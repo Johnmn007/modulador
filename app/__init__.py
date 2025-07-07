@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from .extensions import db, migrate,login_manager
 
-from app.models import Usuario
+from app.models import Usuario,Rol,Asignatura,Carrera,Periodo,Grupo,HorarioClase,Matricula,Asistencia,Archivo,Tramite
 from config import config_by_name
 # Puedes registrar más blueprints aquí
 
