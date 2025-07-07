@@ -11,9 +11,6 @@ from config import config_by_name
 
 
 
-db = SQLAlchemy()
-migrate = Migrate()
-
 def create_app(config_name=None):
     app = Flask(__name__)
     config_name = config_name or os.getenv("FLASK_CONFIG", "development")
