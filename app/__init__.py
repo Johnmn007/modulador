@@ -2,9 +2,17 @@ import os
 from flask import Flask
 from .extensions import db, migrate,login_manager
 
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
 from app.models import Usuario,Rol,Asignatura,Carrera,Periodo,Grupo,HorarioClase,Matricula,Asistencia,Archivo,Tramite
 from config import config_by_name
 # Puedes registrar más blueprints aquí
+
+
+
+db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app(config_name=None):
     app = Flask(__name__)
@@ -16,7 +24,7 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     login_manager.init_app(app) 
     
-    
+    from app import models
     
     @login_manager.user_loader
     def load_user(user_id):
