@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Matriz de Asistencia - {{ curso.nombre_curso }}</title>
+    <style>
+        @page { 
+            size: A4 landscape; 
+            margin: 1cm; 
+        }
+        
+        :root {
+            --primary: #0f172a;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+            color: var(--text-main); 
+            font-size: 9px; 
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        .report-header { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary); 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+
+        .header-title h1 { 
+            margin: 0; 
+            color: var(--primary); 
+            font-size: 18px; 
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-title p { 
+            margin: 2px 0; 
+            color: var(--accent); 
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+        
+        .info-panel { 
+            display: table; 
+            width: 100%; 
+            margin-bottom: 20px; 
+            background: var(--bg-light);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .info-col { 
+            display: table-cell; 
+            width: 33%; 
+            vertical-align: top;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8px;
+            display: block;
+        }
+
+        .info-value {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 10px;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+        }
+        
+        th, td { 
+            border: 1px solid #e2e8f0; 
+            padding: 5px; 
+            text-align: center; 
+        }
+        
+        th { 
+            background-color: var(--primary); 
+            color: white; 
+            font-weight: bold; 
+            font-size: 8px;
+            text-transform: uppercase;
+        }
+        
+        .text-left { text-align: left; padding-left: 10px; }
+        
+        .symbol-p { color: var(--success); font-weight: 800; } 
+        .symbol-f { color: var(--danger); font-weight: 800; } 
+        .symbol-j { color: var(--warning); font-weight: 800; } 
+        
+        .student-name { font-weight: 700; color: var(--primary); }
+        .student-code { font-size: 7px; color: var(--text-muted); }
+        
+        .perc-cell { font-weight: 800; font-size: 10px; }
+        .low-att { color: var(--danger); background-color: #fee2e2; }
+        .good-att { color: var(--success); background-color: #d1fae5; }
+        
+        .legend-box { 
+            background-color: var(--bg-light); 
+            padding: 8px 15px; 
+            border-radius: 6px; 
+            display: inline-block; 
+            border: 1px solid #e2e8f0;
+        }
+        
+        .footer { margin-top: 60px; }
+        
+        .signature-table { 
+            display: table; 
+            width: 100%; 
+            table-layout: fixed;
+        }
+        
+        .sig-cell { 
+            display: table-cell; 
+            text-align: center; 
+            padding: 0 20px;
+        }
+        
+        .sig-line { 
+            border-top: 1px solid var(--primary); 
+            margin-bottom: 8px; 
+        }
+        
+        .sig-text { font-weight: 700; color: var(--primary); font-size: 9px; }
+        .sig-sub { color: var(--text-muted); font-size: 8px; }
+
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <div class="header-title">
+            <h1>SADES | Sistema de Seguimiento</h1>
+            <p>Matriz Consolidada de Asistencia Académica</p>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px; color: var(--primary);">{{ curso.semestre }}</div>
+            <div style="color: var(--text-muted); font-size: 8px;">{{ fecha_generacion }}</div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="info-col">
+            <span class="info-label">Asignatura</span>
+            <span class="info-value">{{ curso.nombre_curso }} ({{ curso.codigo_curso }})</span>
+        </div>
+        <div class="info-col">
+            <span class="info-label">Docente Responsable</span>
+            <span class="info-value">{{ current_user.nombres }} {{ current_user.apellidos }}</span>
+        </div>
+        <div class="info-col" style="text-align: right;">
+            <span class="info-label">Métricas del Curso</span>
+            <span class="info-value">{{ fechas|length }} Sesiones Registradas</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="text-left" style="width: 220px;">Estudiante</th>
+                {% for fecha in fechas %}
+                <th style="width: 25px;">{{ fecha.strftime('%d/%m') }}</th>
+                {% endfor %}
+                <th style="width: 55px;">% Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in matriz %}
+            <tr>
+                <td class="text-left">
+                    <div class="student-name">{{ fila.estudiante.apellidos }}, {{ fila.estudiante.nombres }}</div>
+                    <div class="student-code">{{ fila.estudiante.codigo_estudiante }}</div>
+                </td>
+                {% for sim in fila.asistencias %}
+                <td>
+                    <span class="{% if sim == 'P' %}symbol-p{% elif sim == 'F' %}symbol-f{% elif sim == 'J' %}symbol-j{% endif %}">
+                        {{ sim if sim != '-' else '' }}
+                    </span>
+                </td>
+                {% endfor %}
+                <td class="perc-cell {% if fila.porcentaje < 70 %}low-att{% else %}good-att{% endif %}">
+                    {{ "%.1f"|format(fila.porcentaje) }}%
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div class="legend-box">
+            <strong style="margin-right: 10px; color: var(--primary);">Leyenda:</strong> 
+            <span class="symbol-p">P</span> Presente &nbsp;|&nbsp; 
+            <span class="symbol-f">F</span> Falta &nbsp;|&nbsp; 
+            <span class="symbol-j">J</span> Justificado &nbsp;|&nbsp; 
+            <span style="color: #cbd5e1;">(Vacío)</span> Sin Registro
+        </div>
+        <div style="font-size: 7px; color: var(--text-muted);">
+            Documento de validez institucional generado por SADES Engine v2.0
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="signature-table">
+            <div class="sig-cell">
+                <div class="sig-line"></div>
+                <div class="sig-text">Docente de Asignatura</div>
+                <div class="sig-sub">Nombre y Firma</div>
+            </div>
+            <div class="sig-cell">
+                <div class="sig-line"></div>
+                <div class="sig-text">Coordinación Académica</div>
+                <div class="sig-sub">Sello Institucional</div>
+            </div>
+            <div class="sig-cell">
+                <div class="sig-line"></div>
+                <div class="sig-text">Control de Estudios</div>
+                <div class="sig-sub">Validación de Datos</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

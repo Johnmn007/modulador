@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Administración - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Panel de Control Administrativo</h2>
+                <p class="text-muted mb-0">Gestión de seguridad, algoritmos y mantenimiento del sistema</p>
+            </div>
+            <span class="badge rounded-pill bg-navy px-4 py-2 shadow-sm">
+                <i class="fas fa-shield-alt me-2"></i> MODO ADMINISTRADOR
+            </span>
+        </div>
+
+        <!-- Módulos de Gestión Rápida -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 module-card">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="fas fa-sliders-h fa-2x text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold">Configuración</h5>
+                        <p class="small text-muted mb-4">Ajuste de algoritmos de riesgo, umbrales de alerta y periodos lectivos.</p>
+                        <a href="{{ url_for('admin.configuracion') }}" class="btn btn-primary w-100 fw-bold shadow-sm">
+                            Gestionar Parámetros
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 module-card">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="fas fa-users-cog fa-2x text-success"></i>
+                        </div>
+                        <h5 class="fw-bold">Seguridad y Usuarios</h5>
+                        <p class="small text-muted mb-4">Control de acceso, roles de docentes y administradores del sistema.</p>
+                        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-success w-100 fw-bold shadow-sm">
+                            Gestionar Cuentas
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 module-card">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-navy bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="fas fa-database fa-2x text-navy"></i>
+                        </div>
+                        <h5 class="fw-bold">Sistema y Logs</h5>
+                        <p class="small text-muted mb-4">Respaldos de base de datos y auditoría de eventos del sistema.</p>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('admin.backup') }}" class="btn btn-outline-navy flex-grow-1 fw-bold">Backup</a>
+                            <a href="{{ url_for('admin.logs') }}" class="btn btn-navy flex-grow-1 fw-bold">Ver Logs</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de Configuración Activa -->
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-light py-3 border-0">
+                <h5 class="fw-bold m-0 text-primary-color"><i class="fas fa-info-circle me-2"></i>Estado del Algoritmo de Seguimiento</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-6">
+                        <h6 class="fw-bold small text-muted text-uppercase mb-3">Pesos de Evaluación (Actual)</h6>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 text-center">
+                                    <div class="h3 fw-bold mb-0 text-primary">{{ "%.0f"|format(config.peso_rendimiento * 100) }}%</div>
+                                    <div class="small text-muted">Rendimiento</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 text-center">
+                                    <div class="h3 fw-bold mb-0 text-success">{{ "%.0f"|format(config.peso_asistencia * 100) }}%</div>
+                                    <div class="small text-muted">Asistencia</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 text-center">
+                                    <div class="h3 fw-bold mb-0 text-info">{{ "%.0f"|format(config.peso_distribucion * 100) }}%</div>
+                                    <div class="small text-muted">Distribución</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 text-center bg-light">
+                                    <div class="h3 fw-bold mb-0 text-secondary">{{ "%.0f"|format(config.peso_historial * 100) }}%</div>
+                                    <div class="small text-muted">Historial</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-4 bg-light rounded-4">
+                            <h6 class="fw-bold small text-muted text-uppercase mb-3">Parámetros Críticos</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Semestre Operativo:</span>
+                                <span class="fw-bold text-primary">{{ config.semestre_actual }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Umbral Alerta Roja:</span>
+                                <span class="badge bg-danger">{{ "%.2f"|format(config.umbral_rojo) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Umbral Alerta Amarilla:</span>
+                                <span class="badge bg-warning text-dark">{{ "%.2f"|format(config.umbral_amarillo) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-0">
+                                <span>Nota Mínima:</span>
+                                <span class="fw-bold">{{ config.nota_minima_aprobatoria }}/20</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .btn-navy { background-color: #0f172a; color: white; }
+    .btn-navy:hover { background-color: #1e293b; color: white; }
+    .btn-outline-navy { border-color: #0f172a; color: #0f172a; }
+    .btn-outline-navy:hover { background-color: #0f172a; color: white; }
+    .module-card { transition: transform 0.2s; }
+    .module-card:hover { transform: translateY(-5px); }
+</style>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Vista Previa: {{ titulo }} - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Previsualización del Documento</h2>
+                <p class="text-muted mb-0">Revisión de integridad antes de la exportación oficial</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+                <button onclick="imprimirFormal()" class="btn btn-outline-primary border-2 fw-bold">
+                    <i class="fas fa-print me-1"></i> Impresión Rápida
+                </button>
+                {% if reporte_id %}
+                <a href="{{ url_for('reportes.descargar', reporte_id=reporte_id) }}" class="btn btn-danger fw-bold shadow-sm">
+                    <i class="fas fa-file-pdf me-2"></i> Descargar Documento PDF
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contenedor del Reporte (Estilo Papel) -->
+        <div class="preview-wrapper bg-light p-md-4 rounded-3 border mb-5">
+            <div class="report-paper shadow mx-auto bg-white p-4 p-md-5" id="reporteContent" style="max-width: 900px; min-height: 1000px;">
+                <!-- Encabezado de Identidad Institucional (Solo Preview) -->
+                <div class="institutional-header d-flex justify-content-between align-items-center border-bottom pb-4 mb-5">
+                    <div class="d-flex align-items-center">
+                        <img src="{{url_for('static', filename='img/logo_see_f.png')}}" alt="SADES" style="height: 50px;" class="me-3">
+                        <div>
+                            <div class="h5 fw-bold text-primary-color mb-0">SADES</div>
+                            <div class="small text-muted text-uppercase tracking-wider">Sistema Analítico de Desempeño</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small fw-bold text-navy">REPORTE OFICIAL</div>
+                        <div class="small text-muted">ID: #{{ reporte_id or 'TEMP' }}</div>
+                    </div>
+                </div>
+
+                <!-- Título del Reporte -->
+                <div class="mb-4">
+                    <h3 class="fw-bold text-navy">{{ titulo }}</h3>
+                    <div class="small text-muted">Generado el {{ datetime.now().strftime('%d/%m/%Y %H:%M') if not fecha_generacion else fecha_generacion }}</div>
+                </div>
+
+                <!-- Contenido Dinámico -->
+                <div class="report-body">
+                    {{ contenido|safe }}
+                </div>
+
+                <!-- Pie de Página Institucional -->
+                <div class="mt-5 pt-4 border-top">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <p class="small text-muted mb-0">Este documento es una representación digital generada automáticamente por el algoritmo de seguimiento académico de la institución.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <div class="small fw-bold text-navy">SADES &copy; 2025</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<style>
+    .tracking-wider { letter-spacing: 0.1em; }
+    .bg-navy { background-color: #0f172a !important; }
+    .text-navy { color: #0f172a !important; }
+    
+    /* Estilo Papel para Preview */
+    .report-paper {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #1e293b;
+        transition: transform 0.2s;
+    }
+    
+    .report-body table {
+        width: 100% !important;
+        margin-bottom: 1.5rem;
+        border-collapse: collapse;
+    }
+    
+    .report-body th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .report-body td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+    }
+
+    /* ESTILOS PARA IMPRESIÓN */
+    @media print {
+        /* Ocultar TODO lo que no sea el papel */
+        .no-print, .navbar, footer, .breadcrumb, .btn, .institutional-header { 
+            display: none !important; 
+        }
+        
+        body { 
+            background: white !important; 
+            padding: 0 !important; 
+            margin: 0 !important; 
+        }
+        
+        .container { 
+            max-width: 100% !important; 
+            width: 100% !important; 
+            padding: 0 !important; 
+            margin: 0 !important; 
+        }
+
+        .preview-wrapper { 
+            background: white !important; 
+            border: none !important; 
+            padding: 0 !important; 
+            margin: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .report-paper { 
+            box-shadow: none !important; 
+            padding: 0 !important; 
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Forzar visibilidad de contenido dinámico */
+        .report-body {
+            display: block !important;
+            visibility: visible !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function imprimirFormal() {
+        window.print();
+    }
+</script>
+{% endblock %}

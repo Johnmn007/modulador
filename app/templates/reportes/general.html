@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Reporte General de Riesgo - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Análisis Global de Riesgo</h2>
+                <p class="text-muted mb-0">Consolidado estadístico del rendimiento institucional</p>
+            </div>
+            <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-navy text-white py-3 border-0">
+                <h5 class="fw-bold m-0 small text-uppercase"><i class="fas fa-chart-pie me-2 text-warning"></i>Configuración de Análisis Masivo</h5>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form id="reportForm" method="POST" action="{{ url_for('reportes.generar_general') }}">
+                    <!-- Campo oculto para el formato -->
+                    <input type="hidden" name="formato" id="inputFormato" value="html">
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Semestre Académico *</label>
+                                <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" name="semestre" 
+                                       value="{{ config.semestre_actual if config }}" placeholder="Ej: 2025-I" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Filtrar por Categoría</label>
+                                <select class="form-select form-select-lg bg-light border-0" name="categoria">
+                                    <option value="TODOS">Todas las Alertas</option>
+                                    <option value="SIN_RIESGO">Sin Riesgo Detectado</option>
+                                    <option value="ALERTA_AMARILLA">Alerta Amarilla (Preventiva)</option>
+                                    <option value="ALERTA_ROJA">Alerta Roja (Crítica)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-primary bg-opacity-10 border-0 d-flex align-items-center mb-0">
+                                <i class="fas fa-info-circle fa-lg me-3 text-primary"></i>
+                                <div class="small text-primary-color">
+                                    Este reporte genera un <strong>mapa de calor institucional</strong> que permite identificar los ciclos y cursos con mayor índice de vulnerabilidad académica.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-4 border-top pt-4">
+                        <div class="col-md-6">
+                            <button type="button" onclick="submitReport('html')" class="btn btn-outline-primary w-100 py-3 border-2 fw-bold shadow-sm">
+                                <i class="fas fa-desktop mb-2 d-block fa-lg"></i> Vista Previa Interactiva
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" onclick="submitReport('pdf')" class="btn btn-danger w-100 py-3 border-0 fw-bold shadow-sm">
+                                <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> Descargar Documento PDF
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitReport(formato) {
+        document.getElementById('inputFormato').value = formato;
+        const form = document.getElementById('reportForm');
+        
+        // Validar semestre antes de enviar
+        if (form.checkValidity()) {
+            form.submit();
+        } else {
+            form.reportValidity();
+        }
+    }
+</script>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .btn-outline-primary:hover { background-color: rgba(6, 182, 212, 0.1); color: #0891b2; border-color: #06b6d4; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
+    .btn-outline-primary { color: #06b6d4; border-color: #06b6d4; }
+    .btn-outline-primary:hover { transform: translateY(-2px); }
+</style>
+{% endblock %}

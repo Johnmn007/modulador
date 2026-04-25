@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Centro de Inteligencia y Reportes - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Centro de Inteligencia y Reportes</h2>
+                <p class="text-muted mb-0">Generación de documentos analíticos y consolidados institucionales</p>
+            </div>
+            <a href="{{ url_for('reportes.historial') }}" class="btn btn-outline-primary border-2 fw-bold shadow-sm">
+                <i class="fas fa-folder-open me-2"></i> Ver Historial de Generación
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Reporte Individual -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-user-graduate me-2 text-cyan"></i>Análisis Individual</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">Expediente completo de riesgo para un estudiante específico. Ideal para tutorías personalizadas.</p>
+                        <div class="feature-list mb-4">
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Perfil de Riesgo Detallado
+                            </div>
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Resumen de Asistencias
+                            </div>
+                            <div class="d-flex align-items-center small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Recomendaciones IA
+                            </div>
+                        </div>
+                        <a href="{{ url_for('reportes.individual') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            Configurar Reporte <i class="fas fa-arrow-right ms-2 small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte General de Riesgo -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-users-viewfinder me-2 text-warning"></i>Consolidado de Riesgo</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">Visión global de la institución. Identifica grupos vulnerables por curso y ciclo académico.</p>
+                        <div class="feature-list mb-4">
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Distribución por Alertas
+                            </div>
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Ranking de Cursos Críticos
+                            </div>
+                            <div class="d-flex align-items-center small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Estadísticas Comparativas
+                            </div>
+                        </div>
+                        <a href="{{ url_for('reportes.general') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            Generar General <i class="fas fa-chart-line ms-2 small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte de Asistencia (NUEVO LINK) -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-calendar-check me-2 text-info"></i>Matriz de Asistencia</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">Genera hojas de asistencia mensuales o por ciclo en formato horizontal para impresión.</p>
+                        <div class="feature-list mb-4">
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Matriz Grupal Horizontal
+                            </div>
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Filtro por Ciclo y Curso
+                            </div>
+                            <div class="d-flex align-items-center small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Porcentajes de Faltas
+                            </div>
+                        </div>
+                        <a href="{{ url_for('reportes.asistencias_index') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            Reporte Asistencia <i class="fas fa-table ms-2 small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Informativo Inferior -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-0 bg-primary bg-opacity-10 shadow-none">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="rounded-circle bg-white p-3 shadow-sm me-4">
+                            <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-primary-color">Formatos de Exportación Profesionales</h6>
+                            <p class="text-muted small mb-0">Todos los reportes generados cumplen con los estándares institucionales y están listos para ser descargados en PDF de alta calidad o consultados en línea.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .hover-lift:hover { transform: translateY(-8px); }
+    .bg-navy { background-color: #0f172a !important; }
+    .text-cyan { color: #06b6d4 !important; }
+    .btn-primary { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: none; }
+</style>
+{% endblock %}

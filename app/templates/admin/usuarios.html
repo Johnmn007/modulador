@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Usuarios - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Control de Accesos</h2>
+                <p class="text-muted mb-0">Gestión de cuentas y privilegios del personal</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary fw-bold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+                    <i class="fas fa-plus-circle me-2"></i> Crear Usuario
+                </button>
+                <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary shadow-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Panel Admin
+                </a>
+            </div>
+        </div>
+
+        <!-- Directorio de Usuarios -->
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-body p-0">
+                {% if usuarios %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase fw-bold">
+                            <tr>
+                                <th class="ps-4">Usuario</th>
+                                <th>Email</th>
+                                <th>Rol Académico</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3 bg-navy bg-opacity-10 text-navy fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 10px;">
+                                            {{ usuario.username[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-primary-color">
+                                                {{ usuario.username }}
+                                                {% if usuario.id == current_user.id %}
+                                                <span class="badge rounded-pill bg-cyan ms-1 small" style="font-size: 0.6rem;">TÚ</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="small text-muted">Creado: {{ usuario.fecha_creacion.strftime('%d/%m/%Y') }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    {% if usuario.rol == 'administrador' %}
+                                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-3 border border-danger border-opacity-10">Administrador</span>
+                                    {% elif usuario.rol == 'coordinador' %}
+                                        <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning px-3 border border-warning border-opacity-10">Coordinador</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 border border-primary border-opacity-10">Docente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if usuario.activo %}
+                                        <span class="text-success small fw-bold"><i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i> Activo</span>
+                                    {% else %}
+                                        <span class="text-danger small fw-bold"><i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i> Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        <!-- Menú de Rol -->
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-white border-end dropdown-toggle" type="button" data-bs-toggle="dropdown" {% if usuario.id == current_user.id %}disabled{% endif %}>
+                                                <i class="fas fa-user-tag text-primary me-1"></i> Rol
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                                <li><a class="dropdown-item cambiar-rol small fw-bold py-2" data-usuario-id="{{ usuario.id }}" data-rol="administrador"><i class="fas fa-crown text-danger me-2"></i> Administrador</a></li>
+                                                <li><a class="dropdown-item cambiar-rol small fw-bold py-2" data-usuario-id="{{ usuario.id }}" data-rol="coordinador"><i class="fas fa-user-shield text-warning me-2"></i> Coordinador</a></li>
+                                                <li><a class="dropdown-item cambiar-rol small fw-bold py-2" data-usuario-id="{{ usuario.id }}" data-rol="docente"><i class="fas fa-chalkboard-teacher text-primary me-2"></i> Docente</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <!-- Alternar Estado -->
+                                        <button class="btn btn-sm btn-white border-end toggle-usuario" data-usuario-id="{{ usuario.id }}" {% if usuario.id == current_user.id %}disabled{% endif %} title="Alternar Estado">
+                                            {% if usuario.activo %}
+                                                <i class="fas fa-user-slash text-warning"></i>
+                                            {% else %}
+                                                <i class="fas fa-user-check text-success"></i>
+                                            {% endif %}
+                                        </button>
+
+                                        <!-- Eliminar -->
+                                        <button class="btn btn-sm btn-white eliminar-usuario" data-usuario-id="{{ usuario.id }}" data-usuario-name="{{ usuario.username }}" {% if usuario.id == current_user.id %}disabled{% endif %} title="Eliminar Cuenta">
+                                            <i class="fas fa-trash-alt text-danger"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-3x text-muted opacity-50 mb-3"></i>
+                    <p class="text-muted">No se encontraron usuarios en el sistema.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Usuario -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-navy text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-user-plus me-2 text-cyan"></i>
+                    Nuevo Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCrearUsuario" method="POST" action="{{ url_for('admin.crear_usuario') }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
+                        <input type="text" class="form-control bg-light border-0" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Correo Institucional</label>
+                        <input type="email" class="form-control bg-light border-0" name="email" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Contraseña</label>
+                            <input type="password" class="form-control bg-light border-0" id="password" name="password" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Confirmar</label>
+                            <input type="password" class="form-control bg-light border-0" id="confirm_password" name="confirm_password" required>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Rol Asignado</label>
+                        <select class="form-select bg-light border-0" name="rol" required>
+                            <option value="docente">Docente</option>
+                            <option value="coordinador">Coordinador</option>
+                            <option value="administrador">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Crear Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .bg-cyan { background-color: #06b6d4 !important; }
+    .btn-white { background: #fff; border: 1px solid #e2e8f0; }
+    .btn-white:hover { background: #f8fafc; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle estado de usuario
+    document.querySelectorAll('.toggle-usuario').forEach(button => {
+        button.addEventListener('click', function() {
+            const usuarioId = this.getAttribute('data-usuario-id');
+            fetch(`/admin/usuarios/${usuarioId}/toggle`, { method: 'POST' })
+            .then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
+        });
+    });
+
+    // Cambiar rol
+    document.querySelectorAll('.cambiar-rol').forEach(link => {
+        link.addEventListener('click', function() {
+            const id = this.getAttribute('data-usuario-id');
+            const rol = this.getAttribute('data-rol');
+            if (confirm(`¿Cambiar rol a ${rol}?`)) {
+                fetch(`/admin/usuarios/${id}/cambiar-rol`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rol: rol })
+                }).then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
+            }
+        });
+    });
+
+    // Eliminar
+    document.querySelectorAll('.eliminar-usuario').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-usuario-id');
+            const name = this.getAttribute('data-usuario-name');
+            if (confirm(`¿Eliminar al usuario "${name}" definitivamente?`)) {
+                fetch(`/admin/usuarios/${id}/eliminar`, { method: 'POST' })
+                .then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
+            }
+        });
+    });
+
+    // Validación Passwords
+    document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
+        const p1 = document.getElementById('password').value;
+        const p2 = document.getElementById('confirm_password').value;
+        if (p1 !== p2) { e.preventDefault(); alert('Las contraseñas no coinciden'); }
+        else if (p1.length < 6) { e.preventDefault(); alert('Mínimo 6 caracteres'); }
+    });
+});
+</script>
+{% endblock %}

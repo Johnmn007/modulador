@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Expediente: {{ estudiante.nombres }} - SADES{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div class="d-flex align-items-center">
+                <div class="avatar-huge bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center me-4 shadow-sm" 
+                     style="width: 80px; height: 80px; border-radius: 20px; font-size: 2rem;">
+                    {{ estudiante.nombres[0] }}{{ estudiante.apellidos[0] }}
+                </div>
+                <div>
+                    <h2 class="fw-bold text-primary-color m-0">{{ estudiante.nombres }} {{ estudiante.apellidos }}</h2>
+                    <p class="text-muted mb-0"><i class="fas fa-id-card me-2"></i>Código Estudiante: <strong>{{ estudiante.codigo_estudiante }}</strong></p>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('estudiantes.editar', estudiante_id=estudiante.id) }}" class="btn btn-outline-warning border-2 fw-bold">
+                    <i class="fas fa-edit me-1"></i> Editar Perfil
+                </a>
+                <form method="POST" action="{{ url_for('estudiantes.eliminar', estudiante_id=estudiante.id) }}" 
+                      class="d-inline" onsubmit="return confirm('¿Eliminar registro definitivo?');">
+                    <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Izquierda: Datos Personales -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="fw-bold m-0 text-primary-color text-uppercase small">Información de Contacto</h6>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="info-row mb-3">
+                    <label class="small text-muted d-block text-uppercase fw-bold mb-1">Correo Electrónico</label>
+                    <div class="fw-bold">{{ estudiante.email }}</div>
+                </div>
+                <div class="info-row mb-3">
+                    <label class="small text-muted d-block text-uppercase fw-bold mb-1">Teléfono Movil</label>
+                    <div class="fw-bold">{{ estudiante.telefono or 'No registrado' }}</div>
+                </div>
+                <div class="info-row mb-3">
+                    <label class="small text-muted d-block text-uppercase fw-bold mb-1">Fecha de Ingreso</label>
+                    <div class="fw-bold">{{ estudiante.fecha_inscripcion.strftime('%d de %B, %Y') }}</div>
+                </div>
+                <div class="info-row">
+                    <label class="small text-muted d-block text-uppercase fw-bold mb-1">Estado Académico</label>
+                    <div>
+                        {% if estudiante.activo %}
+                        <span class="badge rounded-pill bg-success px-3">ACTIVO</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-danger px-3">INACTIVO</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Timeline de Riesgo -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold m-0 text-primary-color text-uppercase small">Historial de Riesgo Académico</h6>
+                <span class="badge bg-light text-muted fw-normal">Actualizado: {{ now.strftime('%d/%m/%Y') if now else 'Hoy' }}</span>
+            </div>
+            <div class="card-body p-4 pt-0">
+                {% if seguimientos %}
+                <div class="timeline">
+                    {% for seguimiento in seguimientos %}
+                    <div class="timeline-item border-start border-3 ps-4 pb-4 position-relative 
+                        {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}border-danger
+                        {% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}border-warning
+                        {% else %}border-success{% endif %}">
+                        
+                        <div class="timeline-dot shadow-sm 
+                            {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger
+                            {% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}bg-warning
+                            {% else %}bg-success{% endif %}"></div>
+                        
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-0">Ciclo Académico {{ seguimiento.semestre }}</h6>
+                                <small class="text-muted">{{ seguimiento.fecha_evaluacion.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <span class="badge {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger{% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill px-3">
+                                {{ seguimiento.categoria_riesgo.replace('_', ' ') }}
+                            </span>
+                        </div>
+                        
+                        <div class="p-3 rounded-3 bg-light border-0 shadow-none mb-2">
+                            <div class="row g-2 text-center">
+                                <div class="col-4">
+                                    <div class="small text-muted">Puntaje</div>
+                                    <div class="fw-bold h5 mb-0 text-primary-color">{{ "%.2f"|format(seguimiento.puntaje_riesgo) }}</div>
+                                </div>
+                                <div class="col-8 text-start ps-3 border-start">
+                                    <div class="small text-muted">Observaciones Académicas</div>
+                                    <div class="small fw-medium">{{ seguimiento.observaciones or 'Sin observaciones registradas.' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-shield-alt fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold">Sin histórico de riesgo</h5>
+                    <p class="text-muted small">Este estudiante aún no ha sido procesado por el algoritmo de seguimiento.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-huge { transition: transform 0.3s; }
+    .avatar-huge:hover { transform: scale(1.05); }
+    .timeline-item { position: relative; }
+    .timeline-dot { 
+        position: absolute; 
+        left: -8px; 
+        top: 0; 
+        width: 13px; 
+        height: 13px; 
+        border-radius: 50%; 
+        border: 2px solid white;
+    }
+    .timeline-item:last-child { border-left: none !important; }
+</style>
+{% endblock %}

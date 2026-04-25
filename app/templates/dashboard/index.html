@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-primary-color m-0">Panel de Control</h2>
+            <span class="badge bg-light text-muted border py-2 px-3 rounded-pill">
+                <i class="fas fa-calendar-alt me-1"></i> Semestre Actual: {{ current_user.rol|capitalize }}
+            </span>
+        </div>
+        
+        <!-- Tarjetas de Estadísticas -->
+        <div class="row g-4 mb-5">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                                <i class="fas fa-user-graduate fa-lg"></i>
+                            </div>
+                            <h6 class="card-subtitle text-muted fw-medium m-0">Estudiantes</h6>
+                        </div>
+                        <h2 class="card-title fw-bold m-0">{{ total_estudiantes }}</h2>
+                        <small class="text-success fw-semibold"><i class="fas fa-check-circle me-1"></i>Activos</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 text-info p-3 rounded-3 me-3">
+                                <i class="fas fa-book-open fa-lg"></i>
+                            </div>
+                            <h6 class="card-subtitle text-muted fw-medium m-0">Cursos</h6>
+                        </div>
+                        <h2 class="card-title fw-bold m-0">{{ total_cursos }}</h2>
+                        <small class="text-info fw-semibold"><i class="fas fa-info-circle me-1"></i>En el ciclo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-3 me-3">
+                                <i class="fas fa-exclamation-triangle fa-lg"></i>
+                            </div>
+                            <h6 class="card-subtitle text-muted fw-medium m-0">En Riesgo</h6>
+                        </div>
+                        <h2 class="card-title fw-bold m-0 text-danger">{{ estudiantes_riesgo }}</h2>
+                        <small class="text-danger fw-semibold"><i class="fas fa-arrow-up me-1"></i>Requieren atención</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                                <i class="fas fa-database fa-lg"></i>
+                            </div>
+                            <h6 class="card-subtitle text-muted fw-medium m-0">Registros</h6>
+                        </div>
+                        <h2 class="card-title fw-bold m-0">{{ total_estudiantes + total_cursos }}</h2>
+                        <small class="text-muted">Total de datos procesados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Acciones Rápidas -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="fw-bold m-0">Accesos Directos</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('estudiantes.index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-users text-primary mb-2 fa-lg"></i><br>Estudiantes
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('seguimiento.index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-calculator text-info mb-2 fa-lg"></i><br>Calcular Riesgo
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('importacion.index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-file-import text-success mb-2 fa-lg"></i><br>Importar
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('reportes.index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-chart-pie text-warning mb-2 fa-lg"></i><br>Reportes
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('cursos.index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-book-open text-purple mb-2 fa-lg"></i><br>Cursos
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <a href="{{ url_for('evaluaciones.notas_index') }}" class="btn btn-light w-100 py-3 border shadow-sm hover-lift">
+                                    <i class="fas fa-pen-alt text-danger mb-2 fa-lg"></i><br>Notas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold mb-3">Bienvenido, {{ current_user.username }}</h4>
+                        <p class="opacity-75">SADES es tu herramienta analítica para el éxito estudiantil. Recuerda que los datos de riesgo se actualizan automáticamente tras cada importación.</p>
+                        <hr class="opacity-25">
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="fas fa-lightbulb fa-lg text-warning mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Tip del día</h6>
+                                <p class="small opacity-75 mb-0">Revisa la sección de 'Resultados' para ver la tendencia de riesgo (subida/bajada) de cada estudiante.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        border-color: var(--accent-color) !important;
+    }
+    .text-purple { color: #8b5cf6; }
+</style>
+{% endblock %}

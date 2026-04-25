@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Importación masiva - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Importación Masiva de Datos</h2>
+                <p class="text-muted mb-0">Carga por lotes mediante archivos Excel o CSV</p>
+            </div>
+            <a href="{{ url_for('importacion.resultados') }}" class="btn btn-outline-primary border-2 fw-bold shadow-sm">
+                <i class="fas fa-history me-2"></i> Historial de Cargas
+            </a>
+        </div>
+
+        <!-- Panel de Selección de Tipo de Carga -->
+        <div class="row g-4 mb-5">
+            <!-- Estudiantes -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0 text-center">
+                        <i class="fas fa-user-graduate fa-2x mb-2 opacity-50"></i>
+                        <h5 class="fw-bold m-0">Estudiantes</h5>
+                    </div>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <p class="small text-muted mb-4">Sincroniza el padrón de alumnos con la base de datos institucional.</p>
+                        <form method="POST" action="{{ url_for('importacion.importar_estudiantes') }}" enctype="multipart/form-data" class="mt-auto">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
+                                <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-cloud-upload-alt me-2"></i> Cargar alumnos</button>
+                                <a href="{{ url_for('importacion.descargar_plantilla', tipo='estudiantes') }}" class="btn btn-light btn-sm text-primary fw-bold">
+                                    <i class="fas fa-download me-1"></i> Descargar Plantilla
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cursos -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                    <div class="card-header bg-primary text-white py-3 border-0 text-center">
+                        <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
+                        <h5 class="fw-bold m-0">Cursos / Cátedras</h5>
+                    </div>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <p class="small text-muted mb-4">Importa la oferta académica y códigos de curso para el nuevo ciclo.</p>
+                        <form method="POST" action="{{ url_for('importacion.importar_cursos') }}" enctype="multipart/form-data" class="mt-auto">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
+                                <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-cloud-upload-alt me-2"></i> Cargar cursos</button>
+                                <a href="{{ url_for('importacion.descargar_plantilla', tipo='cursos') }}" class="btn btn-light btn-sm text-primary fw-bold">
+                                    <i class="fas fa-download me-1"></i> Descargar Plantilla
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                    <div class="card-header bg-cyan text-white py-3 border-0 text-center">
+                        <i class="fas fa-file-invoice fa-2x mb-2 opacity-50"></i>
+                        <h5 class="fw-bold m-0">Calificaciones</h5>
+                    </div>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <p class="small text-muted mb-4">Carga masiva de notas finales o parciales para análisis de riesgo.</p>
+                        <form method="POST" action="{{ url_for('importacion.importar_notas') }}" enctype="multipart/form-data" class="mt-auto">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
+                                <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-cloud-upload-alt me-2"></i> Cargar notas</button>
+                                <a href="{{ url_for('importacion.descargar_plantilla', tipo='notas') }}" class="btn btn-light btn-sm text-primary fw-bold">
+                                    <i class="fas fa-download me-1"></i> Descargar Plantilla
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guía de Formatos -->
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-auto mb-3 mb-md-0">
+                        <div class="bg-white p-3 rounded-circle shadow-sm">
+                            <i class="fas fa-info-circle fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <h5 class="fw-bold mb-1">Requisitos de archivo</h5>
+                        <p class="text-muted small mb-0">Asegúrese de que la primera fila contenga los nombres exactos de las columnas.</p>
+                    </div>
+                </div>
+                <hr class="my-4 opacity-50">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <h6 class="fw-bold small text-uppercase text-primary mb-3">Estudiantes</h6>
+                        <ul class="small text-muted list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>codigo_estudiante</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>nombres, apellidos</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>email</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold small text-uppercase text-primary mb-3">Cursos</h6>
+                        <ul class="small text-muted list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>codigo_curso</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>nombre_curso</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>semestre</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold small text-uppercase text-primary mb-3">Notas</h6>
+                        <ul class="small text-muted list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>codigo_estudiante</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>codigo_curso</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>nombre_evaluacion, nota</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .bg-cyan { background-color: #06b6d4 !important; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+</style>
+{% endblock %}

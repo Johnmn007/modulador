@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Paleta Premium */
+    --primary-color: #0f172a;    /* Navy profundo */
+    --accent-color: #06b6d4;     /* Cyan moderno */
+    --accent-hover: #0891b2;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    
+    /* Superficies y Glassmorphism */
+    --bg-main: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    
+    /* Texto */
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #f8fafc;
+    
+    /* Sombras y Bordes */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --radius: 12px;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a; /* Fondo base oscuro */
+    background: radial-gradient(circle at top right, #1e293b, #0f172a);
+    color: var(--text-main);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+/* ======== LAYOUT ======== */
+
+main.container {
+    background: var(--bg-main);
+    margin-top: 2rem !important;
+    margin-bottom: 2rem !important;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    min-height: calc(100vh - 160px);
+}
+
+/* Móvil: Quitar bordes redondeados del main y padding excesivo */
+@media (max-width: 768px) {
+    main.container {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border-radius: 0;
+        padding: 1rem;
+    }
+}
+
+/* ======== NAVBAR MODERNA ======== */
+
+.navbar {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo_see {
+    height: 36px;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover .logo_see {
+    transform: scale(1.1);
+}
+
+.nav-link {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+    color: var(--accent-color) !important;
+    background: rgba(6, 182, 212, 0.1);
+}
+
+/* ======== COMPONENTES ======== */
+
+.card {
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.4);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+/* ======== TABLAS RESPONSIVAS ======== */
+
+.table-responsive {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.table thead th {
+    background: #f1f5f9;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* ======== MENSAJES FLASH ======== */
+
+.alert {
+    border: none;
+    border-radius: 10px;
+    box-shadow: var(--shadow-md);
+    font-weight: 500;
+}
+
+/* ======== BREADCRUMB MODERNO ======== */
+
+.breadcrumb {
+    background: #f1f5f9;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-muted);
+}
+
+

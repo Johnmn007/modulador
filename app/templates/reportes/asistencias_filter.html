@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Reportes de Asistencia - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Reportes de Asistencia</h2>
+                <p class="text-muted mb-0">Control detallado de permanencia y puntualidad institucional</p>
+            </div>
+            <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> Panel de Reportes
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Reporte Grupal -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-users me-2 text-cyan"></i>Matriz Grupal por Curso</h5>
+                    </div>
+                    <div class="card-body p-4 p-md-5">
+                        <p class="text-muted small mb-4">Genera una sábana completa de asistencia con todas las sesiones del periodo para un curso específico.</p>
+                        
+                        <form id="formGrupal" method="POST" action="{{ url_for('reportes.generar_asistencia_grupal') }}">
+                            <input type="hidden" name="formato" id="formatoGrupal" value="html">
+                            
+                            <div class="form-group mb-5">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Seleccionar Asignatura</label>
+                                <select class="form-select form-select-lg bg-light border-0 fw-bold" name="curso_id" required>
+                                    <option value="">-- Buscar asignatura --</option>
+                                    {% for curso in cursos %}
+                                    <option value="{{ curso.id }}">{{ curso.nombre_curso }} | {{ curso.semestre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="row g-2 mt-auto">
+                                <div class="col-6">
+                                    <button type="button" onclick="submitAsistencia('formGrupal', 'formatoGrupal', 'html')" class="btn btn-outline-primary w-100 py-3 fw-bold border-2 shadow-sm">
+                                        <i class="fas fa-desktop mb-2 d-block fa-lg"></i> Vista Web
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" onclick="submitAsistencia('formGrupal', 'formatoGrupal', 'pdf')" class="btn btn-danger w-100 py-3 fw-bold border-0 shadow-sm">
+                                        <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> PDF Legal
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte Individual -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-user-tag me-2 text-warning"></i>Historial por Estudiante</h5>
+                    </div>
+                    <div class="card-body p-4 p-md-5">
+                        <p class="text-muted small mb-4">Análisis detallado de inasistencias y justificaciones para un estudiante en todas sus asignaturas.</p>
+                        
+                        <form id="formIndividual" method="POST" action="{{ url_for('reportes.generar_individual') }}">
+                            <input type="hidden" name="formato" id="formatoIndividual" value="html">
+                            
+                            <div class="form-group mb-4">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Seleccionar Estudiante</label>
+                                <select class="form-select form-select-lg bg-light border-0 fw-bold" name="estudiante_id" required>
+                                    <option value="">-- Buscar por nombre o código --</option>
+                                    {% for est in estudiantes %}
+                                    <option value="{{ est.id }}">{{ est.apellidos }}, {{ est.nombres }} ({{ est.codigo_estudiante }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Semestre Académico</label>
+                                <input type="text" class="form-control form-control-lg bg-light border-0" name="semestre" 
+                                       value="{{ config.semestre_actual if config }}" placeholder="Ej: 2025-1" required>
+                            </div>
+
+                            <div class="row g-2 mt-4">
+                                <div class="col-6">
+                                    <button type="button" onclick="submitAsistencia('formIndividual', 'formatoIndividual', 'html')" class="btn btn-outline-primary w-100 py-3 fw-bold border-2 shadow-sm">
+                                        <i class="fas fa-desktop mb-2 d-block fa-lg"></i> Vista Web
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" onclick="submitAsistencia('formIndividual', 'formatoIndividual', 'pdf')" class="btn btn-danger w-100 py-3 fw-bold border-0 shadow-sm">
+                                        <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> PDF Legal
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitAsistencia(formId, inputId, formato) {
+        document.getElementById(inputId).value = formato;
+        const form = document.getElementById(formId);
+        if (form.checkValidity()) {
+            form.submit();
+        } else {
+            form.reportValidity();
+        }
+    }
+</script>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .text-cyan { color: #06b6d4 !important; }
+    .form-control-lg, .form-select-lg { font-size: 1rem; border-radius: 12px; }
+    .btn-outline-primary { color: #06b6d4; border-color: #06b6d4; }
+    .btn-outline-primary:hover { background-color: rgba(6, 182, 212, 0.1); color: #0891b2; border-color: #06b6d4; transform: translateY(-2px); }
+    .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
+</style>
+{% endblock %}

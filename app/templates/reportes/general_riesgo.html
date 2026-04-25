@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte General de Riesgo Académico - SADES</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        .report-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Header Institutional */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 60px;
+            margin-right: 20px;
+        }
+
+        .inst-name {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .report-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .meta-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 2px 0;
+        }
+
+        /* Summary Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Distribution Section */
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .dist-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .dist-item {
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .dist-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .dot-green { background-color: var(--success); }
+        .dot-yellow { background-color: var(--warning); }
+        .dot-red { background-color: var(--danger); }
+
+        .dist-info {
+            flex-grow: 1;
+        }
+
+        .dist-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .dist-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-size: 11px;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 12px 15px;
+        }
+
+        td {
+            padding: 12px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        .bg-yellow { background: #fef3c7; color: #92400e; }
+        .bg-green { background: #d1fae5; color: #065f46; }
+
+        /* Recommendations */
+        .analysis-box {
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .analysis-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .analysis-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .analysis-list li {
+            margin-bottom: 8px;
+        }
+
+        /* Signatures */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 80px;
+            page-break-inside: avoid;
+        }
+
+        .sig-block {
+            width: 40%;
+            text-align: center;
+        }
+
+        .sig-line {
+            border-top: 1px solid var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .sig-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .sig-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media print {
+            .report-container { padding: 0; }
+            .no-print { display: none !important; }
+            @page { margin: 1.5cm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <img src="{{ url_for('static', filename='img/logo_see_f.png', _external=True) }}" alt="SADES" class="logo">
+                <div>
+                    <h1 class="inst-name">SADES</h1>
+                    <p class="report-title">Seguimiento de Desempeño Estudiantil</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <p class="meta-info"><strong>REPORTE:</strong> GENERAL DE RIESGO</p>
+                <p class="meta-info"><strong>SEMESTRE:</strong> {{ semestre }}</p>
+                <p class="meta-info"><strong>FECHA:</strong> {{ fecha_generacion }}</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Summary -->
+        <h2 class="section-title">Resumen Estadístico Institucional</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-value">{{ estadisticas.total_estudiantes }}</span>
+                <span class="stat-label">Total Alumnos</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" style="color: var(--danger);">{{ estadisticas.total_riesgo }}</span>
+                <span class="stat-label">En Riesgo</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" style="color: var(--accent);">{{ "%.1f"|format(estadisticas.porcentaje_riesgo) }}%</span>
+                <span class="stat-label">Tasa de Riesgo</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" style="color: var(--success);">{{ estadisticas.total_estudiantes - estadisticas.total_riesgo }}</span>
+                <span class="stat-label">Sin Alerta</span>
+            </div>
+        </div>
+
+        <!-- Section 2: Distribution -->
+        <h2 class="section-title">Distribución por Nivel de Severidad</h2>
+        <div class="dist-grid">
+            <div class="dist-item">
+                <div class="dist-dot dot-green"></div>
+                <div class="dist-info">
+                    <div class="dist-name">Preventivo</div>
+                    <div class="dist-val">{{ estadisticas.categorias.get('SIN_RIESGO', 0) }}</div>
+                </div>
+            </div>
+            <div class="dist-item">
+                <div class="dist-dot dot-yellow"></div>
+                <div class="dist-info">
+                    <div class="dist-name">Moderado</div>
+                    <div class="dist-val">{{ estadisticas.categorias.get('ALERTA_AMARILLA', 0) }}</div>
+                </div>
+            </div>
+            <div class="dist-item">
+                <div class="dist-dot dot-red"></div>
+                <div class="dist-info">
+                    <div class="dist-name">Crítico</div>
+                    <div class="dist-val">{{ estadisticas.categorias.get('ALERTA_ROJA', 0) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Student List -->
+        <h2 class="section-title">Población Estudiantil Vulnerable</h2>
+        {% if estudiantes_riesgo %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Estudiante</th>
+                    <th>Categoría</th>
+                    <th>Severidad</th>
+                    <th>Contacto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for estudiante, seguimiento in estudiantes_riesgo %}
+                <tr>
+                    <td style="font-weight: 700;">{{ estudiante.codigo_estudiante }}</td>
+                    <td>{{ estudiante.nombres }} {{ estudiante.apellidos }}</td>
+                    <td>
+                        {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}
+                            <span class="badge bg-red">ALERTA ROJA</span>
+                        {% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}
+                            <span class="badge bg-yellow">ALERTA AMARILLA</span>
+                        {% else %}
+                            <span class="badge bg-green">SIN RIESGO</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 700;">{{ "%.2f"|format(seguimiento.puntaje_riesgo) }}</td>
+                    <td style="font-size: 11px; color: var(--text-muted);">{{ estudiante.email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; background: var(--bg-light); border-radius: 12px; margin-bottom: 40px;">
+            <p style="margin: 0; color: var(--success); font-weight: 700;">No se detectaron estudiantes en situación de riesgo académico para los criterios seleccionados.</p>
+        </div>
+        {% endif %}
+
+        <!-- Section 4: Analysis -->
+        <div class="analysis-box">
+            <div>
+                <h3 class="analysis-title">Diagnóstico de Situación</h3>
+                <ul class="analysis-list">
+                    {% if estadisticas.total_riesgo > 0 %}
+                        <li>Se identifica una población del {{ "%.1f"|format(estadisticas.porcentaje_riesgo) }}% en zona de riesgo.</li>
+                        {% if estadisticas.categorias.get('ALERTA_ROJA', 0) > 0 %}
+                        <li><strong>Crítico:</strong> {{ estadisticas.categorias.get('ALERTA_ROJA', 0) }} alumnos requieren tutoría inmediata.</li>
+                        {% endif %}
+                        <li>Tendencia detectada principalmente en factores de asistencia y rendimiento parcial.</li>
+                    {% else %}
+                        <li>Estabilidad académica general detectada.</li>
+                        <li>Cero casos críticos registrados en el periodo actual.</li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div>
+                <h3 class="analysis-title">Plan de Intervención Sugerido</h3>
+                <ul class="analysis-list">
+                    {% if estadisticas.categorias.get('ALERTA_ROJA', 0) > 0 %}
+                    <li>Citación obligatoria para casos de nivel Crítico.</li>
+                    <li>Revisión de justificaciones de inasistencia.</li>
+                    {% endif %}
+                    <li>Monitoreo preventivo semanal para nivel Moderado.</li>
+                    <li>Refuerzo de canales de comunicación docente-estudiante.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="signatures">
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Coordinación Académica</div>
+                <div class="sig-sub">Nombre, Sello y Firma</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Dirección de Programa</div>
+                <div class="sig-sub">Nombre, Sello y Firma</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

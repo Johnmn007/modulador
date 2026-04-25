@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Calificación Masiva - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Registro de Calificaciones</h2>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-book me-1"></i> {{ evaluacion.curso.nombre_curso }} 
+                    | <i class="fas fa-file-alt me-1"></i> {{ evaluacion.nombre_evaluacion }} ({{ evaluacion.peso }}%)
+                </p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <!-- Estadísticas en tiempo real -->
+                <div class="stats-pill bg-light border px-3 py-1 rounded-pill small fw-bold d-none d-md-block">
+                    <span class="text-muted">Promedio:</span> <span id="promedio_real" class="text-primary">0.0</span>
+                </div>
+                <div class="stats-pill bg-light border px-3 py-1 rounded-pill small fw-bold d-none d-md-block">
+                    <span class="text-muted">Aprobados:</span> <span id="aprobados_real" class="text-success">0</span>
+                </div>
+                <a href="{{ url_for('evaluaciones.registro_masivo', curso_id=evaluacion.curso_id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-times me-1"></i> Salir
+                </a>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('evaluaciones.procesar_masiva') }}" id="gradesForm">
+            <input type="hidden" name="evaluacion_id" value="{{ evaluacion.id }}">
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="gradesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" style="width: 40%">Estudiante</th>
+                                    <th class="text-center" style="width: 20%">Calificación (0-20)</th>
+                                    <th style="width: 40%">Observación rápida</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inscripcion in inscripciones %}
+                                {% set nota_obj = notas_existentes.get(inscripcion.id) %}
+                                <tr class="grade-row" id="row_{{ inscripcion.id }}">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                                {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</div>
+                                                <small class="text-muted">{{ inscripcion.estudiante.codigo_estudiante }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-lg justify-content-center">
+                                            <input type="number" 
+                                                   class="form-control text-center fw-bold grade-input border-0 bg-light rounded-3" 
+                                                   name="nota_{{ inscripcion.id }}" 
+                                                   value="{{ nota_obj.nota if nota_obj else '' }}" 
+                                                   step="0.1" min="0" max="20" 
+                                                   placeholder="--"
+                                                   style="max-width: 100px;"
+                                                   oninput="updateGradeStatus(this, {{ inscripcion.id }})">
+                                        </div>
+                                    </td>
+                                    <td class="pe-4">
+                                        <div class="grade-status-msg small fw-bold mb-1" id="msg_{{ inscripcion.id }}">
+                                            {% if nota_obj %}
+                                                {{ 'Aprobado' if nota_obj.nota >= 11 else 'Desaprobado' }}
+                                            {% else %}
+                                                Sin calificar
+                                            {% endif %}
+                                        </div>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar" id="progress_{{ inscripcion.id }}" style="width: 0%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Control Flotante -->
+            <div class="sticky-bottom-panel py-4 mt-4 bg-white border-top shadow-lg">
+                <div class="container d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <i class="fas fa-info-circle me-1"></i> Se guardarán solo los campos completados. Las notas existentes serán actualizadas.
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm hover-lift">
+                        <i class="fas fa-save me-2"></i> Guardar Calificaciones
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .grade-input:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+        border: 1px solid var(--primary-color) !important;
+    }
+    .grade-row { transition: all 0.2s ease; }
+    .grade-row.passing { background-color: rgba(16, 185, 129, 0.03); }
+    .grade-row.failing { background-color: rgba(239, 68, 68, 0.03); }
+    
+    .sticky-bottom-panel {
+        position: sticky;
+        bottom: 0;
+        margin-left: -2rem;
+        margin-right: -2rem;
+        z-index: 1000;
+    }
+    .hover-lift { transition: transform 0.2s; }
+    .hover-lift:hover { transform: translateY(-3px); }
+</style>
+
+<script>
+function updateGradeStatus(input, id) {
+    const val = parseFloat(input.value);
+    const row = document.getElementById('row_' + id);
+    const msg = document.getElementById('msg_' + id);
+    const progress = document.getElementById('progress_' + id);
+    
+    row.classList.remove('passing', 'failing');
+    progress.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+    
+    if (isNaN(val)) {
+        msg.innerText = "Sin calificar";
+        msg.className = "grade-status-msg small fw-bold mb-1 text-muted";
+        progress.style.width = "0%";
+    } else {
+        const perc = (val / 20) * 100;
+        progress.style.width = perc + "%";
+        
+        if (val >= 14) {
+            row.classList.add('passing');
+            msg.innerText = "Excelente";
+            msg.className = "grade-status-msg small fw-bold mb-1 text-success";
+            progress.classList.add('bg-success');
+        } else if (val >= 11) {
+            row.classList.add('passing');
+            msg.innerText = "Aprobado";
+            msg.className = "grade-status-msg small fw-bold mb-1 text-info";
+            progress.classList.add('bg-info');
+        } else if (val >= 7) {
+            row.classList.add('failing');
+            msg.innerText = "Riesgo";
+            msg.className = "grade-status-msg small fw-bold mb-1 text-warning";
+            progress.classList.add('bg-warning');
+        } else {
+            row.classList.add('failing');
+            msg.innerText = "Crítico";
+            msg.className = "grade-status-msg small fw-bold mb-1 text-danger";
+            progress.classList.add('bg-danger');
+        }
+    }
+    calculateGlobalStats();
+}
+
+function calculateGlobalStats() {
+    const inputs = document.querySelectorAll('.grade-input');
+    let total = 0;
+    let count = 0;
+    let approved = 0;
+    
+    inputs.forEach(input => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) {
+            total += val;
+            count++;
+            if (val >= 11) approved++;
+        }
+    });
+    
+    const avg = count > 0 ? (total / count).toFixed(1) : "0.0";
+    document.getElementById('promedio_real').innerText = avg;
+    document.getElementById('aprobados_real').innerText = approved + "/" + count;
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.grade-input').forEach(input => {
+        const id = input.name.split('_')[1];
+        updateGradeStatus(input, id);
+    });
+});
+</script>
+{% endblock %}

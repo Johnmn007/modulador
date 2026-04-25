@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Individual de Riesgo - {{ estudiante.nombres }} {{ estudiante.apellidos }}</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        .report-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Header Institutional */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 60px;
+            margin-right: 20px;
+        }
+
+        .inst-name {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .report-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .meta-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 2px 0;
+        }
+
+        /* Profile Grid */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            background: var(--bg-light);
+            padding: 25px;
+            border-radius: 12px;
+        }
+
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 0;
+        }
+
+        .profile-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .profile-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Risk Dashboard */
+        .risk-dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .risk-card {
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+        }
+
+        .card-red { background: var(--danger); }
+        .card-yellow { background: var(--warning); }
+        .card-green { background: var(--success); }
+
+        .risk-val {
+            font-size: 32px;
+            font-weight: 800;
+            display: block;
+        }
+
+        .risk-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        /* Table */
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-size: 11px;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 12px 15px;
+        }
+
+        td {
+            padding: 12px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        .bg-yellow { background: #fef3c7; color: #92400e; }
+        .bg-green { background: #d1fae5; color: #065f46; }
+
+        /* Recommendations */
+        .analysis-box {
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+        }
+
+        .analysis-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .analysis-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .analysis-list li {
+            margin-bottom: 10px;
+        }
+
+        /* Signatures */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 80px;
+            page-break-inside: avoid;
+        }
+
+        .sig-block {
+            width: 40%;
+            text-align: center;
+        }
+
+        .sig-line {
+            border-top: 1px solid var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .sig-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .sig-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media print {
+            .report-container { padding: 0; }
+            .no-print { display: none !important; }
+            @page { margin: 1.5cm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <img src="{{ url_for('static', filename='img/logo_see_f.png', _external=True) }}" alt="SADES" class="logo">
+                <div>
+                    <h1 class="inst-name">SADES</h1>
+                    <p class="report-title">Expediente de Seguimiento Académico</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <p class="meta-info"><strong>REPORTE:</strong> INDIVIDUAL DE RIESGO</p>
+                <p class="meta-info"><strong>SEMESTRE:</strong> {{ semestre }}</p>
+                <p class="meta-info"><strong>FECHA:</strong> {{ fecha_generacion }}</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Profile -->
+        <h2 class="section-title">Perfil del Estudiante</h2>
+        <div class="profile-grid">
+            <div class="profile-col">
+                <div class="profile-item">
+                    <span class="profile-label">Nombre Completo</span>
+                    <span class="profile-value">{{ estudiante.nombres }} {{ estudiante.apellidos }}</span>
+                </div>
+                <div class="profile-item">
+                    <span class="profile-label">Código</span>
+                    <span class="profile-value">{{ estudiante.codigo_estudiante }}</span>
+                </div>
+                <div class="profile-item">
+                    <span class="profile-label">Correo Institucional</span>
+                    <span class="profile-value">{{ estudiante.email }}</span>
+                </div>
+            </div>
+            <div class="profile-col">
+                <div class="profile-item">
+                    <span class="profile-label">Teléfono</span>
+                    <span class="profile-value">{{ estudiante.telefono or 'N/R' }}</span>
+                </div>
+                <div class="profile-item">
+                    <span class="profile-label">Ingreso</span>
+                    <span class="profile-value">{{ estudiante.fecha_inscripcion.strftime('%d/%m/%Y') }}</span>
+                </div>
+                <div class="profile-item">
+                    <span class="profile-label">Estado</span>
+                    <span class="profile-value">{% if estudiante.activo %}ACTIVO{% else %}INACTIVO{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Risk Level -->
+        <h2 class="section-title">Nivel de Riesgo Detectado</h2>
+        {% if seguimiento %}
+        <div class="risk-dashboard">
+            <div class="risk-card {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}card-red{% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}card-yellow{% else %}card-green{% endif %}">
+                <span class="risk-val">{{ seguimiento.categoria_riesgo.replace('_', ' ') }}</span>
+                <span class="risk-label">Categoría Actual</span>
+            </div>
+            <div class="risk-card" style="background: var(--primary);">
+                <span class="risk-val">{{ "%.2f"|format(seguimiento.puntaje_riesgo) }}</span>
+                <span class="risk-label">Puntaje Algorítmico</span>
+            </div>
+            <div class="risk-card" style="background: var(--accent);">
+                <span class="risk-val">{{ seguimiento.fecha_evaluacion.strftime('%d/%m/%Y') }}</span>
+                <span class="risk-label">Última Evaluación</span>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px; background: var(--bg-light); border-radius: 12px; margin-bottom: 40px;">
+            <p style="margin: 0; color: var(--text-muted);">No se registran evaluaciones de riesgo para el estudiante en este periodo.</p>
+        </div>
+        {% endif %}
+
+        <!-- Section 3: Detailed Performance -->
+        <h2 class="section-title">Desempeño por Asignatura</h2>
+        {% if cursos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Asignatura</th>
+                    <th>Créditos</th>
+                    <th>Promedio</th>
+                    <th>Asistencia</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for curso_data in cursos %}
+                <tr>
+                    <td style="font-weight: 700;">{{ curso_data.curso.nombre_curso }}</td>
+                    <td>{{ curso_data.curso.creditos }}</td>
+                    <td>
+                        {% if curso_data.promedio is string %}
+                            {{ curso_data.promedio }}
+                        {% else %}
+                            <span style="font-weight: 700;">{{ "%.1f"|format(curso_data.promedio) }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.1f"|format(curso_data.asistencia) if curso_data.total_clases > 0 else 'N/R' }}%</td>
+                    <td>
+                        {% if curso_data.promedio is not string and curso_data.promedio < 12 %}
+                            <span class="badge bg-red">BAJO RENDIMIENTO</span>
+                        {% elif curso_data.asistencia < 70 %}
+                            <span class="badge bg-yellow">BAJA ASISTENCIA</span>
+                        {% else %}
+                            <span class="badge bg-green">SATISFACTORIO</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No se registran cursos inscritos en el semestre analizado.</p>
+        {% endif %}
+
+        <!-- Section 4: Recommendations -->
+        {% if seguimiento and seguimiento.factores_riesgo %}
+        <div class="analysis-box">
+            <h3 class="analysis-title">Plan de Acompañamiento Sugerido</h3>
+            <ul class="analysis-list">
+                {% for factor in seguimiento.factores_riesgo %}
+                    {% if factor.valor > 0.5 %}
+                        {% if factor.nombre == "Rendimiento Actual" %}
+                            <li><strong>Refuerzo Académico:</strong> Se recomienda programar sesiones de tutoría especializada en las asignaturas con promedios inferiores a 12.</li>
+                        {% elif factor.nombre == "Asistencia Actual" %}
+                            <li><strong>Compromiso de Asistencia:</strong> El estudiante presenta inasistencias críticas. Se requiere entrevista con Bienestar para identificar causas externas.</li>
+                        {% elif factor.nombre == "Distribución de Riesgo" %}
+                            <li><strong>Gestión de Carga:</strong> El riesgo está distribuido en múltiples materias; se sugiere priorizar las asignaturas de mayor peso crediticio.</li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}
+                    <li><strong>Seguimiento:</strong> Monitoreo mensual de calificaciones parciales para prevenir escalada a nivel crítico.</li>
+                {% elif seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}
+                    <li><strong>Intervención Urgente:</strong> Notificación a coordinación y citación presencial obligatoria para firma de compromiso académico.</li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Signatures -->
+        <div class="signatures">
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Coordinación Académica</div>
+                <div class="sig-sub">Nombre y Firma</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Estudiante</div>
+                <div class="sig-sub">{{ estudiante.nombres }} {{ estudiante.apellidos }}</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

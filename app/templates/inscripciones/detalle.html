@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Detalle Inscripción - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Expediente de Inscripción</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb small mb-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('inscripciones.index') }}">Inscripciones</a></li>
+                        <li class="breadcrumb-item active">Detalle #{{ inscripcion.id }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('inscripciones.editar', inscripcion_id=inscripcion.id) }}" class="btn btn-warning shadow-sm">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
+                <form method="POST" action="{{ url_for('inscripciones.eliminar', inscripcion_id=inscripcion.id) }}" 
+                      class="d-inline" onsubmit="return confirm('¿Eliminar esta inscripción?');">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-1"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Ficha de Información Principal -->
+        <div class="row g-4">
+            <!-- Datos del Estudiante y Curso -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-auto mb-3 mb-md-0">
+                                <div class="avatar-large bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border-radius: 20px; font-size: 1.5rem;">
+                                    {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <h4 class="fw-bold mb-1">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</h4>
+                                <div class="text-muted mb-2"><i class="fas fa-id-card me-2"></i>{{ inscripcion.estudiante.codigo_estudiante }}</div>
+                                <div class="d-flex gap-3">
+                                    <span class="badge bg-light text-dark border"><i class="fas fa-book me-1"></i> {{ inscripcion.curso.nombre_curso }}</span>
+                                    <span class="badge bg-light text-dark border"><i class="fas fa-layer-group me-1"></i> {{ inscripcion.curso.semestre }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-auto text-md-end mt-3 mt-md-0">
+                                <div class="small text-muted mb-1">Estado de Matrícula</div>
+                                {% if inscripcion.estado == 'ACTIVO' %}
+                                    <span class="badge rounded-pill bg-success px-4 py-2">ACTIVO</span>
+                                {% else %}
+                                    <span class="badge rounded-pill bg-secondary px-4 py-2">{{ inscripcion.estado }}</span>
+                                {% endif %}
+                                <div class="small text-muted mt-2">Inscrito el: {{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestañas de Detalle -->
+                <ul class="nav nav-pills mb-3 bg-white p-2 rounded-3 shadow-sm d-inline-flex" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="pills-notas-tab" data-bs-toggle="pill" data-bs-target="#pills-notas" type="button" role="tab">Calificaciones</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="pills-asistencias-tab" data-bs-toggle="pill" data-bs-target="#pills-asistencias" type="button" role="tab">Asistencias</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- Tab Notas -->
+                    <div class="tab-pane fade show active" id="pills-notas" role="tabpanel">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-0">
+                                {% if notas %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light small text-uppercase">
+                                            <tr>
+                                                <th class="ps-4">Evaluación</th>
+                                                <th>Fecha</th>
+                                                <th class="text-end pe-4">Nota / 20</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for nota in notas %}
+                                            <tr>
+                                                <td class="ps-4 fw-bold text-primary-color">{{ nota.evaluacion.nombre_evaluacion }}</td>
+                                                <td class="text-muted">{{ nota.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                                                <td class="text-end pe-4">
+                                                    <span class="fs-5 fw-bold {{ 'text-danger' if nota.nota < 11 else 'text-success' }}">
+                                                        {{ "%.1f"|format(nota.nota) }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-file-invoice fa-3x text-muted mb-3 opacity-50"></i>
+                                    <p class="text-muted">No se han registrado calificaciones aún.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Asistencias -->
+                    <div class="tab-pane fade" id="pills-asistencias" role="tabpanel">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-0">
+                                {% if asistencias %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light small text-uppercase">
+                                            <tr>
+                                                <th class="ps-4">Fecha</th>
+                                                <th>Estado</th>
+                                                <th class="pe-4">Observaciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for asistencia in asistencias %}
+                                            <tr>
+                                                <td class="ps-4">{{ asistencia.fecha.strftime('%d/%m/%Y') }}</td>
+                                                <td>
+                                                    {% if asistencia.presente %}
+                                                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> Presente</span>
+                                                    {% elif asistencia.justificado %}
+                                                        <span class="text-warning"><i class="fas fa-notes-medical me-1"></i> Justificado</span>
+                                                    {% else %}
+                                                        <span class="text-danger"><i class="fas fa-times-circle me-1"></i> Ausente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-muted small pe-4">{{ asistencia.observaciones or '-' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3 opacity-50"></i>
+                                    <p class="text-muted">No hay registros de asistencia.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Resumen Métrico -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4 bg-primary text-white overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;">
+                    <div class="card-body p-4 position-relative">
+                        <i class="fas fa-graduation-cap position-absolute end-0 bottom-0 opacity-10" style="font-size: 8rem; margin-bottom: -2rem; margin-right: -1rem;"></i>
+                        <h5 class="fw-bold mb-4 opacity-75">Resumen Académico</h5>
+                        
+                        <div class="mb-4">
+                            <div class="small opacity-75 mb-1">Promedio General</div>
+                            <div class="d-flex align-items-baseline">
+                                <span class="display-4 fw-bold">{{ "%.1f"|format(promedio_notas) }}</span>
+                                <span class="ms-2 opacity-50">/ 20</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 6px; background: rgba(255,255,255,0.1);">
+                                <div class="progress-bar bg-cyan" style="width: {{ (promedio_notas/20)*100 }}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <div class="small opacity-75 mb-1">Asistencia Total</div>
+                            <div class="d-flex align-items-baseline">
+                                <span class="display-4 fw-bold">{{ "%.1f"|format(porcentaje_asistencia) }}%</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 6px; background: rgba(255,255,255,0.1);">
+                                <div class="progress-bar bg-success" style="width: {{ porcentaje_asistencia }}%"></div>
+                            </div>
+                            <div class="small mt-2 opacity-75">
+                                <i class="fas fa-info-circle me-1"></i> {{ asistencias_presente }} de {{ total_asistencias }} clases registradas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Informativa Adicional -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Sugerencias de Seguimiento</h6>
+                        {% if promedio_notas < 11 or porcentaje_asistencia < 80 %}
+                        <div class="alert alert-danger mb-0 small">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Atención:</strong> El estudiante presenta métricas por debajo del umbral recomendado. Se sugiere citación a tutoría.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success mb-0 small">
+                            <i class="fas fa-check-circle me-2"></i>
+                            El estudiante mantiene un desempeño satisfactorio en este curso.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-pills .nav-link.active {
+        background-color: var(--primary-color);
+    }
+    .nav-pills .nav-link {
+        color: var(--text-muted);
+        padding: 0.6rem 1.5rem;
+    }
+    .bg-cyan { background-color: #06b6d4 !important; }
+</style>
+{% endblock %}

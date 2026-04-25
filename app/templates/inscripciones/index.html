@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Inscripciones - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-primary-color m-0">Control de Inscripciones</h2>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('inscripciones.matricula_masiva') }}" class="btn btn-outline-success border-2 fw-bold">
+                    <i class="fas fa-users-cog me-2"></i> Matrícula Masiva
+                </a>
+                <a href="{{ url_for('inscripciones.crear') }}" class="btn btn-primary shadow-sm fw-bold px-4">
+                    <i class="fas fa-plus-circle me-2"></i> Individual
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros Avanzados -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('inscripciones.index') }}" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Búsqueda rápida</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0" name="search" value="{{ search }}" placeholder="DNI, Nombre, Curso...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Curso / Semestre</label>
+                        <select class="form-select bg-light" name="curso_id">
+                            <option value="">Todos los cursos</option>
+                            {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
+                                {{ curso.nombre_curso }} ({{ curso.semestre }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Estado Académico</label>
+                        <select class="form-select bg-light" name="estado">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVO" {% if estado == 'ACTIVO' %}selected{% endif %}>🟢 Activo</option>
+                            <option value="APROBADO" {% if estado == 'APROBADO' %}selected{% endif %}>🔵 Aprobado</option>
+                            <option value="REPROBADO" {% if estado == 'REPROBADO' %}selected{% endif %}>🔴 Reprobado</option>
+                            <option value="RETIRADO" {% if estado == 'RETIRADO' %}selected{% endif %}>🟡 Retirado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Filtrar</button>
+                        <a href="{{ url_for('inscripciones.index') }}" class="btn btn-light border"><i class="fas fa-sync-alt"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                {% if inscripciones.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted small text-uppercase fw-bold">
+                            <tr>
+                                <th class="ps-4">Estudiante</th>
+                                <th>Curso / Código</th>
+                                <th>Fecha Registro</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inscripcion in inscripciones.items %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3 bg-primary bg-opacity-10 text-primary fw-bold" style="width: 38px; height: 38px; font-size: 0.8rem;">
+                                            {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</div>
+                                            <small class="text-muted">{{ inscripcion.estudiante.codigo_estudiante }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ inscripcion.curso.nombre_curso }}</div>
+                                    <small class="text-muted">{{ inscripcion.curso.codigo_curso }} | {{ inscripcion.curso.semestre }}</small>
+                                </td>
+                                <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% if inscripcion.estado == 'ACTIVO' %}
+                                        <span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3">Activo</span>
+                                    {% elif inscripcion.estado == 'APROBADO' %}
+                                        <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3">Aprobado</span>
+                                    {% elif inscripcion.estado == 'REPROBADO' %}
+                                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-3">Reprobado</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning px-3">{{ inscripcion.estado }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{{ url_for('inscripciones.detalle', inscripcion_id=inscripcion.id) }}" class="btn btn-sm btn-white border-end" title="Ver Detalles">
+                                            <i class="fas fa-eye text-primary"></i>
+                                        </a>
+                                        <a href="{{ url_for('inscripciones.editar', inscripcion_id=inscripcion.id) }}" class="btn btn-sm btn-white border-end" title="Editar">
+                                            <i class="fas fa-edit text-warning"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('inscripciones.eliminar', inscripcion_id=inscripcion.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('¿Eliminar esta inscripción?');">
+                                            <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-search-minus fa-3x text-muted"></i>
+                    </div>
+                    <h5>No se encontraron inscripciones</h5>
+                    <p class="text-muted">Ajusta los filtros o realiza una nueva matrícula masiva.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if inscripciones.pages > 1 %}
+            <div class="card-footer bg-white py-3 border-0">
+                <nav aria-label="Paginación">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% for page_num in inscripciones.iter_pages() %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == inscripciones.page %}active{% endif %}">
+                                    <a class="page-link shadow-none" href="{{ url_for('inscripciones.index', page=page_num, search=search, curso_id=curso_id, estado=estado) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-white {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+    }
+    .btn-white:hover {
+        background: #f8fafc;
+    }
+    .pagination .page-link {
+        border: 1px solid #e2e8f0;
+        color: var(--text-main);
+        margin: 0 2px;
+        border-radius: 6px;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}

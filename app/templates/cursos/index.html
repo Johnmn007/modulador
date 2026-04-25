@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Cursos - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Catálogo de Cursos</h2>
+                <p class="text-muted mb-0">Gestión de oferta académica y periodos</p>
+            </div>
+            <a href="{{ url_for('cursos.crear') }}" class="btn btn-primary fw-bold px-4 shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i> Nuevo Curso
+            </a>
+        </div>
+
+        <!-- Filtros Rápidos -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <form method="GET" action="{{ url_for('cursos.index') }}" class="row g-2">
+                    <div class="col-md-10">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" class="form-control border-0 bg-light"
+                                name="search" value="{{ search }}"
+                                placeholder="Buscar por nombre de curso, código o semestre académico...">
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary fw-bold" type="submit">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Listado de Cursos -->
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-body p-0">
+                {% if cursos.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase fw-bold">
+                            <tr>
+                                <th class="ps-4">Código</th>
+                                <th>Nombre del Curso</th>
+                                <th>Créditos</th>
+                                <th>Semestre</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for curso in cursos.items %}
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 border border-primary border-opacity-10">
+                                        {{ curso.codigo_curso }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-primary-color">{{ curso.nombre_curso }}</div>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold"><i class="fas fa-star me-1 text-warning"></i> {{ curso.creditos }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ curso.semestre }}</span>
+                                </td>
+                                <td>
+                                    {% if curso.activo %}
+                                    <span class="text-success small fw-bold"><i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i> Activo</span>
+                                    {% else %}
+                                    <span class="text-danger small fw-bold"><i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i> Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{{ url_for('cursos.detalle', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Detalle del Curso">
+                                            <i class="fas fa-book-reader text-primary"></i>
+                                        </a>
+                                        <a href="{{ url_for('cursos.editar', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Editar">
+                                            <i class="fas fa-edit text-warning"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('cursos.eliminar', curso_id=curso.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('¿Eliminar curso del sistema?');">
+                                            <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-book-open fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5>No se encontraron cursos</h5>
+                    <p class="text-muted">Ajusta los filtros o crea un nuevo curso institucional.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if cursos.pages > 1 %}
+            <div class="card-footer bg-white py-3 border-0">
+                <nav aria-label="Paginación">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% for page_num in cursos.iter_pages() %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == cursos.page %}active{% endif %}">
+                                    <a class="page-link shadow-none border-0 rounded-3 mx-1" href="{{ url_for('cursos.index', page=page_num, search=search) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link border-0">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-white { background: #fff; border: 1px solid #e2e8f0; }
+    .btn-white:hover { background: #f8fafc; }
+    .page-item.active .page-link { background-color: var(--primary-color) !important; color: white; }
+    .page-link { color: var(--text-main); font-weight: 600; }
+</style>
+{% endblock %}

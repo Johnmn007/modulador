@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Configuración Institucional - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Parámetros del Sistema</h2>
+                <p class="text-muted mb-0">Gestión de algoritmos de riesgo y configuración académica</p>
+            </div>
+            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> Panel Admin
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin.configuracion') }}">
+            <div class="row g-4">
+                <!-- Columna Izquierda: Algoritmo de Riesgo -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h5 class="fw-bold m-0 text-primary-color"><i class="fas fa-microchip me-2"></i>Ponderación del Algoritmo (Total 1.0)</h5>
+                        </div>
+                        <div class="card-body p-4 pt-0">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 bg-light">
+                                        <label class="form-label fw-bold small text-uppercase">Rendimiento Académico</label>
+                                        <input type="number" class="form-control form-control-lg peso-input" name="peso_rendimiento" 
+                                               step="0.01" min="0" max="1" value="{{ "%.2f"|format(config.peso_rendimiento) }}" required>
+                                        <div class="small text-muted mt-2">Impacto de las notas del semestre actual en el puntaje de riesgo.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 bg-light">
+                                        <label class="form-label fw-bold small text-uppercase">Asistencia Diaria</label>
+                                        <input type="number" class="form-control form-control-lg peso-input" name="peso_asistencia" 
+                                               step="0.01" min="0" max="1" value="{{ "%.2f"|format(config.peso_asistencia) }}" required>
+                                        <div class="small text-muted mt-2">Peso del porcentaje de faltas y justificaciones.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 bg-light">
+                                        <label class="form-label fw-bold small text-uppercase">Distribución de Riesgo</label>
+                                        <input type="number" class="form-control form-control-lg peso-input" name="peso_distribucion" 
+                                               step="0.01" min="0" max="1" value="{{ "%.2f"|format(config.peso_distribucion) }}" required>
+                                        <div class="small text-muted mt-2">Análisis de dispersión de fallos entre múltiples cursos.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 bg-light border-primary border-opacity-25" style="background-color: #f0f9ff;">
+                                        <label class="form-label fw-bold small text-uppercase text-primary">Antecedentes Académicos</label>
+                                        <input type="number" class="form-control form-control-lg peso-input border-primary border-opacity-50" name="peso_historial" 
+                                               step="0.01" min="0" max="1" value="{{ "%.2f"|format(config.peso_historial or 0.20) }}" required>
+                                        <div class="small text-muted mt-2">Impacto de repitencias y notas de ciclos previos.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validador de Suma -->
+                            <div class="mt-4 p-3 rounded-3 d-flex align-items-center justify-content-between" id="sum-validator-box" style="background-color: #f8fafc;">
+                                <div>
+                                    <span class="fw-bold text-muted small text-uppercase">Suma de Ponderaciones:</span>
+                                    <span class="h4 fw-bold mb-0 ms-2" id="total-sum">0.00</span>
+                                </div>
+                                <span id="status-badge" class="badge rounded-pill px-3 py-2">Calculando...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Umbrales de Alerta -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h5 class="fw-bold m-0 text-primary-color"><i class="fas fa-traffic-light me-2"></i>Umbrales de Activación de Alerta</h5>
+                        </div>
+                        <div class="card-body p-4 pt-0">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 border-warning border-opacity-25 bg-warning bg-opacity-10">
+                                        <label class="form-label fw-bold small text-uppercase text-warning-emphasis">Puntaje Alerta Amarilla</label>
+                                        <input type="number" class="form-control" name="umbral_amarillo" step="0.01" 
+                                               value="{{ "%.2f"|format(config.umbral_amarillo) }}" required>
+                                        <div class="small text-muted mt-2">A partir de este valor el sistema marca riesgo preventivo.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-3 border-danger border-opacity-25 bg-danger bg-opacity-10">
+                                        <label class="form-label fw-bold small text-uppercase text-danger">Puntaje Alerta Roja</label>
+                                        <input type="number" class="form-control" name="umbral_rojo" step="0.01" 
+                                               value="{{ "%.2f"|format(config.umbral_rojo) }}" required>
+                                        <div class="small text-muted mt-2">Valor crítico que requiere intervención inmediata.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Parámetros Generales -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                        <div class="card-header bg-navy text-white py-3 border-0">
+                            <h5 class="fw-bold m-0"><i class="fas fa-university me-2"></i>Gestión de Ciclo</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Semestre Operativo</label>
+                                <input type="text" class="form-control form-control-lg fw-bold text-center border-2 border-primary" name="semestre_actual" 
+                                       value="{{ config.semestre_actual }}" placeholder="Ej: 2024-1" required>
+                                <div class="small text-muted mt-2 text-center">Este semestre afectará a todos los cálculos actuales.</div>
+                            </div>
+
+                            <hr class="my-4 opacity-50">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Nota Mínima (Aprobatoria)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-check text-success"></i></span>
+                                    <input type="number" class="form-control fw-bold" name="nota_minima_aprobatoria" step="0.1" 
+                                           value="{{ "%.1f"|format(config.nota_minima_aprobatoria) }}" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Asistencia Mínima (%)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-clock text-primary"></i></span>
+                                    <input type="number" class="form-control fw-bold" name="porcentaje_asistencia_minimo" 
+                                           value="{{ "%.0f"|format(config.porcentaje_asistencia_minimo) }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Flotante/Final de Guardado -->
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-shield-alt fa-3x mb-3 opacity-50"></i>
+                            <h5 class="fw-bold">Guardar Cambios</h5>
+                            <p class="small opacity-75">Las modificaciones se aplicarán en tiempo real a los cálculos de riesgo.</p>
+                            <button type="submit" class="btn btn-light btn-lg w-100 fw-bold text-primary mt-2">
+                                <i class="fas fa-save me-2"></i> Actualizar Sistema
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .peso-input { font-size: 1.25rem; font-weight: 700; text-align: center; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('.peso-input');
+    const totalSumDisplay = document.getElementById('total-sum');
+    const statusBadge = document.getElementById('status-badge');
+    const sumBox = document.getElementById('sum-validator-box');
+
+    function calculateSum() {
+        let sum = 0;
+        inputs.forEach(input => {
+            sum += parseFloat(input.value) || 0;
+        });
+        
+        const roundedSum = Math.round(sum * 100) / 100;
+        totalSumDisplay.textContent = roundedSum.toFixed(2);
+
+        if (Math.abs(roundedSum - 1.0) < 0.01) {
+            statusBadge.className = 'badge rounded-pill px-3 py-2 bg-success';
+            statusBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Balanceado (1.0)';
+            sumBox.style.borderLeft = '4px solid #10b981';
+        } else {
+            statusBadge.className = 'badge rounded-pill px-3 py-2 bg-danger';
+            statusBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Error: Debe sumar 1.0';
+            sumBox.style.borderLeft = '4px solid #ef4444';
+        }
+    }
+
+    inputs.forEach(input => {
+        input.addEventListener('input', calculateSum);
+    });
+
+    calculateSum(); // Initial calc
+});
+</script>
+{% endblock %}

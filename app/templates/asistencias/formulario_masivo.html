@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Toma de Asistencia - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Toma de Asistencia</h2>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-calendar-day me-1"></i> {{ fecha.strftime('%d/%m/%Y') }} 
+                    | <i class="fas fa-book me-1"></i> {{ inscripciones[0].curso.nombre_curso if inscripciones else 'Sin curso' }}
+                </p>
+            </div>
+            <a href="{{ url_for('asistencias.crear_masiva') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times me-1"></i> Cancelar
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('asistencias.procesar_masiva') }}" id="attendanceForm">
+            <input type="hidden" name="curso_id" value="{{ curso_id }}">
+            <input type="hidden" name="fecha" value="{{ fecha }}">
+
+            <!-- Controles de selección rápida -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                    <span class="small fw-bold text-muted text-uppercase">Selección rápida:</span>
+                    <div class="btn-group shadow-sm">
+                        <button type="button" class="btn btn-sm btn-success" onclick="markAll(true)">
+                            <i class="fas fa-check-double me-1"></i> Todos Presentes
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="markAll(false)">
+                            <i class="fas fa-times-circle me-1"></i> Todos Ausentes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Estudiantes -->
+            <div class="row g-3">
+                {% for inscripcion in inscripciones %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100 attendance-card" id="card_{{ inscripcion.id }}">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="avatar-circle me-3 bg-primary bg-opacity-10 text-primary fw-bold">
+                                    {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fw-bold mb-0 text-truncate">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</h6>
+                                    <small class="text-muted">{{ inscripcion.estudiante.codigo_estudiante }}</small>
+                                </div>
+                                <!-- Indicador de Riesgo de Asistencia -->
+                                {% set perc = inscripcion.asistencia_porcentaje %}
+                                <div class="text-end" title="Asistencia acumulada: {{ "%.1f"|format(perc) }}%">
+                                    <div class="small fw-bold {{ 'text-danger' if perc < 80 else 'text-success' }}">
+                                        {{ perc|int }}%
+                                    </div>
+                                    <div class="progress" style="width: 40px; height: 4px;">
+                                        <div class="progress-bar {{ 'bg-danger' if perc < 80 else 'bg-success' }}" style="width: {{ perc }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Controles de Asistencia -->
+                            <div class="d-flex gap-2 mb-3">
+                                <input type="checkbox" class="btn-check presente-check" 
+                                       id="presente_{{ inscripcion.id }}" 
+                                       name="presente_{{ inscripcion.id }}" 
+                                       checked autocomplete="off"
+                                       onchange="updateCardStyle({{ inscripcion.id }})">
+                                <label class="btn btn-outline-success flex-grow-1 py-2 fw-bold" for="presente_{{ inscripcion.id }}">
+                                    <i class="fas fa-check me-1"></i> PRESENTE
+                                </label>
+
+                                <input type="checkbox" class="btn-check justificado-check" 
+                                       id="justificado_{{ inscripcion.id }}" 
+                                       name="justificado_{{ inscripcion.id }}" 
+                                       autocomplete="off"
+                                       onchange="updateCardStyle({{ inscripcion.id }})">
+                                <label class="btn btn-outline-warning flex-grow-1 py-2 fw-bold" for="justificado_{{ inscripcion.id }}">
+                                    <i class="fas fa-notes-medical me-1"></i> JUST.
+                                </label>
+                            </div>
+
+                            <input type="text" class="form-control form-control-sm border-0 bg-light" 
+                                   name="observaciones_{{ inscripcion.id }}" 
+                                   placeholder="Añadir observación...">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botón Flotante/Final para Guardar -->
+            <div class="sticky-bottom-control py-4 mt-4 bg-white border-top shadow-lg d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5 shadow hover-lift">
+                    <i class="fas fa-save me-2"></i> Guardar {{ inscripciones|length }} Asistencias
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+    .attendance-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #10b981 !important; /* Verde por defecto (presente) */
+    }
+    .attendance-card.absent {
+        border-left: 4px solid #ef4444 !important;
+        opacity: 0.8;
+    }
+    .attendance-card.justified {
+        border-left: 4px solid #f59e0b !important;
+    }
+    .sticky-bottom-control {
+        position: sticky;
+        bottom: 0;
+        margin-left: -2rem;
+        margin-right: -2rem;
+        z-index: 100;
+    }
+    .hover-lift { transition: transform 0.2s; }
+    .hover-lift:hover { transform: translateY(-3px); }
+</style>
+
+<script>
+function markAll(present) {
+    const checks = document.querySelectorAll('.presente-check');
+    checks.forEach(check => {
+        check.checked = present;
+        updateCardStyle(check.id.split('_')[1]);
+    });
+}
+
+function updateCardStyle(id) {
+    const card = document.getElementById('card_' + id);
+    const isPresent = document.getElementById('presente_' + id).checked;
+    const isJustified = document.getElementById('justificado_' + id).checked;
+    
+    card.classList.remove('absent', 'justified');
+    
+    if (isJustified) {
+        card.classList.add('justified');
+    } else if (!isPresent) {
+        card.classList.add('absent');
+    }
+}
+
+// Inicializar estilos
+document.addEventListener('DOMContentLoaded', () => {
+    {% for inscripcion in inscripciones %}
+    updateCardStyle({{ inscripcion.id }});
+    {% endfor %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Seguimiento de Riesgo - SADES{% endblock %}
+{% block content %} 
+    <link rel="stylesheet" href="{{ url_for('static', filename='seguimiento/seguimiento.css') }}" />
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary-color m-0">Seguimiento de Riesgo Académico</h2>
+                <a href="{{ url_for('seguimiento.resultados') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-2"></i> Ver Resultados
+                </a>
+            </div>
+
+            <!-- Tarjeta de Cálculo Automático -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold m-0 text-primary-color">
+                        <i class="fas fa-calculator me-2"></i>Cálculo Automático
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-4">
+                        Ejecute el motor analítico para evaluar el riesgo académico actual de todos los estudiantes.
+                        El sistema utiliza un algoritmo ponderado basado en 4 dimensiones críticas.
+                    </p>
+                    
+                    <form method="POST" action="{{ url_for('seguimiento.calcular_riesgo') }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                <label for="semestre" class="form-label small fw-bold text-muted">SEMESTRE A EVALUAR</label>
+                                <select class="form-select form-select-lg border-2" id="semestre" name="semestre" required>
+                                    <option value="2025-1" selected>2025-1 (Actual)</option>
+                                    <option value="2025-2">2025-2</option>
+                                    <option value="2026-1">2026-1</option>
+                                </select>
+                            </div>
+                            <div class="col-md-7">
+                                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow-sm hover-lift" 
+                                        onclick="return confirm('¿Está seguro de ejecutar el cálculo de riesgo? Esto puede tomar algunos segundos.')">
+                                    <i class="fas fa-play-circle me-2"></i> Ejecutar Motor de Riesgo
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Factores de Evaluación -->
+                    <div class="mt-5">
+                        <h6 class="fw-bold text-muted mb-3 text-uppercase small letter-spacing">Factores de Evaluación Ponderados:</h6>
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="card border-0 bg-light h-100 text-center p-3">
+                                    <i class="fas fa-graduation-cap text-primary fa-2x mb-2"></i>
+                                    <h6 class="fw-bold mb-1">Rendimiento</h6>
+                                    <span class="badge bg-primary rounded-pill">35%</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="card border-0 bg-light h-100 text-center p-3">
+                                    <i class="fas fa-calendar-check text-success fa-2x mb-2"></i>
+                                    <h6 class="fw-bold mb-1">Asistencia</h6>
+                                    <span class="badge bg-success rounded-pill">25%</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="card border-0 bg-light h-100 text-center p-3">
+                                    <i class="fas fa-chart-pie text-info fa-2x mb-2"></i>
+                                    <h6 class="fw-bold mb-1">Cursos</h6>
+                                    <span class="badge bg-info rounded-pill">20%</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="card border-0 bg-light h-100 text-center p-3">
+                                    <i class="fas fa-history text-purple fa-2x mb-2"></i>
+                                    <h6 class="fw-bold mb-1">Historial</h6>
+                                    <span class="badge bg-purple rounded-pill text-white">20%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Categorías -->
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-top border-success border-4 h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <h5 class="fw-bold text-success">Sin Riesgo</h5>
+                            <p class="text-muted small mb-0">Puntaje: 0.0 - 0.49</p>
+                            <hr class="opacity-25">
+                            <p class="small text-muted mb-0">Desempeño académico satisfactorio y asistencia regular.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-top border-warning border-4 h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                            <h5 class="fw-bold text-warning">Alerta Ambar</h5>
+                            <p class="text-muted small mb-0">Puntaje: 0.5 - 0.69</p>
+                            <hr class="opacity-25">
+                            <p class="small text-muted mb-0">Indicios de bajo rendimiento o inasistencias leves.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-top border-danger border-4 h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            </div>
+                            <h5 class="fw-bold text-danger">Alerta Roja</h5>
+                            <p class="text-muted small mb-0">Puntaje: 0.7 - 1.0</p>
+                            <hr class="opacity-25">
+                            <p class="small text-muted mb-0">Riesgo crítico de reprobación o deserción inmediata.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .bg-purple { background-color: #8b5cf6; }
+        .text-purple { color: #8b5cf6; }
+        .letter-spacing { letter-spacing: 0.1em; }
+        .hover-lift { transition: transform 0.2s; }
+        .hover-lift:hover { transform: translateY(-3px); }
+    </style>
+{% endblock %}

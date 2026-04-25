@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Historial de Documentos - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Repositorio de Reportes</h2>
+                <p class="text-muted mb-0">Acceso histórico a documentos analíticos generados por el sistema</p>
+            </div>
+            <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> Panel de Reportes
+            </a>
+        </div>
+
+        <!-- Tabla de Historial -->
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-navy text-white py-3 border-0">
+                <h6 class="fw-bold m-0 small text-uppercase"><i class="fas fa-archive me-2 text-cyan"></i>Registro de Generación</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if reportes.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase fw-bold">
+                            <tr>
+                                <th class="ps-4">Fecha / Hora</th>
+                                <th>Tipo de Documento</th>
+                                <th>Título del Reporte</th>
+                                <th>Contexto / Descripción</th>
+                                <th class="text-end pe-4">Descarga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reporte in reportes.items %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="small fw-bold text-primary-color">{{ reporte.fecha_generacion.strftime('%d/%m/%Y') }}</div>
+                                    <div class="small text-muted">{{ reporte.fecha_generacion.strftime('%H:%M') }} hrs</div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-navy bg-opacity-10 text-navy border border-navy border-opacity-10 px-3">
+                                        {{ reporte.tipo_reporte.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-primary-color">{{ reporte.titulo }}</div>
+                                </td>
+                                <td>
+                                    <div class="small text-muted text-truncate" style="max-width: 300px;">{{ reporte.descripcion }}</div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('reportes.descargar', reporte_id=reporte.id) }}" 
+                                           class="btn btn-sm btn-outline-primary border-2 fw-bold px-3 shadow-sm">
+                                            <i class="fas fa-eye me-1"></i> Ver
+                                        </a>
+                                        {% if reporte.archivo_path %}
+                                        <a href="{{ url_for('reportes.descargar', reporte_id=reporte.id) }}" 
+                                           class="btn btn-sm btn-danger border-0 fw-bold px-3 shadow-sm">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-folder-open fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5>No hay reportes previos</h5>
+                    <p class="text-muted small">Los documentos que generes aparecerán listados en esta sección.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if reportes.pages > 1 %}
+            <div class="card-footer bg-white py-3 border-0">
+                <nav aria-label="Paginación">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% for page_num in reportes.iter_pages() %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == reportes.page %}active{% endif %}">
+                                    <a class="page-link shadow-none border-0 rounded-3 mx-1" href="{{ url_for('reportes.historial', page=page_num) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link border-0">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .text-cyan { color: #06b6d4 !important; }
+</style>
+{% endblock %}

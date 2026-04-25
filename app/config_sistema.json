@@ -1,0 +1,11 @@
+{
+    "umbral_amarillo": 0.5,
+    "umbral_rojo": 0.7,
+    "peso_rendimiento": 0.35,
+    "peso_asistencia": 0.25,
+    "peso_distribucion": 0.2,
+    "peso_historial": 0.2,
+    "nota_minima_aprobatoria": 13.0,
+    "porcentaje_asistencia_minimo": 70.0,
+    "semestre_actual": "2026-1"
+}

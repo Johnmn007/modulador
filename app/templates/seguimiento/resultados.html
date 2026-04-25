@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Resultados - Sistema de Seguimiento{% endblock %}
+
+{% block content %} 
+    <link rel="stylesheet" href="{{ url_for('static', filename='seguimiento/seguimiento.css') }}" />
+    
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('seguimiento.index') }}">Seguimiento</a></li>
+            <li class="breadcrumb-item active">Resultados</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary-color m-0">Resultados del Cálculo de Riesgo</h2>
+                <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary">
+                    <i class="fas fa-calculator me-2"></i> Nuevo Cálculo
+                </a>
+            </div>
+
+            <!-- Tabla de Resultados -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold m-0 text-primary-color">Últimos Seguimientos Generados</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if ultimos_seguimientos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Semestre</th>
+                                    <th>Categoría</th>
+                                    <th>Puntaje</th>
+                                    <th>Fecha Evaluación</th>
+                                    <th>Detalles</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seguimiento in ultimos_seguimientos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ seguimiento.estudiante.codigo_estudiante }}</strong><br>
+                                        <small class="text-muted">{{ seguimiento.estudiante.nombres }} {{ seguimiento.estudiante.apellidos }}</small>
+                                    </td>
+                                    <td>{{ seguimiento.semestre }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger
+                                            {% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}bg-warning
+                                            {% else %}bg-success{% endif %}">
+                                            {{ seguimiento.categoria_riesgo.replace('_', ' ') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ "%.2f"|format(seguimiento.puntaje_riesgo) }}</span>
+                                        {% if seguimiento.tendencia == 'SUBE' %}
+                                            <i class="fas fa-arrow-up text-danger ms-1" title="Aumentando"></i>
+                                        {% elif seguimiento.tendencia == 'BAJA' %}
+                                            <i class="fas fa-arrow-down text-success ms-1" title="Disminuyendo"></i>
+                                        {% else %}
+                                            <i class="fas fa-minus text-muted ms-1"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ seguimiento.fecha_evaluacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if seguimiento.factores_riesgo %}
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#factoresModal{{ seguimiento.id }}">
+                                            <i class="fas fa-search-plus me-1"></i> Ver
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted small">N/D</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('estudiantes.detalle', estudiante_id=seguimiento.estudiante.id) }}" 
+                                           class="btn btn-sm btn-light border">
+                                            <i class="fas fa-user"></i> Perfil
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="bg-light rounded-circle d-inline-block p-4 mb-3">
+                            <i class="fas fa-database fa-3x text-muted"></i>
+                        </div>
+                        <h5>No se encontraron resultados</h5>
+                        <p class="text-muted">Ejecute el motor de riesgo para generar nuevos registros.</p>
+                        <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary px-4">
+                            Ir a Seguimiento
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+    {% if ultimos_seguimientos %}
+        {% for seguimiento in ultimos_seguimientos %}
+            {% if seguimiento.factores_riesgo %}
+            <div class="modal fade" id="factoresModal{{ seguimiento.id }}" 
+                 data-bs-backdrop="static" 
+                 data-bs-keyboard="false" 
+                 tabindex="-1" 
+                 aria-labelledby="factoresModalLabel{{ seguimiento.id }}" 
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 16px;">
+                        <div class="modal-header bg-white border-0 p-4 pb-0">
+                            <h5 class="fw-bold m-0 text-primary-color" id="factoresModalLabel{{ seguimiento.id }}">
+                                <i class="fas fa-microchip text-accent me-2"></i>Detalle de Evaluación
+                            </h5>
+                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="p-3 mb-4 rounded-3 d-flex align-items-center justify-content-between" style="background: #f1f5f9;">
+                                <div>
+                                    <span class="text-muted small text-uppercase fw-bold d-block mb-1">Estudiante</span>
+                                    <span class="fw-bold fs-5">{{ seguimiento.estudiante.nombres }} {{ seguimiento.estudiante.apellidos }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-muted small text-uppercase fw-bold d-block mb-1">Riesgo Calculado</span>
+                                    <span class="badge {{ 'bg-danger' if seguimiento.categoria_riesgo == 'ALERTA_ROJA' else 'bg-warning text-dark' if seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' else 'bg-success' }} fs-5 px-3">
+                                        {{ "%.2f"|format(seguimiento.puntaje_riesgo) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold text-muted small text-uppercase mb-3">Factores Analizados:</h6>
+                            <div class="row g-3">
+                                {% for factor in seguimiento.factores_riesgo %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border border-light shadow-none bg-white p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold m-0 small">{{ factor.nombre }}</h6>
+                                            <span class="badge rounded-pill bg-light text-primary border px-2">{{ (factor.peso * 100)|int }}%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 8px; background-color: #e2e8f0;">
+                                            {% set percentage = (factor.valor * 100)|int %}
+                                            <div class="progress-bar {{ 'bg-danger' if factor.valor > 0.7 else 'bg-warning' if factor.valor > 0.4 else 'bg-success' }}" 
+                                                 role="progressbar" style="width: {{ percentage }}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted extra-small" style="font-size: 0.75rem;">{{ factor.descripcion }}</small>
+                                            <small class="fw-bold text-dark">{{ "%.2f"|format(factor.valor) }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if seguimiento.observaciones %}
+                            <div class="mt-4 p-3 rounded-3 border-start border-4 border-info" style="background: #ecfeff;">
+                                <h6 class="fw-bold text-info mb-1 small"><i class="fas fa-lightbulb me-2"></i>Sugerencias de Intervención:</h6>
+                                <p class="mb-0 small text-dark">{{ seguimiento.observaciones }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer border-0 p-4 pt-0">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                            <a href="{{ url_for('estudiantes.detalle', estudiante_id=seguimiento.estudiante.id) }}" class="btn btn-primary px-4">
+                                Ver Expediente Completo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}

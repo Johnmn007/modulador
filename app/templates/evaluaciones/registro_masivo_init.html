@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Registro Masivo - SADES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-file-invoice fa-2x text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary-color">Calificación Masiva</h3>
+                    <p class="text-muted">Selecciona el curso y la evaluación para ingresar notas</p>
+                </div>
+
+                <form method="GET" action="{{ url_for('evaluaciones.registro_masivo') }}">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">1. Seleccionar Curso</label>
+                        <select class="form-select form-select-lg shadow-sm" name="curso_id" onchange="this.form.submit()">
+                            <option value="">-- Selecciona un curso --</option>
+                            {% for curso in cursos %}
+                            <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
+                                {{ curso.nombre_curso }} ({{ curso.semestre }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+
+                {% if curso_id %}
+                <form method="POST" action="{{ url_for('evaluaciones.formulario_masivo') }}">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">2. Seleccionar Evaluación</label>
+                        <select class="form-select form-select-lg shadow-sm" name="evaluacion_id" required>
+                            <option value="">-- Selecciona la evaluación --</option>
+                            {% for ev in evaluaciones %}
+                            <option value="{{ ev.id }}">{{ ev.nombre_evaluacion }} ({{ ev.tipo_evaluacion }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            Continuar al Registro <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
