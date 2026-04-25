@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Ciclos Académicos - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">Gestión de Ciclos Académicos</h2>
+                <p class="text-muted mb-0">Control de apertura y cierre de periodos institucionales</p>
+            </div>
+            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> Panel Admin
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Formulario de Apertura -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm overflow-hidden sticky-top" style="top: 20px;">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="fw-bold m-0 small text-uppercase"><i class="fas fa-plus-circle me-2 text-cyan"></i>Abrir Nuevo Ciclo</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info border-0 bg-opacity-10 d-flex mb-4">
+                            <i class="fas fa-info-circle fa-lg me-3 text-info"></i>
+                            <div class="small text-info-emphasis">
+                                Al abrir un nuevo ciclo, el sistema cambiará el <strong>Semestre Operativo</strong>. El dashboard se verá vacío hasta que importes los nuevos cursos y estudiantes.
+                            </div>
+                        </div>
+
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Nombre del Ciclo</label>
+                                <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" 
+                                       name="nombre" placeholder="Ej: Ciclo II 2025" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Código del Semestre (ID)</label>
+                                <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" 
+                                       name="codigo" placeholder="Ej: 2025-2" required>
+                                <div class="form-text small">Este código se usará para filtrar toda la data del sistema.</div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Fecha Inicio</label>
+                                    <input type="date" class="form-control bg-light border-0" name="fecha_inicio" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Fecha Fin</label>
+                                    <input type="date" class="form-control bg-light border-0" name="fecha_fin" required>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm py-3" 
+                                        onclick="return confirm('¿Está seguro de cerrar el ciclo actual y abrir uno nuevo? Esta acción cambiará el contexto global del sistema.')">
+                                    <i class="fas fa-rocket me-2"></i> Iniciar Nuevo Ciclo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Ciclos -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold m-0 text-primary-color"><i class="fas fa-history me-2"></i>Cronología de Periodos</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted small text-uppercase fw-bold">
+                                    <tr>
+                                        <th class="ps-4">Estado</th>
+                                        <th>Periodo / Código</th>
+                                        <th>Rango de Fechas</th>
+                                        <th class="text-end pe-4">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ciclo in ciclos %}
+                                    <tr class="{{ 'bg-primary bg-opacity-10' if ciclo.codigo_ciclo == config.semestre_actual else '' }}">
+                                        <td class="ps-4">
+                                            {% if ciclo.codigo_ciclo == config.semestre_actual %}
+                                                <span class="badge rounded-pill bg-success px-3">OPERATIVO</span>
+                                            {% elif ciclo.activo %}
+                                                <span class="badge rounded-pill bg-info px-3">DISPONIBLE</span>
+                                            {% else %}
+                                                <span class="badge rounded-pill bg-light text-muted px-3 border">ARCHIVADO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-primary-color">{{ ciclo.nombre }}</div>
+                                            <div class="small text-muted">{{ ciclo.codigo_ciclo }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small"><i class="fas fa-calendar-day me-2 text-muted"></i>{{ ciclo.fecha_inicio.strftime('%d/%m/%Y') }}</div>
+                                            <div class="small"><i class="fas fa-calendar-check me-2 text-muted"></i>{{ ciclo.fecha_fin.strftime('%d/%m/%Y') }}</div>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            {% if ciclo.codigo_ciclo != config.semestre_actual %}
+                                            <form method="POST" action="{{ url_for('admin.cambiar_semestre') }}" style="display: inline;">
+                                                <input type="hidden" name="semestre" value="{{ ciclo.codigo_ciclo }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary border-2 fw-bold">
+                                                    Reactivar
+                                                </button>
+                                            </form>
+                                            {% else %}
+                                                <i class="fas fa-check-circle text-success fa-lg"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm bg-navy text-white mt-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-shield-alt fa-2x text-cyan me-3"></i>
+                            <h5 class="fw-bold m-0">Protocolo de Seguridad</h5>
+                        </div>
+                        <p class="small opacity-75 mb-0">
+                            SADES conserva toda la data de ciclos anteriores. Si necesitas consultar reportes o notas de un periodo archivado, simplemente utiliza el botón <strong>"Reactivar"</strong> para cambiar el contexto temporal del sistema temporalmente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-navy { background-color: #0f172a !important; }
+    .text-cyan { color: #06b6d4 !important; }
+    .btn-primary { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: none; }
+    .form-control-lg { border-radius: 12px; }
+</style>
+{% endblock %}

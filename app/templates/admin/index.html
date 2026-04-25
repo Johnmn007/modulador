@@ -16,45 +16,59 @@
 
         <!-- Módulos de Gestión Rápida -->
         <div class="row g-4 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 module-card">
                     <div class="card-body p-4 text-center">
                         <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
                             <i class="fas fa-sliders-h fa-2x text-primary"></i>
                         </div>
                         <h5 class="fw-bold">Configuración</h5>
-                        <p class="small text-muted mb-4">Ajuste de algoritmos de riesgo, umbrales de alerta y periodos lectivos.</p>
+                        <p class="small text-muted mb-4">Algoritmos de riesgo y umbrales.</p>
                         <a href="{{ url_for('admin.configuracion') }}" class="btn btn-primary w-100 fw-bold shadow-sm">
-                            Gestionar Parámetros
+                            Gestionar
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 module-card border-primary border-opacity-25">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="fas fa-sync-alt fa-2x text-info"></i>
+                        </div>
+                        <h5 class="fw-bold">Ciclo Académico</h5>
+                        <p class="small text-muted mb-4">Cierre y apertura de periodos.</p>
+                        <a href="{{ url_for('admin.ciclos') }}" class="btn btn-info w-100 fw-bold text-white shadow-sm">
+                            Gestionar Periodos
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 module-card">
                     <div class="card-body p-4 text-center">
                         <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
                             <i class="fas fa-users-cog fa-2x text-success"></i>
                         </div>
-                        <h5 class="fw-bold">Seguridad y Usuarios</h5>
-                        <p class="small text-muted mb-4">Control de acceso, roles de docentes y administradores del sistema.</p>
+                        <h5 class="fw-bold">Seguridad</h5>
+                        <p class="small text-muted mb-4">Cuentas y roles de usuarios.</p>
                         <a href="{{ url_for('admin.usuarios') }}" class="btn btn-success w-100 fw-bold shadow-sm">
-                            Gestionar Cuentas
+                            Usuarios
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 module-card">
                     <div class="card-body p-4 text-center">
                         <div class="bg-navy bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
                             <i class="fas fa-database fa-2x text-navy"></i>
                         </div>
-                        <h5 class="fw-bold">Sistema y Logs</h5>
-                        <p class="small text-muted mb-4">Respaldos de base de datos y auditoría de eventos del sistema.</p>
+                        <h5 class="fw-bold">Sistema</h5>
+                        <p class="small text-muted mb-4">Backups y logs de eventos.</p>
                         <div class="d-flex gap-2">
                             <a href="{{ url_for('admin.backup') }}" class="btn btn-outline-navy flex-grow-1 fw-bold">Backup</a>
-                            <a href="{{ url_for('admin.logs') }}" class="btn btn-navy flex-grow-1 fw-bold">Ver Logs</a>
+                            <a href="{{ url_for('admin.logs') }}" class="btn btn-navy flex-grow-1 fw-bold">Logs</a>
                         </div>
                     </div>
                 </div>

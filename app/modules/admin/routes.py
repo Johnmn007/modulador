@@ -268,6 +268,53 @@ def eliminar_usuario(usuario_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@admin_bp.route('/ciclos', methods=['GET', 'POST'])
+@login_required
+def ciclos():
+    """Gestión de ciclos académicos y cierre/apertura"""
+    if current_user.rol != 'administrador':
+        flash('No tiene permisos para acceder a esta sección', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
+    from app.models import Ciclo
+    config = cargar_configuracion()
+    
+    if request.method == 'POST':
+        try:
+            nombre = request.form.get('nombre')
+            codigo = request.form.get('codigo')  # Ej: 2025-2
+            fecha_inicio = datetime.strptime(request.form.get('fecha_inicio'), '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(request.form.get('fecha_fin'), '%Y-%m-%d').date()
+            
+            # Crear el nuevo ciclo
+            nuevo_ciclo = Ciclo(
+                nombre=nombre,
+                codigo_ciclo=codigo,
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                activo=True
+            )
+            
+            # Desactivar ciclos anteriores (opcional, pero recomendado para orden)
+            Ciclo.query.update({Ciclo.activo: False})
+            
+            db.session.add(nuevo_ciclo)
+            
+            # Actualizar configuración global
+            config['semestre_actual'] = codigo
+            guardar_configuracion(config)
+            
+            db.session.commit()
+            flash(f'¡Ciclo {nombre} iniciado exitosamente! El sistema ahora opera en el periodo {codigo}.', 'success')
+            return redirect(url_for('admin.ciclos'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al crear ciclo: {str(e)}', 'danger')
+    
+    ciclos_historial = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all()
+    return render_template('admin/ciclos.html', ciclos=ciclos_historial, config=config)
+
 @admin_bp.route('/backup')
 @login_required
 def backup():
