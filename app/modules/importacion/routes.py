@@ -8,6 +8,7 @@ from . import importacion_bp
 from app.models import Estudiante, Curso, Inscripcion, Evaluacion, Nota, SeguimientoRiesgo
 from app.extensions import db
 from app.services.seguimiento_service import SeguimientoService
+from app.services.config_service import cargar_configuracion
 
 @importacion_bp.route('/')
 @login_required
