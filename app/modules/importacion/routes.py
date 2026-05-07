@@ -1,6 +1,7 @@
 # app/modules/importacion/routes.py
 from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
 from flask_login import login_required, current_user
+from app.decorators import roles_required
 import pandas as pd
 import io
 from datetime import datetime
@@ -12,12 +13,14 @@ from app.services.config_service import cargar_configuracion
 
 @importacion_bp.route('/')
 @login_required
+@roles_required('administrador', 'coordinador')
 def index():
     """Panel de importación de datos"""
     return render_template('importacion/index.html')
 
 @importacion_bp.route('/importar-estudiantes', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def importar_estudiantes():
     """Importar estudiantes desde archivo Excel/CSV con mejor manejo de errores"""
     try:
@@ -149,6 +152,7 @@ def importar_estudiantes():
 
 @importacion_bp.route('/importar-cursos', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def importar_cursos():
     """Importar cursos desde archivo Excel/CSV"""
     try:
@@ -216,6 +220,7 @@ def importar_cursos():
 
 @importacion_bp.route('/importar-notas', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def importar_notas():
     """Importar notas desde archivo Excel/CSV"""
     try:
@@ -327,6 +332,7 @@ def importar_notas():
 
 @importacion_bp.route('/resultados')
 @login_required
+@roles_required('administrador', 'coordinador')
 def resultados():
     """Mostrar resultados de importaciones"""
     # Obtener estadísticas actuales
@@ -343,6 +349,7 @@ def resultados():
 
 @importacion_bp.route('/descargar-plantilla/<tipo>')
 @login_required
+@roles_required('administrador', 'coordinador')
 def descargar_plantilla(tipo):
     """Descargar plantillas para importación"""
     if tipo == 'estudiantes':

@@ -1,6 +1,7 @@
 # app/modules/inscripciones/routes.py
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
+from app.decorators import roles_required
 from . import inscripciones_bp
 from app.models import Inscripcion, Estudiante, Curso, Asistencia, Nota, Evaluacion
 from app.extensions import db
@@ -12,6 +13,7 @@ from .forms import InscripcionForm, MatriculaMasivaForm
 # PARA MATRICULAR DE UNA SOLA VEZ EN UN CICLO
 @inscripciones_bp.route('/matricula-masiva', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def matricula_masiva():
     """Matrícula masiva de estudiantes a todos los cursos de un semestre"""
     
@@ -155,6 +157,7 @@ def index():
 
 @inscripciones_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def crear():
     """Crear nueva inscripción"""
     form = InscripcionForm()
@@ -248,6 +251,7 @@ def detalle(inscripcion_id):
 
 @inscripciones_bp.route('/<int:inscripcion_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def editar(inscripcion_id):
     """Editar inscripción existente"""
     inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
@@ -285,6 +289,7 @@ def editar(inscripcion_id):
 
 @inscripciones_bp.route('/<int:inscripcion_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar(inscripcion_id):
     """Eliminar inscripción"""
     try:

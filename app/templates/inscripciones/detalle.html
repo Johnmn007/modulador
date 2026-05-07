@@ -14,6 +14,7 @@
                     </ol>
                 </nav>
             </div>
+            {% if current_user.rol in ['administrador', 'coordinador'] %}
             <div class="d-flex gap-2">
                 <a href="{{ url_for('inscripciones.editar', inscripcion_id=inscripcion.id) }}" class="btn btn-warning shadow-sm">
                     <i class="fas fa-edit me-1"></i> Editar
@@ -25,6 +26,7 @@
                     </button>
                 </form>
             </div>
+            {% endif %}
         </div>
 
         <!-- Ficha de Información Principal -->

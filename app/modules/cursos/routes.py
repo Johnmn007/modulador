@@ -2,8 +2,9 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import cursos_bp
-from app.models import Curso, Inscripcion, Evaluacion,Estudiante
+from app.models import Curso, Inscripcion, Evaluacion,Estudiante, Usuario
 from app.extensions import db
+from app.decorators import roles_required
 from .forms import CursoForm
 
 @cursos_bp.route('/')
@@ -15,6 +16,10 @@ def index():
 
     # Query base
     cursos_query = Curso.query
+    
+    # Filtro por rol
+    if current_user.rol == 'docente':
+        cursos_query = cursos_query.filter_by(docente_id=current_user.id)
 
     # Búsqueda
     search = request.args.get('search', '')
@@ -37,9 +42,13 @@ def index():
 
 @cursos_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def crear():
     """Crear nuevo curso"""
     form = CursoForm()
+    
+    docentes = Usuario.query.filter_by(rol='docente', activo=True).all()
+    form.docente_id.choices = [(0, '--- Seleccionar Docente ---')] + [(d.id, f"{d.username}") for d in docentes]
     
     if form.validate_on_submit():
         try:
@@ -59,6 +68,7 @@ def crear():
                 nombre_curso=form.nombre_curso.data,
                 creditos=form.creditos.data,
                 semestre=form.semestre.data,
+                docente_id=form.docente_id.data if form.docente_id.data != 0 else None,
                 activo=form.activo.data
             )
             
@@ -80,6 +90,10 @@ def crear():
 def detalle(curso_id):
     """Detalle de un curso específico"""
     curso = Curso.query.get_or_404(curso_id)
+    
+    if current_user.rol == 'docente' and curso.docente_id != current_user.id:
+        flash('No tiene permisos para ver este curso', 'danger')
+        return redirect(url_for('cursos.index'))
     
     # Obtener inscripciones del curso
     inscripciones = (
@@ -109,10 +123,18 @@ def detalle(curso_id):
 
 @cursos_bp.route('/<int:curso_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def editar(curso_id):
     """Editar curso existente"""
     curso = Curso.query.get_or_404(curso_id)
     form = CursoForm(obj=curso)
+    
+    docentes = Usuario.query.filter_by(rol='docente', activo=True).all()
+    form.docente_id.choices = [(0, '--- Seleccionar Docente ---')] + [(d.id, f"{d.username}") for d in docentes]
+    
+    # Preseleccionar el docente actual (form obj=curso ya hace esto si es None)
+    if curso.docente_id is None and request.method == 'GET':
+        form.docente_id.data = 0
     
     if form.validate_on_submit():
         try:
@@ -132,6 +154,7 @@ def editar(curso_id):
             curso.nombre_curso = form.nombre_curso.data
             curso.creditos = form.creditos.data
             curso.semestre = form.semestre.data
+            curso.docente_id = form.docente_id.data if form.docente_id.data != 0 else None
             curso.activo = form.activo.data
             
             db.session.commit()
@@ -147,6 +170,7 @@ def editar(curso_id):
 
 @cursos_bp.route('/<int:curso_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar(curso_id):
     """Eliminar curso"""
     try:

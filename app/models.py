@@ -50,11 +50,13 @@ class Curso(db.Model):
     creditos = db.Column(db.Integer, default=3)
     semestre = db.Column(db.String(10), nullable=False)
     ciclo_id = db.Column(db.Integer, db.ForeignKey('ciclos.id'), nullable=False)
+    docente_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     activo = db.Column(db.Boolean, default=True)
     
     # Relaciones
     inscripciones = db.relationship('Inscripcion', backref='curso', lazy=True)
     evaluaciones = db.relationship('Evaluacion', backref='curso', lazy=True)
+    docente = db.relationship('Usuario', backref='cursos_asignados', lazy=True)
     
     def __repr__(self):
         return f'<Curso {self.codigo_curso}: {self.nombre_curso}>'

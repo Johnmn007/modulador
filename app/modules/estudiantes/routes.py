@@ -1,6 +1,7 @@
 # app/modules/estudiantes/routes.py
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
+from app.decorators import roles_required
 from . import estudiantes_bp
 from app.models import Estudiante, SeguimientoRiesgo
 from .forms import EstudianteForm
@@ -74,6 +75,7 @@ def en_riesgo():
     
 @estudiantes_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def crear():
     """Crear nuevo estudiante"""
     form = EstudianteForm()
@@ -127,6 +129,7 @@ def crear():
 
 @estudiantes_bp.route('/<int:estudiante_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def editar(estudiante_id):
     """Editar estudiante existente"""
     estudiante = Estudiante.query.get_or_404(estudiante_id)
@@ -176,6 +179,7 @@ def editar(estudiante_id):
 
 @estudiantes_bp.route('/<int:estudiante_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar(estudiante_id):
     """Eliminar estudiante"""
     try:

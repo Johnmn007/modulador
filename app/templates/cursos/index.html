@@ -9,9 +9,11 @@
                 <h2 class="fw-bold text-primary-color m-0">Catálogo de Cursos</h2>
                 <p class="text-muted mb-0">Gestión de oferta académica y periodos</p>
             </div>
+            {% if current_user.rol in ['administrador', 'coordinador'] %}
             <a href="{{ url_for('cursos.crear') }}" class="btn btn-primary fw-bold px-4 shadow-sm">
                 <i class="fas fa-plus-circle me-2"></i> Nuevo Curso
             </a>
+            {% endif %}
         </div>
 
         <!-- Filtros Rápidos -->
@@ -78,6 +80,7 @@
                                         <a href="{{ url_for('cursos.detalle', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Detalle del Curso">
                                             <i class="fas fa-book-reader text-primary"></i>
                                         </a>
+                                        {% if current_user.rol in ['administrador', 'coordinador'] %}
                                         <a href="{{ url_for('cursos.editar', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Editar">
                                             <i class="fas fa-edit text-warning"></i>
                                         </a>
@@ -87,6 +90,7 @@
                                                 <i class="fas fa-trash text-danger"></i>
                                             </button>
                                         </form>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

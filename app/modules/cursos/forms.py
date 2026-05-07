@@ -13,5 +13,6 @@ class CursoForm(FlaskForm):
                            default=3)
     semestre = StringField('Semestre', 
                           validators=[DataRequired(), Length(max=10)])
+    docente_id = SelectField('Docente Asignado', coerce=int, validators=[Optional()])
     activo = BooleanField('Activo', default=True)
     submit = SubmitField('Guardar Curso')
