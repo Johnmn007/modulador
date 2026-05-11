@@ -2,8 +2,10 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import cursos_bp
-from app.models import Curso, Inscripcion, Evaluacion,Estudiante, Usuario
+from datetime import datetime
+from app.models import Curso, Inscripcion, Evaluacion, Estudiante, Usuario, Ciclo
 from app.extensions import db
+from app.services.config_service import cargar_configuracion
 from app.decorators import roles_required
 from .forms import CursoForm
 
@@ -52,22 +54,41 @@ def crear():
     
     if form.validate_on_submit():
         try:
-            # Verificar si el código de curso ya existe en el mismo semestre
+            semestre_val = form.semestre.data
+            
+            config = cargar_configuracion()
+            periodo_actual = config.get('semestre_actual', '2024-1')
+            
+            # Buscar o crear el ciclo del periodo actual
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            if not ciclo:
+                ciclo = Ciclo(
+                    nombre=f"Ciclo {periodo_actual}",
+                    codigo_ciclo=periodo_actual,
+                    fecha_inicio=datetime.utcnow().date(),
+                    fecha_fin=datetime.utcnow().date(),
+                    activo=True
+                )
+                db.session.add(ciclo)
+                db.session.flush()
+
+            # Verificar si el código de curso ya existe en este ciclo
             curso_existente = Curso.query.filter_by(
                 codigo_curso=form.codigo_curso.data,
-                semestre=form.semestre.data
+                ciclo_id=ciclo.id
             ).first()
             
             if curso_existente:
-                flash('Ya existe un curso con este código en el mismo semestre', 'danger')
+                flash('Ya existe un curso con este código en el periodo actual', 'danger')
                 return render_template('cursos/crear.html', form=form)
-            
+
             # Crear nuevo curso
             nuevo_curso = Curso(
                 codigo_curso=form.codigo_curso.data,
                 nombre_curso=form.nombre_curso.data,
                 creditos=form.creditos.data,
-                semestre=form.semestre.data,
+                semestre=semestre_val,
+                ciclo_id=ciclo.id,
                 docente_id=form.docente_id.data if form.docente_id.data != 0 else None,
                 activo=form.activo.data
             )
@@ -138,22 +159,41 @@ def editar(curso_id):
     
     if form.validate_on_submit():
         try:
-            # Verificar si el código de curso ya existe (excluyendo el actual)
+            semestre_val = form.semestre.data
+            
+            config = cargar_configuracion()
+            periodo_actual = config.get('semestre_actual', '2024-1')
+            
+            # Buscar o crear el ciclo del periodo actual
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            if not ciclo:
+                ciclo = Ciclo(
+                    nombre=f"Ciclo {periodo_actual}",
+                    codigo_ciclo=periodo_actual,
+                    fecha_inicio=datetime.utcnow().date(),
+                    fecha_fin=datetime.utcnow().date(),
+                    activo=True
+                )
+                db.session.add(ciclo)
+                db.session.flush()
+
+            # Verificar si el código de curso ya existe en este ciclo (excluyendo el actual)
             curso_existente = Curso.query.filter(
                 Curso.codigo_curso == form.codigo_curso.data,
-                Curso.semestre == form.semestre.data,
+                Curso.ciclo_id == ciclo.id,
                 Curso.id != curso_id
             ).first()
             
             if curso_existente:
-                flash('Ya existe un curso con este código en el mismo semestre', 'danger')
+                flash('Ya existe un curso con este código en el periodo actual', 'danger')
                 return render_template('cursos/editar.html', form=form, curso=curso)
-            
+
             # Actualizar curso
             curso.codigo_curso = form.codigo_curso.data
             curso.nombre_curso = form.nombre_curso.data
             curso.creditos = form.creditos.data
-            curso.semestre = form.semestre.data
+            curso.semestre = semestre_val
+            curso.ciclo_id = ciclo.id
             curso.docente_id = form.docente_id.data if form.docente_id.data != 0 else None
             curso.activo = form.activo.data
             

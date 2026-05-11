@@ -45,7 +45,7 @@ class Curso(db.Model):
     __tablename__ = 'cursos'
     
     id = db.Column(db.Integer, primary_key=True)
-    codigo_curso = db.Column(db.String(20), unique=True, nullable=False)
+    codigo_curso = db.Column(db.String(20), nullable=False)
     nombre_curso = db.Column(db.String(100), nullable=False)
     creditos = db.Column(db.Integer, default=3)
     semestre = db.Column(db.String(10), nullable=False)
@@ -57,6 +57,10 @@ class Curso(db.Model):
     inscripciones = db.relationship('Inscripcion', backref='curso', lazy=True)
     evaluaciones = db.relationship('Evaluacion', backref='curso', lazy=True)
     docente = db.relationship('Usuario', backref='cursos_asignados', lazy=True)
+    
+    __table_args__ = (
+        db.UniqueConstraint('codigo_curso', 'ciclo_id', name='uq_curso_ciclo'),
+    )
     
     def __repr__(self):
         return f'<Curso {self.codigo_curso}: {self.nombre_curso}>'

@@ -21,26 +21,37 @@ def matricula_masiva():
     
     if form.validate_on_submit():
         try:
-            # ✅ CORREGIDO: usar semestre en lugar de ciclo_id
-            semestre = form.semestre.data
+            from app.services.config_service import cargar_configuracion
+            from app.models import Ciclo
+            
+            config = cargar_configuracion()
+            periodo_actual = config.get('semestre_actual')
+            
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            if not ciclo:
+                flash(f'Error: El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                return render_template('inscripciones/matricula_masiva.html', form=form)
+            
+            # El form.semestre.data en realidad trae el Nivel de Malla (ej. 'I', 'II')
+            nivel_malla = form.semestre.data
             grupo = form.grupo_estudiantes.data
             fecha_inscripcion = form.fecha_inscripcion.data
             estado = form.estado.data
             
-            # ✅ CORREGIDO: buscar por semestre
-            cursos_semestre = Curso.query.filter_by(semestre=semestre, activo=True).all()
+            # Buscar cursos de ese nivel, PERO QUE PERTENEZCAN AL CICLO ACTUAL
+            cursos_semestre = Curso.query.filter_by(semestre=nivel_malla, ciclo_id=ciclo.id, activo=True).all()
             
             if not cursos_semestre:
-                flash(f'No hay cursos activos para el semestre {semestre}', 'warning')
+                flash(f'No hay cursos registrados para el nivel {nivel_malla} en el ciclo {periodo_actual}', 'warning')
                 return render_template('inscripciones/matricula_masiva.html', form=form)
             
             # Obtener estudiantes según criterio
             if grupo == 'todos':
                 estudiantes = Estudiante.query.filter_by(activo=True).all()
             else:  # 'nuevos'
-                # Estudiantes sin inscripciones en el semestre
+                # Estudiantes sin ninguna inscripción en el ciclo actual
                 estudiantes_subquery = db.session.query(Inscripcion.estudiante_id)\
-                    .join(Curso).filter(Curso.semestre == semestre).subquery()
+                    .join(Curso).filter(Curso.ciclo_id == ciclo.id).subquery()
                 estudiantes = Estudiante.query.filter(
                     Estudiante.activo == True,
                     ~Estudiante.id.in_(estudiantes_subquery)

@@ -6,7 +6,7 @@ import pandas as pd
 import io
 from datetime import datetime
 from . import importacion_bp
-from app.models import Estudiante, Curso, Inscripcion, Evaluacion, Nota, SeguimientoRiesgo
+from app.models import Estudiante, Curso, Inscripcion, Evaluacion, Nota, SeguimientoRiesgo, Ciclo
 from app.extensions import db
 from app.services.seguimiento_service import SeguimientoService
 from app.services.config_service import cargar_configuracion
@@ -181,17 +181,36 @@ def importar_cursos():
         cursos_importados = 0
         cursos_actualizados = 0
         
+        config = cargar_configuracion()
+        periodo_actual = config.get('semestre_actual', '2024-1')
+        
+        # Buscar o crear el ciclo del periodo actual
+        ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+        if not ciclo:
+            ciclo = Ciclo(
+                nombre=f"Ciclo {periodo_actual}",
+                codigo_ciclo=periodo_actual,
+                fecha_inicio=datetime.utcnow().date(),
+                fecha_fin=datetime.utcnow().date(),
+                activo=True
+            )
+            db.session.add(ciclo)
+            db.session.flush()
+
         for _, fila in df.iterrows():
-            # Buscar si el curso ya existe
+            semestre_val = str(fila['semestre']).strip()
+            
+            # Buscar si el curso ya existe en este ciclo específico
             curso = Curso.query.filter_by(
                 codigo_curso=fila['codigo_curso'],
-                semestre=fila['semestre']
+                ciclo_id=ciclo.id
             ).first()
             
             if curso:
                 # Actualizar curso existente
                 curso.nombre_curso = fila['nombre_curso']
                 curso.creditos = fila.get('creditos', 3)
+                curso.ciclo_id = ciclo.id
                 cursos_actualizados += 1
             else:
                 # Crear nuevo curso
@@ -199,7 +218,8 @@ def importar_cursos():
                     codigo_curso=fila['codigo_curso'],
                     nombre_curso=fila['nombre_curso'],
                     creditos=fila.get('creditos', 3),
-                    semestre=fila['semestre'],
+                    semestre=semestre_val,
+                    ciclo_id=ciclo.id,
                     activo=True
                 )
                 db.session.add(curso)
@@ -246,20 +266,24 @@ def importar_notas():
                 flash(f'Columna requerida faltante: {columna}', 'danger')
                 return redirect(url_for('importacion.index'))
         
+        config = cargar_configuracion()
+        semestre_actual = config.get('semestre_actual', '2024-1')
+        
+        ciclo = Ciclo.query.filter_by(codigo_ciclo=semestre_actual).first()
+        if not ciclo:
+            flash(f'Error: El ciclo actual ({semestre_actual}) no existe. Configure el ciclo o importe los cursos primero.', 'danger')
+            return redirect(url_for('importacion.index'))
+
         notas_importadas = 0
         
         for _, fila in df.iterrows():
-            # Buscar estudiante y curso (en el semestre actual)
-            config = cargar_configuracion()
-            semestre_actual = config.get('semestre_actual')
-            
             estudiante = Estudiante.query.filter_by(
                 codigo_estudiante=fila['codigo_estudiante']
             ).first()
             
             curso = Curso.query.filter_by(
                 codigo_curso=fila['codigo_curso'],
-                semestre=semestre_actual
+                ciclo_id=ciclo.id
             ).first()
             
             if not estudiante or not curso:
@@ -366,7 +390,7 @@ def descargar_plantilla(tipo):
             'codigo_curso': ['MAT101', 'PROG102'],
             'nombre_curso': ['Matemáticas Básicas', 'Programación Python'],
             'creditos': [4, 3],
-            'semestre': ['2024-1', '2024-1']
+            'semestre': ['I', 'II']
         })
     elif tipo == 'notas':
         df = pd.DataFrame({

@@ -16,15 +16,20 @@ class AsistenciaForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(AsistenciaForm, self).__init__(*args, **kwargs)
         # Importar modelos dentro del método para evitar importaciones circulares
-        from app.models import Inscripcion, Estudiante, Curso
+        from app.models import Inscripcion, Estudiante, Curso, Ciclo
+        from app.services.config_service import cargar_configuracion
         
-        # Cargar inscripciones activas
+        config = cargar_configuracion()
+        periodo_actual = config.get('semestre_actual')
+        
+        # Cargar inscripciones activas del periodo actual
         self.inscripcion_id.choices = [
             (ins.id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos} - {ins.curso.nombre_curso}")
-            for ins in Inscripcion.query.join(Estudiante).join(Curso).filter(
+            for ins in Inscripcion.query.join(Estudiante).join(Curso).join(Ciclo).filter(
                 Inscripcion.estado == 'ACTIVO',
                 Estudiante.activo == True,
-                Curso.activo == True
+                Curso.activo == True,
+                Ciclo.codigo_ciclo == periodo_actual
             ).order_by(Curso.nombre_curso, Estudiante.apellidos).all()
         ]
 
@@ -36,10 +41,17 @@ class AsistenciaMasivaForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(AsistenciaMasivaForm, self).__init__(*args, **kwargs)
         # Importar modelos dentro del método
-        from app.models import Curso
+        from app.models import Curso, Ciclo
+        from app.services.config_service import cargar_configuracion
         
-        # Cargar cursos activos
+        config = cargar_configuracion()
+        periodo_actual = config.get('semestre_actual')
+        
+        # Cargar cursos activos del periodo actual
         self.curso_id.choices = [
-            (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} ({curso.semestre})")
-            for curso in Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+            (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre} | {curso.ciclo.codigo_ciclo})")
+            for curso in Curso.query.join(Ciclo).filter(
+                Curso.activo == True,
+                Ciclo.codigo_ciclo == periodo_actual
+            ).order_by('semestre', 'nombre_curso').all()
         ]
