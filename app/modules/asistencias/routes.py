@@ -4,11 +4,13 @@ from flask_login import login_required, current_user
 from . import asistencias_bp
 from app.models import Asistencia, Inscripcion, Estudiante, Curso
 from app.extensions import db
+from app.decorators import roles_required
 from .forms import AsistenciaForm, AsistenciaMasivaForm
 from datetime import datetime
 
 @asistencias_bp.route('/')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def index():
     """Lista de todas las asistencias"""
     page = request.args.get('page', 1, type=int)
@@ -54,6 +56,7 @@ def index():
 
 @asistencias_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def crear():
     """Registrar nueva asistencia individual"""
     form = AsistenciaForm()
@@ -93,6 +96,7 @@ def crear():
 
 @asistencias_bp.route('/masiva', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def crear_masiva():
     """Registro masivo de asistencias por curso"""
     form = AsistenciaMasivaForm()
@@ -122,6 +126,7 @@ def crear_masiva():
 
 @asistencias_bp.route('/masiva/procesar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def procesar_masiva():
     """Procesar el formulario masivo de asistencias"""
     try:
@@ -175,7 +180,7 @@ def procesar_masiva():
         # RECALCULAR RIESGO PARA ESTOS ESTUDIANTES
         from app.services.seguimiento_service import SeguimientoService
         for inscripcion in inscripciones:
-            SeguimientoService.recalcular_riesgo_estudiante(inscripcion.estudiante_id)
+            SeguimientoService.recalcular_estudiante(inscripcion.estudiante_id)
             
         flash(f'Asistencias procesadas exitosamente: {registros_procesados} registros y riesgo actualizado', 'success')
         
@@ -187,6 +192,7 @@ def procesar_masiva():
 
 @asistencias_bp.route('/<int:asistencia_id>')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def detalle(asistencia_id):
     """Detalle de una asistencia específica"""
     asistencia = Asistencia.query.get_or_404(asistencia_id)
@@ -195,6 +201,7 @@ def detalle(asistencia_id):
 
 @asistencias_bp.route('/<int:asistencia_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def editar(asistencia_id):
     """Editar asistencia existente"""
     asistencia = Asistencia.query.get_or_404(asistencia_id)
@@ -233,6 +240,7 @@ def editar(asistencia_id):
 
 @asistencias_bp.route('/<int:asistencia_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar(asistencia_id):
     """Eliminar asistencia"""
     try:
@@ -251,6 +259,7 @@ def eliminar(asistencia_id):
 
 @asistencias_bp.route('/estadisticas')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def estadisticas():
     """Estadísticas de asistencias"""
     # Obtener parámetros de filtro

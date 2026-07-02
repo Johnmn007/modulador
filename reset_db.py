@@ -9,9 +9,10 @@ def reset_database():
     with app.app_context():
         print("⏳ Borrando todas las tablas (esto puede tardar unos segundos)...")
         # Ignoramos la revisión de llaves foráneas para poder borrar las tablas sin problemas de dependencias en MySQL
-        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+        # (Se comenta porque en PostgreSQL causa error de sintaxis y db.drop_all() funciona correctamente)
+        # db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
         db.drop_all()
-        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+        # db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
         
         print("🧹 Limpiando el historial de migraciones...")
         db.session.execute(text("DROP TABLE IF EXISTS alembic_version"))

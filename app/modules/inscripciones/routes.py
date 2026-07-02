@@ -6,7 +6,7 @@ from . import inscripciones_bp
 from app.models import Inscripcion, Estudiante, Curso, Asistencia, Nota, Evaluacion
 from app.extensions import db
 from .forms import InscripcionForm
-from datetime import datetime
+from datetime import datetime, timezone
 from .forms import InscripcionForm, MatriculaMasivaForm 
 
 
@@ -106,7 +106,7 @@ def matricula_masiva():
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
-        form.fecha_inscripcion.data = datetime.utcnow().date()
+        form.fecha_inscripcion.data = datetime.now(timezone.utc).date()
     
     return render_template('inscripciones/matricula_masiva.html', form=form)
 
@@ -205,7 +205,7 @@ def crear():
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
-        form.fecha_inscripcion.data = datetime.utcnow().date()
+        form.fecha_inscripcion.data = datetime.now(timezone.utc).date()
         form.estado.data = 'ACTIVO'
     
     return render_template('inscripciones/crear.html', form=form)

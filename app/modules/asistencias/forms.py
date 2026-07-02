@@ -2,11 +2,11 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, DateField, BooleanField, StringField, SubmitField
 from wtforms.validators import DataRequired, Optional, Length
-from datetime import datetime
+from datetime import datetime, timezone
 
 class AsistenciaForm(FlaskForm):
     inscripcion_id = SelectField('Inscripción', coerce=int, validators=[DataRequired()])
-    fecha = DateField('Fecha de Clase', validators=[DataRequired()], default=datetime.utcnow)
+    fecha = DateField('Fecha de Clase', validators=[DataRequired()], default=lambda: datetime.now(timezone.utc).date())
     presente = BooleanField('Presente', default=True)
     justificado = BooleanField('Justificado', default=False)
     observaciones = StringField('Observaciones', 
@@ -35,7 +35,7 @@ class AsistenciaForm(FlaskForm):
 
 class AsistenciaMasivaForm(FlaskForm):
     curso_id = SelectField('Curso', coerce=int, validators=[DataRequired()])
-    fecha = DateField('Fecha de Clase', validators=[DataRequired()], default=datetime.utcnow)
+    fecha = DateField('Fecha de Clase', validators=[DataRequired()], default=lambda: datetime.now(timezone.utc).date())
     submit = SubmitField('Generar Formulario Masivo')
     
     def __init__(self, *args, **kwargs):

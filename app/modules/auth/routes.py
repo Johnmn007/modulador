@@ -2,6 +2,7 @@
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
+from urllib.parse import urlparse, urljoin
 from . import auth_bp
 from .forms import LoginForm
 from app.models import Usuario
@@ -29,7 +30,7 @@ def login():
                 
                 # Redirigir según el rol
                 next_page = request.args.get('next')
-                if next_page:
+                if next_page and _is_safe_url(next_page):
                     return redirect(next_page)
                 
                 # TODOS los roles van al dashboard
@@ -40,6 +41,11 @@ def login():
             flash('Email o contraseña incorrectos', 'danger')
     
     return render_template('auth/login.html', form=form)
+
+def _is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 @auth_bp.route('/logout')
 @login_required

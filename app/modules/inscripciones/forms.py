@@ -1,7 +1,7 @@
 # app/modules/inscripciones/forms.py
 from flask_wtf import FlaskForm
 from wtforms import SelectField, DateField, StringField, SubmitField
-from wtforms.validators import DataRequired, Optional,length
+from wtforms.validators import DataRequired, Optional, Length
 from app.models import Estudiante, Curso
 
 class InscripcionForm(FlaskForm):
@@ -79,8 +79,7 @@ class MatriculaMasivaForm(FlaskForm):
                 if not self.semestre.choices:
                     self.semestre.choices = [('', 'No hay cursos activos')]
                     
-            except Exception as e:
-                print(f"Error cargando semestres: {e}")
+            except Exception:
                 # Fallback a semestres por defecto
                 self.semestre.choices = [
                     ('I', 'Semestre I'), ('II', 'Semestre II'), ('III', 'Semestre III'),

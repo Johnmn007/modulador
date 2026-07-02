@@ -4,13 +4,15 @@ from flask_login import login_required, current_user
 from . import evaluaciones_bp
 from app.models import Evaluacion, Curso, Nota, Inscripcion, Estudiante
 from app.extensions import db
+from app.decorators import roles_required
 from .forms import EvaluacionForm, NotaForm
-from datetime import datetime
+from datetime import datetime, timezone
 
 # ===== RUTAS PARA EVALUACIONES =====
 
 @evaluaciones_bp.route('/')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def index():
     """Lista de todas las evaluaciones"""
     page = request.args.get('page', 1, type=int)
@@ -59,6 +61,7 @@ def index():
 
 @evaluaciones_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def crear_evaluacion():
     """Crear nueva evaluación"""
     form = EvaluacionForm()
@@ -96,13 +99,14 @@ def crear_evaluacion():
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
-        form.fecha_creacion.data = datetime.utcnow().date()
+        form.fecha_creacion.data = datetime.now(timezone.utc).date()
         form.peso.data = 100.0  # Valor por defecto
     
     return render_template('evaluaciones/crear_evaluacion.html', form=form)
 
 @evaluaciones_bp.route('/<int:evaluacion_id>')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def detalle_evaluacion(evaluacion_id):
     """Detalle de una evaluación específica"""
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
@@ -134,6 +138,7 @@ def detalle_evaluacion(evaluacion_id):
 
 @evaluaciones_bp.route('/<int:evaluacion_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def editar_evaluacion(evaluacion_id):
     """Editar evaluación existente"""
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
@@ -172,6 +177,7 @@ def editar_evaluacion(evaluacion_id):
 
 @evaluaciones_bp.route('/<int:evaluacion_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar_evaluacion(evaluacion_id):
     """Eliminar evaluación"""
     try:
@@ -197,6 +203,7 @@ def eliminar_evaluacion(evaluacion_id):
 
 @evaluaciones_bp.route('/notas')
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def notas_index():
     """Lista de todas las notas"""
     page = request.args.get('page', 1, type=int)
@@ -239,6 +246,7 @@ def notas_index():
 
 @evaluaciones_bp.route('/notas/crear', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def crear_nota():
     """Crear nueva nota"""
     form = NotaForm()
@@ -276,12 +284,13 @@ def crear_nota():
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
-        form.fecha_registro.data = datetime.utcnow().date()
+        form.fecha_registro.data = datetime.now(timezone.utc).date()
     
     return render_template('evaluaciones/crear_nota.html', form=form)
 
 @evaluaciones_bp.route('/notas/<int:nota_id>/editar', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def editar_nota(nota_id):
     """Editar nota existente"""
     nota = Nota.query.get_or_404(nota_id)
@@ -320,6 +329,7 @@ def editar_nota(nota_id):
 
 @evaluaciones_bp.route('/notas/<int:nota_id>/eliminar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def eliminar_nota(nota_id):
     """Eliminar nota"""
     try:
@@ -340,6 +350,7 @@ def eliminar_nota(nota_id):
 
 @evaluaciones_bp.route('/notas/masiva', methods=['GET', 'POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def registro_masivo():
     """Formulario inicial para registro masivo de notas"""
     cursos = Curso.query.filter_by(activo=True).all()
@@ -356,6 +367,7 @@ def registro_masivo():
 
 @evaluaciones_bp.route('/notas/masiva/formulario', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def formulario_masivo():
     """Formulario para ingresar las notas de todos los estudiantes"""
     evaluacion_id = request.form.get('evaluacion_id', type=int)
@@ -377,6 +389,7 @@ def formulario_masivo():
 
 @evaluaciones_bp.route('/notas/masiva/procesar', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador', 'docente')
 def procesar_masiva():
     """Procesar el registro masivo de notas"""
     try:
@@ -403,13 +416,13 @@ def procesar_masiva():
                 
                 if nota_obj:
                     nota_obj.nota = nota_float
-                    nota_obj.fecha_registro = datetime.utcnow().date()
+                    nota_obj.fecha_registro = datetime.now(timezone.utc).date()
                 else:
                     nueva_nota = Nota(
                         inscripcion_id=inscripcion.id,
                         evaluacion_id=evaluacion_id,
                         nota=nota_float,
-                        fecha_registro=datetime.utcnow().date()
+                        fecha_registro=datetime.now(timezone.utc).date()
                     )
                     db.session.add(nueva_nota)
         

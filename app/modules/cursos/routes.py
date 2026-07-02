@@ -2,7 +2,7 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import cursos_bp
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models import Curso, Inscripcion, Evaluacion, Estudiante, Usuario, Ciclo
 from app.extensions import db
 from app.services.config_service import cargar_configuracion
@@ -65,8 +65,8 @@ def crear():
                 ciclo = Ciclo(
                     nombre=f"Ciclo {periodo_actual}",
                     codigo_ciclo=periodo_actual,
-                    fecha_inicio=datetime.utcnow().date(),
-                    fecha_fin=datetime.utcnow().date(),
+                    fecha_inicio=datetime.now(timezone.utc).date(),
+                    fecha_fin=datetime.now(timezone.utc).date(),
                     activo=True
                 )
                 db.session.add(ciclo)
@@ -170,8 +170,8 @@ def editar(curso_id):
                 ciclo = Ciclo(
                     nombre=f"Ciclo {periodo_actual}",
                     codigo_ciclo=periodo_actual,
-                    fecha_inicio=datetime.utcnow().date(),
-                    fecha_fin=datetime.utcnow().date(),
+                    fecha_inicio=datetime.now(timezone.utc).date(),
+                    fecha_fin=datetime.now(timezone.utc).date(),
                     activo=True
                 )
                 db.session.add(ciclo)

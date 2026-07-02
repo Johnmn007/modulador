@@ -182,7 +182,7 @@ class CalculatorRiesgoIntrasemestral:
             asistencias = result.asistencias
             justificadas = result.justificadas
             
-            porcentaje_asistencia = (asistencias / total_clases) * 100
+            porcentaje_asistencia = (asistencias / total_clases) * 100 if total_clases > 0 else 0
             
             # Calcular asistencia neta (sin justificadas)
             asistencia_neta = (asistencias - justificadas) / total_clases * 100 if total_clases > 0 else 0

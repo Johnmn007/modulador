@@ -1,7 +1,7 @@
 # app/models.py
 from app.extensions import db  # Usar la misma instancia de extensions
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timezone
 
 # TODOS los modelos usan db desde extensions
 
@@ -14,7 +14,7 @@ class Estudiante(db.Model):
     apellidos = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     telefono = db.Column(db.String(15))
-    fecha_inscripcion = db.Column(db.Date, default=datetime.utcnow)
+    fecha_inscripcion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     activo = db.Column(db.Boolean, default=True)
     
     # Relaciones
@@ -71,7 +71,7 @@ class Inscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     estudiante_id = db.Column(db.Integer, db.ForeignKey('estudiantes.id'), nullable=False)
     curso_id = db.Column(db.Integer, db.ForeignKey('cursos.id'), nullable=False)
-    fecha_inscripcion = db.Column(db.Date, default=datetime.utcnow)
+    fecha_inscripcion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     estado = db.Column(db.String(20), default='ACTIVO')
     
     # Relaciones
@@ -110,7 +110,7 @@ class Evaluacion(db.Model):
     nombre_evaluacion = db.Column(db.String(100), nullable=False)
     tipo_evaluacion = db.Column(db.String(50))
     peso = db.Column(db.Numeric(5, 2), default=100.0)
-    fecha_creacion = db.Column(db.Date, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     
     # Relaciones
     notas = db.relationship('Nota', backref='evaluacion', lazy=True)
@@ -125,7 +125,7 @@ class Nota(db.Model):
     inscripcion_id = db.Column(db.Integer, db.ForeignKey('inscripciones.id'), nullable=False)
     evaluacion_id = db.Column(db.Integer, db.ForeignKey('evaluaciones.id'), nullable=False)
     nota = db.Column(db.Numeric(5, 2))
-    fecha_registro = db.Column(db.Date, default=datetime.utcnow)
+    fecha_registro = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     observaciones = db.Column(db.Text)
     
     def __repr__(self):
@@ -141,7 +141,7 @@ class SeguimientoRiesgo(db.Model):
     puntaje_riesgo = db.Column(db.Numeric(5, 2), default=0.0)
     puntaje_anterior = db.Column(db.Numeric(5, 2), default=0.0)
     tendencia = db.Column(db.String(20), default='ESTABLE')  # 'SUBE', 'BAJA', 'ESTABLE'
-    fecha_evaluacion = db.Column(db.Date, default=datetime.utcnow)
+    fecha_evaluacion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     factores_riesgo = db.Column(db.JSON)
     observaciones = db.Column(db.Text)
     
@@ -155,7 +155,7 @@ class Intervencion(db.Model):
     estudiante_id = db.Column(db.Integer, db.ForeignKey('estudiantes.id'), nullable=False)
     tipo_intervencion = db.Column(db.String(50))
     descripcion = db.Column(db.Text, nullable=False)
-    fecha_intervencion = db.Column(db.Date, default=datetime.utcnow)
+    fecha_intervencion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     responsable = db.Column(db.String(100))
     estado = db.Column(db.String(20), default='PENDIENTE')
     resultado = db.Column(db.Text)
@@ -172,7 +172,7 @@ class Usuario(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     rol = db.Column(db.String(20), default='docente')
     activo = db.Column(db.Boolean, default=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):
         return f'<Usuario {self.username}>'
@@ -185,9 +185,9 @@ class Reporte(db.Model):
     titulo = db.Column(db.String(200), nullable=False)
     descripcion = db.Column(db.Text)
     parametros = db.Column(db.JSON)  # Parámetros usados para generar el reporte
-    contenido = db.Column(db.Text(length=4294967295))   # LONGTEXT para reportes extensos
+    contenido = db.Column(db.Text)   # LONGTEXT para reportes extensos
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    fecha_generacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_generacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     archivo_path = db.Column(db.String(500))  # Ruta del archivo PDF generado
     
     # Relación

@@ -50,7 +50,7 @@
 
                 <!-- Contenido Dinámico -->
                 <div class="report-body">
-                    {{ contenido|safe }}
+                    {{ contenido|sanitize_html|safe }}
                 </div>
 
                 <!-- Pie de Página Institucional -->

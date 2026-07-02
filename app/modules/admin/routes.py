@@ -27,8 +27,6 @@ def index():
         return redirect(url_for('dashboard.index'))
     
     config = cargar_configuracion()
-    print(f"🎯 Configuración final: {config}")
-    print(f"📅 Semestre actual: {config['semestre_actual']}")
     
     stats = {
         'total_usuarios': Usuario.query.count(),

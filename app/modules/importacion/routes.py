@@ -1,10 +1,11 @@
 # app/modules/importacion/routes.py
+import re
 from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
 from flask_login import login_required, current_user
 from app.decorators import roles_required
 import pandas as pd
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from . import importacion_bp
 from app.models import Estudiante, Curso, Inscripcion, Evaluacion, Nota, SeguimientoRiesgo, Ciclo
 from app.extensions import db
@@ -70,10 +71,10 @@ def importar_estudiantes():
             fila_actual = fila + index
             try:
                 # Validar datos requeridos
-                codigo = str(fila_df['codigo_estudiante']).strip() if not pd.isna(fila_df['codigo_estudiante']) else ''
-                nombres = str(fila_df['nombres']).strip() if not pd.isna(fila_df['nombres']) else ''
-                apellidos = str(fila_df['apellidos']).strip() if not pd.isna(fila_df['apellidos']) else ''
-                email = str(fila_df['email']).strip() if not pd.isna(fila_df['email']) else ''
+                codigo = _sanitize(str(fila_df['codigo_estudiante']).strip() if not pd.isna(fila_df['codigo_estudiante']) else '')
+                nombres = _sanitize(str(fila_df['nombres']).strip() if not pd.isna(fila_df['nombres']) else '')
+                apellidos = _sanitize(str(fila_df['apellidos']).strip() if not pd.isna(fila_df['apellidos']) else '')
+                email = _sanitize(str(fila_df['email']).strip() if not pd.isna(fila_df['email']) else '')
                 
                 if not codigo or not nombres or not apellidos or not email:
                     errores.append(f"Fila {fila_actual}: Datos requeridos incompletos")
@@ -190,8 +191,8 @@ def importar_cursos():
             ciclo = Ciclo(
                 nombre=f"Ciclo {periodo_actual}",
                 codigo_ciclo=periodo_actual,
-                fecha_inicio=datetime.utcnow().date(),
-                fecha_fin=datetime.utcnow().date(),
+                fecha_inicio=datetime.now(timezone.utc).date(),
+                fecha_fin=datetime.now(timezone.utc).date(),
                 activo=True
             )
             db.session.add(ciclo)
@@ -335,7 +336,7 @@ def importar_notas():
                     inscripcion_id=inscripcion.id,
                     evaluacion_id=evaluacion.id,
                     nota=float(fila['nota']),
-                    fecha_registro=pd.to_datetime(fila.get('fecha', datetime.utcnow()))
+                    fecha_registro=pd.to_datetime(fila.get('fecha', datetime.now(timezone.utc)))
                 )
                 db.session.add(nota)
             
@@ -370,6 +371,10 @@ def resultados():
     }
     
     return render_template('importacion/resultados.html', estadisticas=estadisticas)
+
+def _sanitize(value):
+    value = re.sub(r'[<>\'";]', '', value)
+    return value
 
 @importacion_bp.route('/descargar-plantilla/<tipo>')
 @login_required

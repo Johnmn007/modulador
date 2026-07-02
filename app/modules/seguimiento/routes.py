@@ -2,9 +2,10 @@ from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import seguimiento_bp
 from app.extensions import db
-from app.models import SeguimientoRiesgo
+from app.models import SeguimientoRiesgo, Estudiante
 from app.services.seguimiento_service import SeguimientoService
 from app.services.config_service import cargar_configuracion
+from app.services.riesgo_calculator_v2 import CalculatorRiesgoIntrasemestral
 
 @seguimiento_bp.route('/')
 @login_required
@@ -62,8 +63,6 @@ def calcular_estudiante(estudiante_id):
         semestre = request.args.get('semestre', semestre_defecto)
         estudiante = Estudiante.query.get_or_404(estudiante_id)
         
-        # CORRECCIÓN: Cargar configuración
-        config = cargar_configuracion()
         calculador = CalculatorRiesgoIntrasemestral(config)
         
         resultado = calculador.calcular_riesgo_estudiante(estudiante_id, semestre, db)

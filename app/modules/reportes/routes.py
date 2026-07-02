@@ -1,14 +1,15 @@
 # reportes/routes.py - VERSIÓN COMPLETAMENTE CORREGIDA
-from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
-from flask_login import login_required, current_user
 import os
 import pdfkit
 from datetime import datetime
 import tempfile
 import platform
+from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
+from flask_login import login_required, current_user
 from . import reportes_bp
 from app.services.report_generator import ReportGenerator
 from app.services.config_service import cargar_configuracion
+from app.services.logger import app_logger
 from app.models import Reporte, Estudiante, Curso
 from app.extensions import db
 
@@ -39,8 +40,7 @@ def get_pdf_config():
         # Si no se encuentra, usar None (asume que está en PATH)
         return pdfkit.configuration()
         
-    except Exception as e:
-        print(f"Advertencia en configuración PDF: {e}")
+    except Exception:
         return pdfkit.configuration()
     
     
@@ -98,7 +98,8 @@ def generar_general():
                 temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
                 temp.write(pdf)
                 temp.close()
-                return send_file(temp.name, as_attachment=True, download_name=filename)
+                response = send_file(temp.name, as_attachment=True, download_name=filename)
+                return response
             except Exception as e:
                 flash(f'Error al generar PDF: {str(e)}', 'warning')
                 return resultado['html']
@@ -157,7 +158,8 @@ def generar_individual():
                 temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
                 temp.write(pdf)
                 temp.close()
-                return send_file(temp.name, as_attachment=True, download_name=filename)
+                response = send_file(temp.name, as_attachment=True, download_name=filename)
+                return response
             except Exception as e:
                 flash(f'Error al generar PDF: {str(e)}', 'warning')
                 return resultado['html']
@@ -221,7 +223,8 @@ def generar_asistencia_grupal():
                 temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
                 temp.write(pdf)
                 temp.close()
-                return send_file(temp.name, as_attachment=True, download_name=filename)
+                response = send_file(temp.name, as_attachment=True, download_name=filename)
+                return response
             except Exception as e:
                 flash(f'Error al generar PDF: {str(e)}', 'warning')
                 return resultado['html']
@@ -253,6 +256,7 @@ def descargar(reporte_id):
     """Descargar reporte generado anteriormente"""
     reporte = Reporte.query.get_or_404(reporte_id)
     if reporte.usuario_id != current_user.id and current_user.rol != 'administrador':
+        app_logger.warning(f"Acceso denegado a reporte {reporte_id} por usuario {current_user.id} (rol: {current_user.rol})")
         flash('No tiene permisos para acceder a este reporte', 'danger')
         return redirect(url_for('reportes.historial'))
     

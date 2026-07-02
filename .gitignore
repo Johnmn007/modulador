@@ -30,7 +30,7 @@ desktop.ini
 
 # Archivos de entorno
 .env
-.env.*
+.env.local
+.env.production
 
 # Archivos de migraciones generados por Flask-Migrate
-migrations/

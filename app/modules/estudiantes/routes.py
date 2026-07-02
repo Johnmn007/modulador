@@ -5,7 +5,7 @@ from app.decorators import roles_required
 from . import estudiantes_bp
 from app.models import Estudiante, SeguimientoRiesgo
 from .forms import EstudianteForm
-from datetime import datetime
+from datetime import datetime, timezone
 from app.extensions import db
 
 @estudiantes_bp.route('/')
@@ -123,7 +123,7 @@ def crear():
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
-        form.fecha_inscripcion.data = datetime.utcnow().date()
+        form.fecha_inscripcion.data = datetime.now(timezone.utc).date()
     
     return render_template('estudiantes/crear.html', form=form)
 
