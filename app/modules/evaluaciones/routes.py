@@ -235,6 +235,9 @@ def notas_index():
         Curso.activo == True
     ).order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()
 
+    estudiante_actual = next((e for e in estudiantes if e.id == estudiante_id), None) if estudiante_id else None
+    estudiante_nombre_actual = f"{estudiante_actual.codigo_estudiante} - {estudiante_actual.nombres} {estudiante_actual.apellidos}" if estudiante_actual else ''
+
     return render_template('evaluaciones/notas_index.html',
                          notas=notas,
                          estudiantes=estudiantes,
@@ -242,7 +245,8 @@ def notas_index():
                          evaluaciones=evaluaciones,
                          estudiante_id=estudiante_id,
                          curso_id=curso_id,
-                         evaluacion_id=evaluacion_id)
+                         evaluacion_id=evaluacion_id,
+                         estudiante_nombre_actual=estudiante_nombre_actual)
 
 @evaluaciones_bp.route('/notas/crear', methods=['GET', 'POST'])
 @login_required

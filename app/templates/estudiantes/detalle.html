@@ -17,15 +17,28 @@
             </div>
             {% if current_user.rol in ['administrador', 'coordinador'] %}
             <div class="d-flex gap-2">
+                <button onclick="history.length > 1 ? history.back() : window.location.href='{{ url_for('estudiantes.index') }}'"
+                        class="btn btn-outline-secondary border-2 fw-bold"
+                        title="Regresar a la página anterior">
+                    <i class="fas fa-arrow-left me-1"></i> Regresar
+                </button>
                 <a href="{{ url_for('estudiantes.editar', estudiante_id=estudiante.id) }}" class="btn btn-outline-warning border-2 fw-bold">
                     <i class="fas fa-edit me-1"></i> Editar Perfil
                 </a>
-                <form method="POST" action="{{ url_for('estudiantes.eliminar', estudiante_id=estudiante.id) }}" 
+                <form method="POST" action="{{ url_for('estudiantes.eliminar', estudiante_id=estudiante.id) }}"
                       class="d-inline" onsubmit="return confirm('¿Eliminar registro definitivo?');">
                     <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
                         <i class="fas fa-trash"></i>
                     </button>
                 </form>
+            </div>
+            {% else %}
+            <div class="d-flex gap-2">
+                <button onclick="history.length > 1 ? history.back() : window.location.href='{{ url_for('estudiantes.index') }}'"
+                        class="btn btn-outline-secondary border-2 fw-bold"
+                        title="Regresar a la página anterior">
+                    <i class="fas fa-arrow-left me-1"></i> Regresar
+                </button>
             </div>
             {% endif %}
         </div>

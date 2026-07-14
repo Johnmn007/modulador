@@ -266,6 +266,67 @@ def eliminar_usuario(usuario_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@admin_bp.route('/usuarios/<int:usuario_id>/editar', methods=['POST'])
+@login_required
+def editar_usuario(usuario_id):
+    """Editar datos de un usuario existente (username, email, contraseña)"""
+    if current_user.rol != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+
+    try:
+        usuario = Usuario.query.get_or_404(usuario_id)
+
+        nuevo_username = request.form.get('username', '').strip()
+        nuevo_email    = request.form.get('email', '').strip()
+        nueva_password = request.form.get('password', '').strip()
+        confirmar_pass = request.form.get('confirm_password', '').strip()
+
+        # Validaciones básicas
+        if not nuevo_username or not nuevo_email:
+            flash('El nombre de usuario y el email son obligatorios.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        # Verificar duplicados excluyendo al propio usuario
+        if Usuario.query.filter(
+            Usuario.username == nuevo_username,
+            Usuario.id != usuario_id
+        ).first():
+            flash(f'El nombre de usuario "{nuevo_username}" ya está en uso.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        if Usuario.query.filter(
+            Usuario.email == nuevo_email,
+            Usuario.id != usuario_id
+        ).first():
+            flash(f'El email "{nuevo_email}" ya está registrado.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        # Actualizar campos básicos
+        usuario.username = nuevo_username
+        usuario.email    = nuevo_email
+
+        # Actualizar contraseña solo si se proporcionó una nueva
+        if nueva_password:
+            if len(nueva_password) < 6:
+                flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+                return redirect(url_for('admin.usuarios'))
+            if nueva_password != confirmar_pass:
+                flash('Las contraseñas no coinciden.', 'danger')
+                return redirect(url_for('admin.usuarios'))
+            usuario.password_hash = generate_password_hash(nueva_password)
+
+        db.session.commit()
+        flash(f'Usuario "{nuevo_username}" actualizado correctamente.', 'success')
+
+    except Exception as e:
+        app_logger.error(f"Error editando usuario {usuario_id}: {str(e)}")
+        db.session.rollback()
+        flash(f'Error al actualizar: {str(e)}', 'danger')
+
+    return redirect(url_for('admin.usuarios'))
+
+
+
 @admin_bp.route('/ciclos', methods=['GET', 'POST'])
 @login_required
 def ciclos():
