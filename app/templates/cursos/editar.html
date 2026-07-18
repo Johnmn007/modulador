@@ -67,6 +67,17 @@
                         </div>
 
                         <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase"><i class="fas fa-chalkboard-teacher me-1 text-primary"></i> Docente Asignado</label>
+                                {{ form.docente_id(class="form-select form-control-lg bg-light border-0 fw-bold") }}
+                                {% if form.docente_id.errors %}
+                                    <div class="text-danger small mt-1">{% for error in form.docente_id.errors %}{{ error }}{% endfor %}</div>
+                                {% endif %}
+                                <div class="form-text small">Selecciona al profesor responsable de impartir la asignatura.</div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
                             <div class="form-check form-switch p-0 ps-5 mb-4">
                                 {{ form.activo(class="form-check-input ms-n5", style="width: 2.5em; height: 1.25em;") }}
                                 <label class="form-check-label fw-bold text-muted ms-2 mt-1" for="activo">Asignatura habilitada para matriculación</label>
