@@ -1,6 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Consolidado de Notas - SADES{% endblock %}
 
+{# ── CSS adicional: Tom Select compacto para el filtro de cursos ── #}
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    /* ── Botones de acción en tabla ── */
+    .btn-white { background: #fff; border: 1px solid #e2e8f0; }
+    .btn-white:hover { background: #f8fafc; }
+    .page-item.active .page-link { background-color: var(--primary-color) !important; color: white; }
+    .page-link { color: var(--text-main); font-weight: 600; }
+
+    /* ── Dropdown buscador de estudiante (position:fixed) ── */
+    #student-dropdown {
+        position: fixed;
+        z-index: 9999;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        max-height: 280px;
+        overflow-y: auto;
+        display: none;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+    #student-dropdown li.student-option {
+        cursor: pointer;
+        transition: background 0.12s;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 0.5rem 1rem;
+    }
+    #student-dropdown li.student-option:last-child { border-bottom: none; }
+    #student-dropdown li.student-option:hover,
+    #student-dropdown li.student-option.active-option { background: #eef2ff; }
+    #student-dropdown li.student-option.hidden-option { display: none !important; }
+    #student-search-input:focus { outline: none; box-shadow: none; }
+
+    /* ── Tom Select adaptado al estilo compacto del filtro ── */
+    #filter-form .ts-wrapper .ts-control {
+        background-color: #f8f9fa !important;
+        border: none !important;
+        border-radius: 0 0.375rem 0.375rem 0 !important;
+        min-height: 38px !important;
+        font-size: 0.875rem !important;
+        padding: 0.375rem 2rem 0.375rem 0.75rem !important;
+        box-shadow: none !important;
+    }
+    #filter-form .ts-wrapper.focus .ts-control {
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    #filter-form .ts-wrapper .ts-dropdown,
+    .ts-dropdown.single {
+        border-radius: 0.5rem !important;
+        border: 1px solid #dee2e6 !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        font-size: 0.875rem !important;
+        z-index: 99999 !important;
+    }
+    #filter-form .ts-dropdown .option {
+        padding: 0.45rem 0.85rem !important;
+        color: #374151;
+    }
+    #filter-form .ts-dropdown .active {
+        background-color: #eef2ff !important;
+        color: #3730a3 !important;
+    }
+    #filter-form .ts-wrapper.single .ts-control {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236c757d' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 0.6rem center !important;
+        background-size: 14px 10px !important;
+    }
+    #filter-form .input-group .ts-wrapper { flex: 1 1 auto; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -24,11 +102,10 @@
             <div class="card-body p-3">
                 <form method="GET" action="{{ url_for('evaluaciones.notas_index') }}" class="row g-3" id="filter-form">
 
-                    <!-- Buscador de Estudiante (reemplaza el select nativo) -->
-                    <div class="col-md-3">
-                        <!-- Campo hidden que se envía con el formulario -->
+                    <!-- Buscador de Estudiante (custom, position:fixed dropdown) -->
+                    <div class="col-md-3" id="student-col">
                         <input type="hidden" name="estudiante_id" id="estudiante_id_hidden" value="{{ estudiante_id or '' }}">
-                        <div class="input-group position-relative" id="student-search-wrapper">
+                        <div class="input-group" id="student-search-wrapper">
                             <span class="input-group-text bg-light border-0">
                                 <i class="fas fa-user-graduate text-muted"></i>
                             </span>
@@ -38,36 +115,19 @@
                                    placeholder="Buscar estudiante..."
                                    autocomplete="off"
                                    value="{{ estudiante_nombre_actual or '' }}">
-                            <!-- Botón para limpiar selección -->
                             <button type="button" id="student-clear-btn"
                                     class="btn btn-link text-muted p-0 px-2 border-0"
                                     style="display:none;" title="Limpiar">
                                 <i class="fas fa-times-circle"></i>
                             </button>
-                            <!-- Lista desplegable de resultados -->
-                            <ul id="student-dropdown"
-                                class="list-unstyled mb-0 shadow-lg border rounded-3 bg-white position-absolute w-100"
-                                style="top:100%; z-index:1050; max-height:240px; overflow-y:auto; display:none;">
-                                <li class="px-3 py-2 text-muted small fst-italic student-option"
-                                    data-id="" data-label="Todos los Estudiantes">
-                                    — Todos los Estudiantes —
-                                </li>
-                                {% for estudiante in estudiantes %}
-                                <li class="px-3 py-2 student-option"
-                                    data-id="{{ estudiante.id }}"
-                                    data-label="{{ estudiante.codigo_estudiante }} - {{ estudiante.nombres }} {{ estudiante.apellidos }}">
-                                    <span class="fw-semibold">{{ estudiante.codigo_estudiante }}</span>
-                                    <span class="text-muted ms-1">{{ estudiante.nombres }} {{ estudiante.apellidos }}</span>
-                                </li>
-                                {% endfor %}
-                            </ul>
                         </div>
                     </div>
 
+                    <!-- Buscador de Curso (Tom Select) -->
                     <div class="col-md-3">
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0"><i class="fas fa-university text-muted"></i></span>
-                            <select class="form-select border-0 bg-light" name="curso_id">
+                            <select id="select-curso" class="form-select border-0 bg-light" name="curso_id">
                                 <option value="">Todos los Cursos</option>
                                 {% for curso in cursos %}
                                 <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
@@ -77,6 +137,8 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Selector de Evaluación -->
                     <div class="col-md-4">
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0"><i class="fas fa-tasks text-muted"></i></span>
@@ -90,14 +152,13 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="col-md-2 d-grid">
                         <button class="btn btn-primary fw-bold" type="submit">Filtrar Notas</button>
                     </div>
                 </form>
             </div>
         </div>
-
-
 
         <!-- Tabla de Notas Consolidada -->
         <div class="card border-0 shadow-sm overflow-hidden">
@@ -144,7 +205,7 @@
                                         <a href="{{ url_for('evaluaciones.editar_nota', nota_id=nota.id) }}" class="btn btn-sm btn-white border-end" title="Editar Nota">
                                             <i class="fas fa-edit text-warning"></i>
                                         </a>
-                                        <form method="POST" action="{{ url_for('evaluaciones.eliminar_nota', nota_id=nota.id) }}" 
+                                        <form method="POST" action="{{ url_for('evaluaciones.eliminar_nota', nota_id=nota.id) }}"
                                               class="d-inline" onsubmit="return confirm('¿Eliminar esta calificación?');">
                                             <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                                                 <i class="fas fa-trash text-danger"></i>
@@ -175,7 +236,8 @@
                         {% for page_num in notas.iter_pages() %}
                             {% if page_num %}
                                 <li class="page-item {% if page_num == notas.page %}active{% endif %}">
-                                    <a class="page-link shadow-none border-0 rounded-3 mx-1" href="{{ url_for('evaluaciones.notas_index', page=page_num, estudiante_id=estudiante_id, curso_id=curso_id, evaluacion_id=evaluacion_id) }}">
+                                    <a class="page-link shadow-none border-0 rounded-3 mx-1"
+                                       href="{{ url_for('evaluaciones.notas_index', page=page_num, estudiante_id=estudiante_id, curso_id=curso_id, evaluacion_id=evaluacion_id) }}">
                                         {{ page_num }}
                                     </a>
                                 </li>
@@ -191,104 +253,112 @@
     </div>
 </div>
 
-<style>
-    .btn-white { background: #fff; border: 1px solid #e2e8f0; }
-    .btn-white:hover { background: #f8fafc; }
-    .page-item.active .page-link { background-color: var(--primary-color) !important; color: white; }
-    .page-link { color: var(--text-main); font-weight: 600; }
+{# ── Dropdown del buscador de estudiante fuera de cualquier contenedor con overflow ── #}
+<ul id="student-dropdown">
+    <li class="student-option text-muted small fst-italic" data-id="" data-label="Todos los Estudiantes">
+        — Todos los Estudiantes —
+    </li>
+    {% for estudiante in estudiantes %}
+    <li class="student-option"
+        data-id="{{ estudiante.id }}"
+        data-label="{{ estudiante.codigo_estudiante }} - {{ estudiante.nombres }} {{ estudiante.apellidos }}">
+        <span class="fw-semibold">{{ estudiante.codigo_estudiante }}</span>
+        <span class="text-muted ms-1">{{ estudiante.nombres }} {{ estudiante.apellidos }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
 
-    /* ---- Buscador de estudiante ---- */
-    #student-dropdown li.student-option {
-        cursor: pointer;
-        transition: background 0.12s;
-        font-size: 0.875rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    #student-dropdown li.student-option:last-child { border-bottom: none; }
-    #student-dropdown li.student-option:hover,
-    #student-dropdown li.student-option.active-option {
-        background: #eef2ff;
-    }
-    #student-dropdown li.student-option.hidden-option { display: none; }
-    #student-search-input:focus { outline: none; box-shadow: none; }
-</style>
-
+{% block scripts %}
+<!-- Tom Select JS (buscador de cursos) -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
-(function () {
-    const searchInput  = document.getElementById('student-search-input');
-    const hiddenInput  = document.getElementById('estudiante_id_hidden');
-    const dropdown     = document.getElementById('student-dropdown');
-    const clearBtn     = document.getElementById('student-clear-btn');
-    const allOptions   = Array.from(dropdown.querySelectorAll('li.student-option'));
+document.addEventListener('DOMContentLoaded', function () {
 
-    /* ── Abrir / cerrar ── */
-    function openDropdown() { dropdown.style.display = 'block'; }
-    function closeDropdown() { dropdown.style.display = 'none'; }
-
-    /* ── Filtrar mientras escribe ── */
-    searchInput.addEventListener('input', function () {
-        const q = this.value.trim().toLowerCase();
-        let visible = 0;
-
-        allOptions.forEach(li => {
-            const label = li.dataset.label.toLowerCase();
-            if (!q || label.includes(q)) {
-                li.classList.remove('hidden-option');
-                visible++;
-            } else {
-                li.classList.add('hidden-option');
+    /* ════════════════════════════════════════════
+       1. Tom Select — buscador de cursos
+    ════════════════════════════════════════════ */
+    var selectCurso = document.getElementById('select-curso');
+    if (selectCurso) {
+        new TomSelect(selectCurso, {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: 'Buscar curso...',
+            maxOptions: null,
+            dropdownParent: 'body',
+            sortField: { field: 'text', direction: 'asc' },
+            onChange: function () {
+                document.getElementById('filter-form').submit();
             }
         });
+    }
 
-        // Limpiar selección anterior si el usuario escribe de nuevo
+    /* ════════════════════════════════════════════
+       2. Buscador custom de estudiantes (fixed dropdown)
+    ════════════════════════════════════════════ */
+    const searchInput = document.getElementById('student-search-input');
+    const hiddenInput = document.getElementById('estudiante_id_hidden');
+    const dropdown    = document.getElementById('student-dropdown');
+    const clearBtn    = document.getElementById('student-clear-btn');
+    const wrapper     = document.getElementById('student-search-wrapper');
+    const allOptions  = Array.from(dropdown.querySelectorAll('li.student-option'));
+
+    function positionDropdown() {
+        const rect = wrapper.getBoundingClientRect();
+        dropdown.style.top   = (rect.bottom + window.scrollY) + 'px';
+        dropdown.style.left  = (rect.left  + window.scrollX) + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+    function openDropdown()  { positionDropdown(); dropdown.style.display = 'block'; }
+    function closeDropdown() { dropdown.style.display = 'none'; }
+
+    searchInput.addEventListener('input', function () {
+        const q = this.value.trim().toLowerCase();
+        allOptions.forEach(li => {
+            const label = (li.dataset.label || '').toLowerCase();
+            li.classList.toggle('hidden-option', q !== '' && !label.includes(q));
+        });
         hiddenInput.value = '';
         clearBtn.style.display = q ? 'inline-block' : 'none';
         openDropdown();
     });
 
-    /* ── Abrir dropdown al hacer clic en el input ── */
     searchInput.addEventListener('focus', function () {
         allOptions.forEach(li => li.classList.remove('hidden-option'));
         openDropdown();
     });
 
-    /* ── Seleccionar una opción ── */
     allOptions.forEach(li => {
         li.addEventListener('mousedown', function (e) {
-            e.preventDefault();  // Evita que el input pierda el foco antes del click
-            const id    = this.dataset.id;
-            const label = this.dataset.label;
-
-            hiddenInput.value     = id;
-            searchInput.value     = id ? label : '';
-            clearBtn.style.display = id ? 'inline-block' : 'none';
+            e.preventDefault();
+            hiddenInput.value      = this.dataset.id;
+            searchInput.value      = this.dataset.id ? this.dataset.label : '';
+            clearBtn.style.display = this.dataset.id ? 'inline-block' : 'none';
             closeDropdown();
-
-            // Auto-submit del formulario al seleccionar
             document.getElementById('filter-form').submit();
         });
     });
 
-    /* ── Botón limpiar (X) ── */
     clearBtn.addEventListener('click', function () {
-        hiddenInput.value      = '';
-        searchInput.value      = '';
-        this.style.display     = 'none';
+        hiddenInput.value  = '';
+        searchInput.value  = '';
+        this.style.display = 'none';
         allOptions.forEach(li => li.classList.remove('hidden-option'));
-        // Auto-submit para mostrar todos los estudiantes
         document.getElementById('filter-form').submit();
     });
 
-    /* ── Cerrar al hacer clic fuera ── */
     document.addEventListener('click', function (e) {
-        const wrapper = document.getElementById('student-search-wrapper');
-        if (!wrapper.contains(e.target)) closeDropdown();
+        if (!wrapper.contains(e.target) && !dropdown.contains(e.target)) closeDropdown();
     });
 
-    /* ── Mostrar el botón limpiar si ya hay un valor seleccionado al cargar ── */
-    if (hiddenInput.value) {
-        clearBtn.style.display = 'inline-block';
-    }
-})();
+    window.addEventListener('scroll', function () {
+        if (dropdown.style.display === 'block') positionDropdown();
+    }, true);
+    window.addEventListener('resize', function () {
+        if (dropdown.style.display === 'block') positionDropdown();
+    });
+
+    if (hiddenInput.value) clearBtn.style.display = 'inline-block';
+});
 </script>
-{% endblock %}
+{% endblock %}
