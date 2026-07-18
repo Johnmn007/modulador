@@ -12,6 +12,25 @@
 </nav>
 {% endblock %}
 
+{% block styles %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        padding: 0.375rem 0.75rem !important;
+        min-height: 38px !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.375rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+        z-index: 1050 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -107,4 +126,37 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buscador para Estudiantes
+        var estudianteSelect = document.getElementById('estudiante_id');
+        if (estudianteSelect) {
+            new TomSelect(estudianteSelect, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: "-- Buscar y seleccionar estudiante --"
+            });
+        }
+
+        // Buscador para Cursos (igual que en individual.html)
+        var cursoSelect = document.getElementById('curso_id');
+        if (cursoSelect) {
+            new TomSelect(cursoSelect, {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: "-- Buscar por nombre o código --",
+                allowEmptyOption: false,
+                maxOptions: null // Mostrar todos los cursos durante la búsqueda
+            });
+        }
+    });
+</script>
 {% endblock %}
