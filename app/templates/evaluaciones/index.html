@@ -22,7 +22,7 @@
         <!-- Barra de Filtros Inteligente -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
-                <form method="GET" action="{{ url_for('evaluaciones.index') }}" class="row g-3">
+                <form method="GET" action="{{ url_for('evaluaciones.index') }}" class="row g-3" id="search-form">
                     <div class="col-md-4">
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0"><i class="fas fa-university text-muted"></i></span>
@@ -51,9 +51,15 @@
                     </div>
                     <div class="col-md-3">
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" class="form-control border-0 bg-light" name="search" 
-                                   value="{{ search }}" placeholder="Nombre de evaluación...">
+                            <span class="input-group-text bg-light border-0">
+                                <span id="search-icon"><i class="fas fa-search text-muted"></i></span>
+                            </span>
+                            <input type="text" class="form-control border-0 bg-light" 
+                                   id="search-input"
+                                   name="search" 
+                                   value="{{ search }}" placeholder="Nombre de evaluación..."
+                                   autocomplete="off">
+                            <span class="input-group-text bg-light border-0 text-muted small" id="search-counter" style="display:none;"></span>
                         </div>
                     </div>
                     <div class="col-md-2 d-grid">
@@ -79,7 +85,7 @@
                                 <th class="text-end pe-4">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tabla-body">
                             {% for evaluacion in evaluaciones.items %}
                             <tr>
                                 <td class="ps-4">
@@ -133,7 +139,7 @@
             </div>
 
             {% if evaluaciones.pages > 1 %}
-            <div class="card-footer bg-white py-3 border-0">
+            <div class="card-footer bg-white py-3 border-0" id="paginacion-footer">
                 <nav aria-label="Paginación">
                     <ul class="pagination pagination-sm justify-content-center mb-0">
                         {% for page_num in evaluaciones.iter_pages() %}
@@ -160,5 +166,135 @@
     .text-cyan { color: #0891b2 !important; }
     .btn-white { background: #fff; border: 1px solid #e2e8f0; }
     .btn-white:hover { background: #f8fafc; }
+
+    /* Animación de aparición de filas */
+    #tabla-body tr { animation: fadeInRow 0.18s ease-in-out; }
+    @keyframes fadeInRow {
+        from { opacity: 0; transform: translateY(5px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Spinner de búsqueda */
+    .live-search-spinner {
+        width: 16px; height: 16px;
+        border: 2px solid #dee2e6;
+        border-top-color: var(--primary-color, #0d6efd);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #search-counter { font-size: 0.78rem; min-width: 90px; white-space: nowrap; }
 </style>
+
+<script>
+(function () {
+    const input      = document.getElementById('search-input');
+    const tablaBody  = document.getElementById('tabla-body');
+    const counter    = document.getElementById('search-counter');
+    const iconSlot   = document.getElementById('search-icon');
+    const pagination = document.getElementById('paginacion-footer');
+
+    const DEBOUNCE_MS = 300;
+    let debounceTimer = null;
+
+    const originalBody      = tablaBody      ? tablaBody.innerHTML      : '';
+    const originalPagHTML   = pagination     ? pagination.innerHTML     : '';
+
+    function showSpinner()    { iconSlot.innerHTML = '<span class="live-search-spinner"></span>'; }
+    function showSearchIcon() { iconSlot.innerHTML = '<i class="fas fa-search text-muted"></i>'; }
+
+    function formatTipo(tipo) {
+        if (!tipo) return '';
+        return tipo.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    function buildRows(list) {
+        if (!list.length) {
+            return `<tr><td colspan="6">
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-clipboard-check fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5>Sin resultados</h5>
+                    <p class="text-muted">No se encontraron evaluaciones con ese criterio.</p>
+                </div>
+            </td></tr>`;
+        }
+
+        return list.map(e => {
+            return `<tr>
+                <td class="ps-4">
+                    <div class="fw-bold text-primary-color">${e.nombre_evaluacion}</div>
+                </td>
+                <td>
+                    <div class="small fw-bold">${e.curso_nombre}</div>
+                    <div class="small text-muted">${e.curso_codigo} | ${e.curso_semestre}</div>
+                </td>
+                <td>
+                    <span class="badge rounded-pill bg-cyan bg-opacity-10 text-cyan border border-cyan border-opacity-10 px-3">
+                        ${formatTipo(e.tipo_evaluacion)}
+                    </span>
+                </td>
+                <td>
+                    <div class="h5 fw-bold mb-0 text-primary-color">${Number(e.peso).toFixed(1)}%</div>
+                </td>
+                <td>
+                    <div class="small text-muted">${e.fecha}</div>
+                </td>
+                <td class="text-end pe-4">
+                    <div class="btn-group shadow-sm">
+                        <a href="${e.url_detalle}" class="btn btn-sm btn-white border-end" title="Ver Resultados">
+                            <i class="fas fa-clipboard-list text-primary"></i>
+                        </a>
+                        <a href="${e.url_editar}" class="btn btn-sm btn-white border-end" title="Editar">
+                            <i class="fas fa-edit text-warning"></i>
+                        </a>
+                        <form method="POST" action="${e.url_eliminar}" class="d-inline" onsubmit="return confirm('¿Eliminar evaluación institucional?');">
+                            <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
+                                <i class="fas fa-trash text-danger"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function doSearch(q) {
+        if (!q) {
+            if (tablaBody)  tablaBody.innerHTML = originalBody;
+            if (pagination) { pagination.innerHTML = originalPagHTML; pagination.style.display = ''; }
+            counter.style.display = 'none';
+            showSearchIcon();
+            return;
+        }
+
+        showSpinner();
+        if (pagination) pagination.style.display = 'none';
+
+        fetch(`{{ url_for('evaluaciones.buscar') }}?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (tablaBody) tablaBody.innerHTML = buildRows(data.evaluaciones);
+
+                const n = data.total;
+                counter.textContent = n === 0 ? 'Sin resultados' : `${n} encontrado${n !== 1 ? 's' : ''}`;
+                counter.style.display = '';
+                showSearchIcon();
+            })
+            .catch(() => showSearchIcon());
+    }
+
+    if (input) {
+        input.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const q = this.value.trim();
+            debounceTimer = setTimeout(() => doSearch(q), DEBOUNCE_MS);
+        });
+    }
+})();
+</script>
 {% endblock %}

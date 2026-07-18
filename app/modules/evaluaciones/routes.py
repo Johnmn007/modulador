@@ -199,6 +199,45 @@ def eliminar_evaluacion(evaluacion_id):
     
     return redirect(url_for('evaluaciones.index'))
 
+@evaluaciones_bp.route('/buscar')
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def buscar():
+    """Endpoint AJAX para búsqueda en tiempo real de evaluaciones"""
+    q = request.args.get('q', '').strip()
+    
+    if not q:
+        return jsonify({'evaluaciones': [], 'total': 0})
+        
+    evaluaciones_query = Evaluacion.query.join(Curso)
+    
+    resultados = evaluaciones_query.filter(
+        db.or_(
+            Evaluacion.nombre_evaluacion.ilike(f'%{q}%'),
+            Curso.nombre_curso.ilike(f'%{q}%'),
+            Curso.codigo_curso.ilike(f'%{q}%')
+        )
+    ).order_by(Curso.semestre.desc(), Curso.nombre_curso, Evaluacion.nombre_evaluacion).limit(20).all()
+    
+    data = []
+    for e in resultados:
+        data.append({
+            'id': e.id,
+            'nombre_evaluacion': e.nombre_evaluacion,
+            'curso_nombre': e.curso.nombre_curso,
+            'curso_codigo': e.curso.codigo_curso,
+            'curso_semestre': e.curso.semestre,
+            'tipo_evaluacion': e.tipo_evaluacion,
+            'peso': e.peso,
+            'fecha': e.fecha_creacion.strftime('%d/%m/%Y'),
+            'notas_count': len(e.notas),
+            'url_detalle': url_for('evaluaciones.detalle_evaluacion', evaluacion_id=e.id),
+            'url_editar': url_for('evaluaciones.editar_evaluacion', evaluacion_id=e.id),
+            'url_eliminar': url_for('evaluaciones.eliminar_evaluacion', evaluacion_id=e.id)
+        })
+        
+    return jsonify({'evaluaciones': data, 'total': len(data)})
+
 # ===== RUTAS PARA NOTAS =====
 
 @evaluaciones_bp.route('/notas')

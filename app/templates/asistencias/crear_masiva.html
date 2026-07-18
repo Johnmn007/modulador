@@ -1,7 +1,24 @@
 {% extends "base.html" %}
-
 {% block title %}Registro Masivo de Asistencias - Sistema de Seguimiento{% endblock %}
 
+{% block styles %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        padding: 0.375rem 0.75rem !important;
+        min-height: 38px !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.375rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+        z-index: 1050 !important;
+    }
+</style>
+{% endblock %}
 {% block breadcrumb %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -84,4 +101,22 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var cursoSelect = document.getElementById('curso_id');
+    if (cursoSelect) {
+        new TomSelect(cursoSelect, {
+            create: false,
+            placeholder: '-- Buscar y seleccionar curso --',
+            sortField: { field: "text", direction: "asc" },
+            maxOptions: null,
+            dropdownParent: 'body'
+        });
+    }
+});
+</script>
 {% endblock %}

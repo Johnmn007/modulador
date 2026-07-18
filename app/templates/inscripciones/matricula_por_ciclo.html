@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Matrícula por Ciclo - Sistema de Seguimiento{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('inscripciones.index') }}">Inscripciones</a></li>
+        <li class="breadcrumb-item active">Matrícula por Ciclo</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block styles %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        padding: 0.375rem 0.75rem !important;
+        min-height: 38px !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.375rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+        z-index: 1050 !important;
+    }
+    
+    .preview-table-container {
+        display: none;
+        margin-top: 1rem;
+    }
+    
+    .loading-spinner {
+        display: none;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-layer-group text-dark"></i>
+                Matrícula por Ciclo
+            </h2>
+            <a href="{{ url_for('inscripciones.index') }}" class="btn btn-outline-primary text-light bg-cards">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header text-white bg-cards">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Información de Matrícula por Ciclo
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('inscripciones.matricula_por_ciclo') }}" id="matriculaCicloForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.estudiante_id.label(class="form-label fw-bold") }}
+                                {{ form.estudiante_id(class="form-select") }}
+                                {% if form.estudiante_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.estudiante_id.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Seleccione el estudiante a matricular</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.semestre.label(class="form-label fw-bold") }}
+                                {{ form.semestre(class="form-select", id="semestreSelect") }}
+                                {% if form.semestre.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.semestre.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Seleccione el ciclo (semestre académico) para cargar los cursos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.fecha_inscripcion.label(class="form-label fw-bold") }}
+                                {{ form.fecha_inscripcion(class="form-control", type="date") }}
+                                {% if form.fecha_inscripcion.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.fecha_inscripcion.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.estado.label(class="form-label fw-bold") }}
+                                {{ form.estado(class="form-select") }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.estado.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row preview-table-container" id="cursosContainer">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-list"></i> Cursos a matricular 
+                                <span class="spinner-border spinner-border-sm text-primary loading-spinner" role="status" id="loadingCursos">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </span>
+                            </h5>
+                            
+                            <div class="alert alert-info" id="noCursosAlert" style="display: none;">
+                                <i class="fas fa-info-circle"></i> No hay cursos vinculados a este ciclo en el periodo actual.
+                            </div>
+                            
+                            <div class="table-responsive" id="cursosTableContainer" style="display: none;">
+                                <table class="table table-bordered table-striped table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Nombre del Curso</th>
+                                            <th>Créditos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cursosTableBody">
+                                        <!-- Cursos se cargarán aquí por AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('inscripciones.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="btnSubmit" disabled>
+                            <i class="fas fa-save"></i> Generar Matrícula por Ciclo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buscador para Estudiantes
+        var estudianteSelect = document.getElementById('estudiante_id');
+        if (estudianteSelect) {
+            new TomSelect(estudianteSelect, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: "-- Buscar y seleccionar estudiante --"
+            });
+        }
+        
+        // Logica para cargar cursos dinamicamente
+        const semestreSelect = document.getElementById('semestreSelect');
+        const cursosContainer = document.getElementById('cursosContainer');
+        const loadingCursos = document.getElementById('loadingCursos');
+        const noCursosAlert = document.getElementById('noCursosAlert');
+        const cursosTableContainer = document.getElementById('cursosTableContainer');
+        const cursosTableBody = document.getElementById('cursosTableBody');
+        const btnSubmit = document.getElementById('btnSubmit');
+        
+        // Si hay un error de validación previo, cargar los cursos inmediatamente
+        if (semestreSelect.value) {
+            cargarCursos(semestreSelect.value);
+        }
+        
+        semestreSelect.addEventListener('change', function() {
+            const semestre = this.value;
+            if (semestre) {
+                cargarCursos(semestre);
+            } else {
+                cursosContainer.style.display = 'none';
+                btnSubmit.disabled = true;
+            }
+        });
+        
+        function cargarCursos(semestre) {
+            cursosContainer.style.display = 'block';
+            loadingCursos.style.display = 'inline-block';
+            noCursosAlert.style.display = 'none';
+            cursosTableContainer.style.display = 'none';
+            btnSubmit.disabled = true;
+            cursosTableBody.innerHTML = '';
+            
+            fetch(`/inscripciones/api/cursos-semestre/${semestre}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingCursos.style.display = 'none';
+                    
+                    if (data.length === 0) {
+                        noCursosAlert.style.display = 'block';
+                        btnSubmit.disabled = true;
+                    } else {
+                        data.forEach(curso => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${curso.codigo_curso}</td>
+                                <td>${curso.nombre_curso}</td>
+                                <td>${curso.creditos || 3}</td>
+                            `;
+                            cursosTableBody.appendChild(tr);
+                        });
+                        cursosTableContainer.style.display = 'block';
+                        btnSubmit.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar cursos:', error);
+                    loadingCursos.style.display = 'none';
+                    noCursosAlert.textContent = 'Error al cargar los cursos. Por favor intente de nuevo.';
+                    noCursosAlert.className = 'alert alert-danger';
+                    noCursosAlert.style.display = 'block';
+                });
+        }
+    });
+</script>
+{% endblock %}

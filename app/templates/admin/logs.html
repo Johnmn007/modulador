@@ -75,8 +75,8 @@
                             <input type="text" class="form-control border-0 bg-light" id="filter_search" placeholder="Buscar en mensaje de log...">
                         </div>
                     </div>
-                    <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary fw-bold" id="btn-apply-filters">Filtrar Logs</button>
+                    <div class="col-md-2 d-grid" style="display: none !important;">
+                        <!-- Filter is now real-time -->
                     </div>
                 </div>
             </div>
@@ -145,7 +145,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('btn-apply-filters').addEventListener('click', function() {
+    function filterLogs() {
         const level = document.getElementById('filter_level').value;
         const date = document.getElementById('filter_date').value;
         const search = document.getElementById('filter_search').value.toLowerCase();
@@ -160,7 +160,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             row.style.display = show ? '' : 'none';
         });
-    });
+    }
+
+    document.getElementById('filter_search').addEventListener('input', filterLogs);
+    document.getElementById('filter_level').addEventListener('change', filterLogs);
+    document.getElementById('filter_date').addEventListener('change', filterLogs);
 
     document.getElementById('btn-refresh-logs').addEventListener('click', function() {
         location.reload();

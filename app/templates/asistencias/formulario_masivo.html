@@ -37,64 +37,79 @@
             </div>
 
             <!-- Lista de Estudiantes -->
-            <div class="row g-3">
-                {% for inscripcion in inscripciones %}
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100 attendance-card" id="card_{{ inscripcion.id }}">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-circle me-3 bg-primary bg-opacity-10 text-primary fw-bold">
-                                    {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
-                                </div>
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <h6 class="fw-bold mb-0 text-truncate">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</h6>
-                                    <small class="text-muted">{{ inscripcion.estudiante.codigo_estudiante }}</small>
-                                </div>
-                                <!-- Indicador de Riesgo de Asistencia -->
-                                {% set perc = inscripcion.asistencia_porcentaje %}
-                                <div class="text-end" title="Asistencia acumulada: {{ "%.1f"|format(perc) }}%">
-                                    <div class="small fw-bold {{ 'text-danger' if perc < 80 else 'text-success' }}">
-                                        {{ perc|int }}%
-                                    </div>
-                                    <div class="progress" style="width: 40px; height: 4px;">
-                                        <div class="progress-bar {{ 'bg-danger' if perc < 80 else 'bg-success' }}" style="width: {{ perc }}%"></div>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="card border-0 shadow-sm overflow-hidden mb-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 table-sm">
+                            <thead class="bg-light text-muted small text-uppercase fw-bold">
+                                <tr>
+                                    <th class="ps-4 py-2">Estudiante</th>
+                                    <th class="text-center py-2" style="width: 150px;">Asistencia</th>
+                                    <th class="text-center py-2" style="width: 240px;">Estado</th>
+                                    <th class="pe-4 py-2" style="width: 250px;">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inscripcion in inscripciones %}
+                                <tr id="row_{{ inscripcion.id }}" class="attendance-row">
+                                    <td class="ps-4 py-1">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-2 bg-primary bg-opacity-10 text-primary fw-bold">
+                                                {{ inscripcion.estudiante.nombres[0] }}{{ inscripcion.estudiante.apellidos[0] }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-primary-color small">{{ inscripcion.estudiante.nombres }} {{ inscripcion.estudiante.apellidos }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center py-1">
+                                        {% set perc = inscripcion.asistencia_porcentaje %}
+                                        <div title="Asistencia acumulada: {{ "%.1f"|format(perc) }}%">
+                                            <div class="small fw-bold {{ 'text-danger' if perc < 80 else 'text-success' }}">
+                                                {{ perc|int }}%
+                                            </div>
+                                            <div class="progress mx-auto mt-1" style="width: 50px; height: 4px;">
+                                                <div class="progress-bar {{ 'bg-danger' if perc < 80 else 'bg-success' }}" style="width: {{ perc }}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center py-1">
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <input type="checkbox" class="btn-check presente-check" 
+                                                   id="presente_{{ inscripcion.id }}" 
+                                                   name="presente_{{ inscripcion.id }}" 
+                                                   checked autocomplete="off"
+                                                   onchange="updateRowStyle({{ inscripcion.id }})">
+                                            <label class="btn btn-outline-success btn-sm py-1 px-2 fw-bold" style="font-size: 0.75rem;" for="presente_{{ inscripcion.id }}">
+                                                <i class="fas fa-check"></i> PRE.
+                                            </label>
 
-                            <!-- Controles de Asistencia -->
-                            <div class="d-flex gap-2 mb-3">
-                                <input type="checkbox" class="btn-check presente-check" 
-                                       id="presente_{{ inscripcion.id }}" 
-                                       name="presente_{{ inscripcion.id }}" 
-                                       checked autocomplete="off"
-                                       onchange="updateCardStyle({{ inscripcion.id }})">
-                                <label class="btn btn-outline-success flex-grow-1 py-2 fw-bold" for="presente_{{ inscripcion.id }}">
-                                    <i class="fas fa-check me-1"></i> PRESENTE
-                                </label>
-
-                                <input type="checkbox" class="btn-check justificado-check" 
-                                       id="justificado_{{ inscripcion.id }}" 
-                                       name="justificado_{{ inscripcion.id }}" 
-                                       autocomplete="off"
-                                       onchange="updateCardStyle({{ inscripcion.id }})">
-                                <label class="btn btn-outline-warning flex-grow-1 py-2 fw-bold" for="justificado_{{ inscripcion.id }}">
-                                    <i class="fas fa-notes-medical me-1"></i> JUST.
-                                </label>
-                            </div>
-
-                            <input type="text" class="form-control form-control-sm border-0 bg-light" 
-                                   name="observaciones_{{ inscripcion.id }}" 
-                                   placeholder="Añadir observación...">
-                        </div>
+                                            <input type="checkbox" class="btn-check justificado-check" 
+                                                   id="justificado_{{ inscripcion.id }}" 
+                                                   name="justificado_{{ inscripcion.id }}" 
+                                                   autocomplete="off"
+                                                   onchange="updateRowStyle({{ inscripcion.id }})">
+                                            <label class="btn btn-outline-warning btn-sm py-1 px-2 fw-bold" style="font-size: 0.75rem;" for="justificado_{{ inscripcion.id }}">
+                                                <i class="fas fa-notes-medical"></i> JUS.
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td class="pe-4 py-1">
+                                        <input type="text" class="form-control form-control-sm border-1 bg-light" 
+                                               name="observaciones_{{ inscripcion.id }}" 
+                                               placeholder="Observación...">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                {% endfor %}
             </div>
 
             <!-- Botón Flotante/Final para Guardar -->
-            <div class="sticky-bottom-control py-4 mt-4 bg-white border-top shadow-lg d-flex justify-content-center">
-                <button type="submit" class="btn btn-primary btn-lg px-5 shadow hover-lift">
+            <div class="sticky-bottom-control py-3 mt-3 bg-white border-top shadow-lg d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary px-5 shadow hover-lift">
                     <i class="fas fa-save me-2"></i> Guardar {{ inscripciones|length }} Asistencias
                 </button>
             </div>
@@ -104,24 +119,31 @@
 
 <style>
     .avatar-circle {
-        width: 45px;
-        height: 45px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
-    .attendance-card {
+    .attendance-row {
         transition: all 0.3s ease;
-        border-left: 4px solid #10b981 !important; /* Verde por defecto (presente) */
     }
-    .attendance-card.absent {
-        border-left: 4px solid #ef4444 !important;
-        opacity: 0.8;
+    .attendance-row td:first-child {
+        border-left: 4px solid #10b981; /* Verde por defecto */
     }
-    .attendance-card.justified {
-        border-left: 4px solid #f59e0b !important;
+    .attendance-row.absent td:first-child {
+        border-left: 4px solid #ef4444;
+    }
+    .attendance-row.absent {
+        background-color: rgba(239, 68, 68, 0.05);
+    }
+    .attendance-row.justified td:first-child {
+        border-left: 4px solid #f59e0b;
+    }
+    .attendance-row.justified {
+        background-color: rgba(245, 158, 11, 0.05);
     }
     .sticky-bottom-control {
         position: sticky;
@@ -139,28 +161,28 @@ function markAll(present) {
     const checks = document.querySelectorAll('.presente-check');
     checks.forEach(check => {
         check.checked = present;
-        updateCardStyle(check.id.split('_')[1]);
+        updateRowStyle(check.id.split('_')[1]);
     });
 }
 
-function updateCardStyle(id) {
-    const card = document.getElementById('card_' + id);
+function updateRowStyle(id) {
+    const row = document.getElementById('row_' + id);
     const isPresent = document.getElementById('presente_' + id).checked;
     const isJustified = document.getElementById('justificado_' + id).checked;
     
-    card.classList.remove('absent', 'justified');
+    row.classList.remove('absent', 'justified');
     
     if (isJustified) {
-        card.classList.add('justified');
+        row.classList.add('justified');
     } else if (!isPresent) {
-        card.classList.add('absent');
+        row.classList.add('absent');
     }
 }
 
 // Inicializar estilos
 document.addEventListener('DOMContentLoaded', () => {
     {% for inscripcion in inscripciones %}
-    updateCardStyle({{ inscripcion.id }});
+    updateRowStyle({{ inscripcion.id }});
     {% endfor %}
 });
 </script>

@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Registro Masivo - SADES{% endblock %}
 
+{% block styles %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        padding: 0.5rem 1rem !important;
+        min-height: 48px !important; /* to match form-select-lg */
+        font-size: 1.1rem;
+    }
+    .ts-dropdown {
+        border-radius: 0.375rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+        z-index: 1050 !important;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
@@ -17,7 +36,7 @@
                 <form method="GET" action="{{ url_for('evaluaciones.registro_masivo') }}">
                     <div class="mb-4">
                         <label class="form-label fw-bold small">1. Seleccionar Curso</label>
-                        <select class="form-select form-select-lg shadow-sm" name="curso_id" onchange="this.form.submit()">
+                        <select class="form-select form-select-lg shadow-sm" name="curso_id" id="curso_id">
                             <option value="">-- Selecciona un curso --</option>
                             {% for curso in cursos %}
                             <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
@@ -32,7 +51,7 @@
                 <form method="POST" action="{{ url_for('evaluaciones.formulario_masivo') }}">
                     <div class="mb-4">
                         <label class="form-label fw-bold small">2. Seleccionar Evaluación</label>
-                        <select class="form-select form-select-lg shadow-sm" name="evaluacion_id" required>
+                        <select class="form-select form-select-lg shadow-sm" name="evaluacion_id" id="evaluacion_id" required>
                             <option value="">-- Selecciona la evaluación --</option>
                             {% for ev in evaluaciones %}
                             <option value="{{ ev.id }}">{{ ev.nombre_evaluacion }} ({{ ev.tipo_evaluacion }})</option>
@@ -42,6 +61,7 @@
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+
                             Continuar al Registro <i class="fas fa-arrow-right ms-2"></i>
                         </button>
                     </div>
@@ -51,4 +71,38 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var cursoSelect = document.getElementById('curso_id');
+    if (cursoSelect) {
+        new TomSelect(cursoSelect, {
+            create: false,
+            placeholder: '-- Selecciona un curso --',
+            sortField: { field: "text", direction: "asc" },
+            maxOptions: null,
+            dropdownParent: 'body',
+            onChange: function(val) {
+                if(val) {
+                    this.input.form.submit();
+                }
+            }
+        });
+    }
+
+    var evalSelect = document.getElementById('evaluacion_id');
+    if (evalSelect) {
+        new TomSelect(evalSelect, {
+            create: false,
+            placeholder: '-- Selecciona la evaluación --',
+            sortField: { field: "text", direction: "asc" },
+            maxOptions: null,
+            dropdownParent: 'body'
+        });
+    }
+});
+</script>
 {% endblock %}

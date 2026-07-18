@@ -1,7 +1,7 @@
 # app/modules/inscripciones/forms.py
 from flask_wtf import FlaskForm
-from wtforms import SelectField, DateField, StringField, SubmitField
-from wtforms.validators import DataRequired, Optional, Length
+from wtforms import SelectField, DateField, SubmitField
+from wtforms.validators import DataRequired
 from app.models import Estudiante, Curso
 
 class InscripcionForm(FlaskForm):
@@ -36,7 +36,7 @@ class InscripcionForm(FlaskForm):
         self.curso_id.choices = [(0, '')] + [
             (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre} | {curso.ciclo.codigo_ciclo})")
             for curso in Curso.query.join(Ciclo).filter(
-                Curso.activo == True,
+                Curso.activo.is_(True),
                 Ciclo.codigo_ciclo == periodo_actual
             ).order_by('semestre', 'nombre_curso').all()
         ]
@@ -63,13 +63,12 @@ class MatriculaMasivaForm(FlaskForm):
         super(MatriculaMasivaForm, self).__init__(*args, **kwargs)
         # Importar la aplicación para acceder a la BD
         from flask import current_app
-        from app.models import Curso
         
         with current_app.app_context():
             try:
                 from app.extensions import db
                 semestres = db.session.query(Curso.semestre)\
-                    .filter(Curso.activo == True)\
+                    .filter(Curso.activo.is_(True))\
                     .distinct()\
                     .order_by(Curso.semestre)\
                     .all()
@@ -85,3 +84,49 @@ class MatriculaMasivaForm(FlaskForm):
                     ('I', 'Semestre I'), ('II', 'Semestre II'), ('III', 'Semestre III'),
                     ('IV', 'Semestre IV'), ('V', 'Semestre V'), ('VI', 'Semestre VI')
                 ]
+
+# ------------------------------------------------------------------
+# MATRICULA POR CICLO
+# app/modules/inscripciones/forms.py - AÑADIR
+class MatriculaPorCicloForm(FlaskForm):
+    estudiante_id = SelectField('Estudiante', coerce=int, validators=[DataRequired()])
+    semestre = SelectField('Ciclo / Semestre', coerce=str, validators=[DataRequired()])
+    fecha_inscripcion = DateField('Fecha de Matrícula', validators=[DataRequired()])
+    estado = SelectField('Estado Inicial',
+        choices=[
+            ('ACTIVO', 'Activo'),
+            ('OBSERVADO', 'Observado')
+        ], default='ACTIVO')
+    submit = SubmitField('Generar Matrícula por Ciclo')
+    
+    def __init__(self, *args, **kwargs):
+        super(MatriculaPorCicloForm, self).__init__(*args, **kwargs)
+        from flask import current_app
+        from app.extensions import db
+        
+        # Cargar estudiantes activos
+        self.estudiante_id.choices = [(0, '')] + [
+            (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
+            for est in Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
+        ]
+        
+        with current_app.app_context():
+            try:
+                semestres = db.session.query(Curso.semestre)\
+                    .filter(Curso.activo.is_(True))\
+                    .distinct()\
+                    .order_by(Curso.semestre)\
+                    .all()
+                
+                self.semestre.choices = [('', '-- Seleccione un ciclo --')] + [(sem[0], f'Semestre {sem[0]}') for sem in semestres]
+                
+                if len(self.semestre.choices) == 1:
+                    self.semestre.choices = [('', 'No hay cursos activos')]
+                    
+            except Exception:
+                # Fallback
+                self.semestre.choices = [
+                    ('', '-- Seleccione un ciclo --'),
+                    ('I', 'Semestre I'), ('II', 'Semestre II'), ('III', 'Semestre III'),
+                    ('IV', 'Semestre IV'), ('V', 'Semestre V'), ('VI', 'Semestre VI')
+                ]
