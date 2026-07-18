@@ -22,7 +22,7 @@ class InscripcionForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(InscripcionForm, self).__init__(*args, **kwargs)
         # Cargar estudiantes activos
-        self.estudiante_id.choices = [
+        self.estudiante_id.choices = [(0, '')] + [
             (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
             for est in Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
         ]
@@ -33,7 +33,7 @@ class InscripcionForm(FlaskForm):
         periodo_actual = config.get('semestre_actual')
         
         # Cargar cursos activos del periodo actual
-        self.curso_id.choices = [
+        self.curso_id.choices = [(0, '')] + [
             (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre} | {curso.ciclo.codigo_ciclo})")
             for curso in Curso.query.join(Ciclo).filter(
                 Curso.activo == True,
