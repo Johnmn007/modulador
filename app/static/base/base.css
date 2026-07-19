@@ -193,4 +193,63 @@ main.container {
     color: var(--text-muted);
 }
 
+/* ======== ESTILOS GLOBALES DE UI ======== */
 
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    border-color: var(--accent-color) !important;
+}
+
+/* Animación de aparición de filas en tablas */
+tbody tr {
+    animation: fadeInRow 0.18s ease-in-out;
+}
+@keyframes fadeInRow {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Spinner global (usado en live search) */
+.live-search-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid #dee2e6;
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Botones de Acción de Tablas (btn-white) */
+.btn-white { 
+    background: #fff; 
+    border: 1px solid #e2e8f0; 
+    color: var(--text-main);
+}
+.btn-white:hover { 
+    background: #f8fafc; 
+}
+
+/* Estado Vacío (Empty State) */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+.empty-state-icon {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.empty-state-icon i {
+    font-size: 3rem;
+    color: #94a3b8;
+    opacity: 0.7;
+}

@@ -26,7 +26,7 @@
                     <i class="fas fa-edit me-1"></i> Editar Perfil
                 </a>
                 <form method="POST" action="{{ url_for('estudiantes.eliminar', estudiante_id=estudiante.id) }}"
-                      class="d-inline" onsubmit="return confirm('¿Eliminar registro definitivo?');">
+                      class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar registro definitivo?');">
                     <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
                         <i class="fas fa-trash"></i>
                     </button>

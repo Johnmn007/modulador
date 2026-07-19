@@ -25,7 +25,7 @@
                     <i class="fas fa-edit"></i> Editar Asistencia
                 </a>
                 <form method="POST" action="{{ url_for('asistencias.eliminar', asistencia_id=asistencia.id) }}" 
-                      class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este registro de asistencia?');">
+                      class="d-inline" onsubmit="return confirmDelete(event, this, '¿Está seguro de eliminar este registro de asistencia?');">
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Eliminar Asistencia
                     </button>

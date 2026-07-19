@@ -139,8 +139,8 @@
                             </div>
                             
                             <div class="table-responsive" id="cursosTableContainer" style="display: none;">
-                                <table class="table table-bordered table-striped table-hover">
-                                    <thead class="table-light">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-muted small text-uppercase fw-bold">
                                         <tr>
                                             <th>Código</th>
                                             <th>Nombre del Curso</th>
@@ -155,13 +155,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('inscripciones.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-primary" id="btnSubmit" disabled>
-                            <i class="fas fa-save"></i> Generar Matrícula por Ciclo
-                        </button>
+                    <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
+                        <a href="{{ url_for('inscripciones.index') }}" class="btn btn-light fw-bold px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-primary fw-bold px-5 shadow-sm">Guardar Cambios</button>
                     </div>
                 </form>
             </div>

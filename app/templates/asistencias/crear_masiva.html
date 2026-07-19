@@ -90,11 +90,9 @@
                         la asistencia de todos los estudiantes del curso seleccionado en la fecha especificada.
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('asistencias.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        {{ form.submit(class="btn btn-success") }}
+                    <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
+                        <a href="{{ url_for('asistencias.index') }}" class="btn btn-light fw-bold px-4">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary fw-bold px-5 shadow-sm") }}
                     </div>
                 </form>
             </div>
@@ -109,12 +107,29 @@
 document.addEventListener('DOMContentLoaded', function() {
     var cursoSelect = document.getElementById('curso_id');
     if (cursoSelect) {
+        cursoSelect.innerHTML = '<option value=""></option>';
         new TomSelect(cursoSelect, {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
             create: false,
-            placeholder: '-- Buscar y seleccionar curso --',
-            sortField: { field: "text", direction: "asc" },
-            maxOptions: null,
-            dropdownParent: 'body'
+            placeholder: '-- Escribe para buscar un curso en tiempo real --',
+            maxOptions: 50,
+            dropdownParent: 'body',
+            load: function(query, callback) {
+                if (!query.length) return callback();
+                fetch(`/cursos/buscar?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(json => {
+                        var options = json.cursos.map(c => ({
+                            id: c.id,
+                            text: `${c.codigo_curso} - ${c.nombre_curso} (Nivel ${c.semestre})`
+                        }));
+                        callback(options);
+                    }).catch(()=>{
+                        callback();
+                    });
+            }
         });
     }
 });

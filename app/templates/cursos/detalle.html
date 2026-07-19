@@ -25,7 +25,7 @@
                     <i class="fas fa-edit me-1"></i> Editar Curso
                 </a>
                 <form method="POST" action="{{ url_for('cursos.eliminar', curso_id=curso.id) }}" 
-                      class="d-inline" onsubmit="return confirm('¿Eliminar curso del catálogo académico?');">
+                      class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar curso del catálogo académico?');">
                     <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
                         <i class="fas fa-trash"></i>
                     </button>
