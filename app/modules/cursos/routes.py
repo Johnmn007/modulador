@@ -233,5 +233,50 @@ def eliminar(curso_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error al eliminar curso: {str(e)}', 'danger')
-    
     return redirect(url_for('cursos.index'))
+
+@cursos_bp.route('/buscar')
+@login_required
+def buscar():
+    """Endpoint AJAX para búsqueda en tiempo real de cursos"""
+    q = request.args.get('q', '').strip()
+    
+    if not q:
+        return jsonify({'cursos': [], 'total': 0})
+    
+    # Query base
+    cursos_query = Curso.query
+    
+    # Filtro por rol
+    if current_user.rol == 'docente':
+        cursos_query = cursos_query.filter_by(docente_id=current_user.id)
+        
+    resultados = cursos_query.filter(
+        db.or_(
+            Curso.nombre_curso.ilike(f'%{q}%'),
+            Curso.codigo_curso.ilike(f'%{q}%'),
+            Curso.semestre.ilike(f'%{q}%')
+        )
+    ).order_by(Curso.semestre.desc(), Curso.nombre_curso).limit(20).all()
+    
+    data = []
+    for c in resultados:
+        docente_nombre = 'N/A'
+        if c.docente:
+            docente_nombre = f"{c.docente.username}"
+            
+        data.append({
+            'id': c.id,
+            'nombre_curso': c.nombre_curso,
+            'codigo_curso': c.codigo_curso,
+            'semestre': c.semestre,
+            'creditos': c.creditos,
+            'activo': c.activo,
+            'docente': docente_nombre,
+            'inscritos': len(c.inscripciones),
+            'url_detalle': url_for('cursos.detalle', curso_id=c.id),
+            'url_editar': url_for('cursos.editar', curso_id=c.id),
+            'url_eliminar': url_for('cursos.eliminar', curso_id=c.id)
+        })
+    
+    return jsonify({'cursos': data, 'total': len(data)})

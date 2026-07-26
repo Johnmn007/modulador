@@ -200,3 +200,39 @@ def eliminar(estudiante_id):
         flash(f'Error al eliminar estudiante: {str(e)}', 'danger')
     
     return redirect(url_for('estudiantes.index'))
+
+@estudiantes_bp.route('/buscar')
+@login_required
+def buscar():
+    """Endpoint AJAX para búsqueda en tiempo real de estudiantes"""
+    q = request.args.get('q', '').strip()
+    
+    if not q:
+        return jsonify({'estudiantes': [], 'total': 0})
+    
+    resultados = Estudiante.query.filter(
+        Estudiante.activo == True,
+        db.or_(
+            Estudiante.nombres.ilike(f'%{q}%'),
+            Estudiante.apellidos.ilike(f'%{q}%'),
+            Estudiante.codigo_estudiante.ilike(f'%{q}%'),
+            Estudiante.email.ilike(f'%{q}%'),
+        )
+    ).order_by(Estudiante.apellidos).limit(20).all()
+    
+    data = []
+    for e in resultados:
+        data.append({
+            'id': e.id,
+            'nombres': e.nombres,
+            'apellidos': e.apellidos,
+            'email': e.email,
+            'codigo_estudiante': e.codigo_estudiante,
+            'telefono': e.telefono or 'N/A',
+            'fecha_inscripcion': e.fecha_inscripcion.strftime('%d/%m/%Y') if e.fecha_inscripcion else 'N/A',
+            'url_detalle': url_for('estudiantes.detalle', estudiante_id=e.id),
+            'url_editar': url_for('estudiantes.editar', estudiante_id=e.id),
+            'url_eliminar': url_for('estudiantes.eliminar', estudiante_id=e.id),
+        })
+    
+    return jsonify({'estudiantes': data, 'total': len(data)})

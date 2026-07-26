@@ -111,15 +111,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        <div>
-                            <button type="submit" class="btn btn-warning">
-                                <i class="fas fa-save"></i> Actualizar Evaluación
-                            </button>
-                        </div>
+                    <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
+                        <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="btn btn-light fw-bold px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-primary fw-bold px-5 shadow-sm">Guardar Cambios</button>
                     </div>
                 </form>
             </div>

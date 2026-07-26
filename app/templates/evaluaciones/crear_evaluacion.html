@@ -113,11 +113,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('evaluaciones.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        {{ form.submit(class="btn btn-primary") }}
+                    <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
+                        <a href="{{ url_for('evaluaciones.index') }}" class="btn btn-light fw-bold px-4">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary fw-bold px-5 shadow-sm") }}
                     </div>
                 </form>
             </div>

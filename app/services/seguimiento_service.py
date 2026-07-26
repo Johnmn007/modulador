@@ -1,3 +1,4 @@
+from datetime import datetime
 from app.models import Estudiante, SeguimientoRiesgo
 from app.extensions import db
 from app.services.riesgo_calculator_v2 import CalculatorRiesgoIntrasemestral
@@ -28,7 +29,7 @@ class SeguimientoService:
             seguimiento.categoria_riesgo = resultado['categoria']
             seguimiento.puntaje_riesgo = nuevo_puntaje
             seguimiento.factores_riesgo = resultado['factores']
-            seguimiento.fecha_evaluacion = db.func.now()
+            seguimiento.fecha_evaluacion = datetime.now().date()
         else:
             seguimiento = SeguimientoRiesgo(
                 estudiante_id=estudiante_id,

@@ -1,7 +1,24 @@
 {% extends "base.html" %}
-
 {% block title %}Registro Masivo de Asistencias - Sistema de Seguimiento{% endblock %}
 
+{% block styles %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        padding: 0.375rem 0.75rem !important;
+        min-height: 38px !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.375rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+        z-index: 1050 !important;
+    }
+</style>
+{% endblock %}
 {% block breadcrumb %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -73,15 +90,48 @@
                         la asistencia de todos los estudiantes del curso seleccionado en la fecha especificada.
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('asistencias.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        {{ form.submit(class="btn btn-success") }}
+                    <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
+                        <a href="{{ url_for('asistencias.index') }}" class="btn btn-light fw-bold px-4">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary fw-bold px-5 shadow-sm") }}
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var cursoSelect = document.getElementById('curso_id');
+    if (cursoSelect) {
+        cursoSelect.innerHTML = '<option value=""></option>';
+        new TomSelect(cursoSelect, {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            create: false,
+            placeholder: '-- Escribe para buscar un curso en tiempo real --',
+            maxOptions: 50,
+            dropdownParent: 'body',
+            load: function(query, callback) {
+                if (!query.length) return callback();
+                fetch(`/cursos/buscar?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(json => {
+                        var options = json.cursos.map(c => ({
+                            id: c.id,
+                            text: `${c.codigo_curso} - ${c.nombre_curso} (Nivel ${c.semestre})`
+                        }));
+                        callback(options);
+                    }).catch(()=>{
+                        callback();
+                    });
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

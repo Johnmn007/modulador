@@ -21,12 +21,13 @@
         }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+            font-family: Arial, sans-serif; 
             color: var(--text-main); 
-            font-size: 9px; 
+            font-size: 11pt; 
             margin: 0;
             padding: 0;
             background-color: white;
+            line-height: 1.1;
         }
 
         .report-header { 
@@ -41,17 +42,17 @@
         .header-title h1 { 
             margin: 0; 
             color: var(--primary); 
-            font-size: 18px; 
-            font-weight: 800;
+            font-size: 16pt; 
+            font-weight: bold;
             letter-spacing: -0.5px;
         }
         
         .header-title p { 
             margin: 2px 0; 
             color: var(--accent); 
-            font-weight: 700;
+            font-weight: bold;
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 11pt;
         }
         
         .info-panel { 
@@ -71,36 +72,54 @@
 
         .info-label {
             color: var(--text-muted);
-            font-weight: 700;
+            font-weight: bold;
             text-transform: uppercase;
-            font-size: 8px;
+            font-size: 9pt;
             display: block;
         }
 
         .info-value {
             color: var(--primary);
-            font-weight: 600;
-            font-size: 10px;
+            font-weight: bold;
+            font-size: 11pt;
         }
         
         table { 
             width: 100%; 
             border-collapse: collapse; 
             margin-bottom: 20px; 
+            table-layout: fixed;
         }
         
         th, td { 
             border: 1px solid #e2e8f0; 
-            padding: 5px; 
+            padding: 1px 2px; 
             text-align: center; 
         }
         
+        td {
+            overflow: hidden;
+            font-size: 9pt;
+        }
+
         th { 
             background-color: var(--primary); 
             color: white; 
             font-weight: bold; 
-            font-size: 8px;
+            font-size: 10pt;
             text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            white-space: nowrap;
+            height: 50px;
+            text-align: left;
+            padding-bottom: 5px;
+            vertical-align: middle;
+            font-size: 9pt;
         }
         
         .text-left { text-align: left; padding-left: 10px; }
@@ -109,10 +128,17 @@
         .symbol-f { color: var(--danger); font-weight: 800; } 
         .symbol-j { color: var(--warning); font-weight: 800; } 
         
-        .student-name { font-weight: 700; color: var(--primary); }
-        .student-code { font-size: 7px; color: var(--text-muted); }
+        .student-name { 
+            font-weight: bold; 
+            color: var(--primary); 
+            font-size: 9pt; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        .student-code { display: none; }
         
-        .perc-cell { font-weight: 800; font-size: 10px; }
+        .perc-cell { font-weight: bold; font-size: 11pt; }
         .low-att { color: var(--danger); background-color: #fee2e2; }
         .good-att { color: var(--success); background-color: #d1fae5; }
         
@@ -146,17 +172,27 @@
         .sig-text { font-weight: 700; color: var(--primary); font-size: 9px; }
         .sig-sub { color: var(--text-muted); font-size: 8px; }
 
+        .page-container {
+            page-break-after: always;
+            padding-bottom: 20px;
+        }
+        .page-container:last-child {
+            page-break-after: auto;
+        }
+
     </style>
 </head>
 <body>
-    <div class="report-header">
-        <div class="header-title">
-            <h1>SADES | Sistema de Seguimiento</h1>
-            <p>Matriz Consolidada de Asistencia Académica</p>
-        </div>
+    {% for mes in meses %}
+    <div class="page-container">
+        <div class="report-header">
+            <div class="header-title">
+                <h1>SADES | Sistema de Seguimiento</h1>
+                <p>Matriz Consolidada - {{ mes.nombre }}</p>
+            </div>
         <div style="text-align: right;">
-            <div style="font-weight: 800; font-size: 12px; color: var(--primary);">{{ curso.semestre }}</div>
-            <div style="color: var(--text-muted); font-size: 8px;">{{ fecha_generacion }}</div>
+            <div style="font-weight: bold; font-size: 12pt; color: var(--primary);">{{ curso.semestre }}</div>
+            <div style="color: var(--text-muted); font-size: 9pt;">{{ fecha_generacion }}</div>
         </div>
     </div>
 
@@ -170,27 +206,26 @@
             <span class="info-value">{{ current_user.nombres }} {{ current_user.apellidos }}</span>
         </div>
         <div class="info-col" style="text-align: right;">
-            <span class="info-label">Métricas del Curso</span>
-            <span class="info-value">{{ fechas|length }} Sesiones Registradas</span>
+            <span class="info-label">Métricas del Mes</span>
+            <span class="info-value">{{ mes.fechas|length }} Sesiones Registradas</span>
         </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th class="text-left" style="width: 220px;">Estudiante</th>
-                {% for fecha in fechas %}
-                <th style="width: 25px;">{{ fecha.strftime('%d/%m') }}</th>
+                <th class="text-left" style="width: 25%;">Estudiante</th>
+                {% for fecha in mes.fechas %}
+                <th class="vertical-text">{{ fecha.strftime('%d/%m') }}</th>
                 {% endfor %}
-                <th style="width: 55px;">% Total</th>
+                <th style="width: 8%;">% Global</th>
             </tr>
         </thead>
         <tbody>
-            {% for fila in matriz %}
+            {% for fila in mes.matriz %}
             <tr>
                 <td class="text-left">
-                    <div class="student-name">{{ fila.estudiante.apellidos }}, {{ fila.estudiante.nombres }}</div>
-                    <div class="student-code">{{ fila.estudiante.codigo_estudiante }}</div>
+                    <div class="student-name">{{ fila.estudiante.apellidos }} {{ fila.estudiante.nombres }}</div>
                 </td>
                 {% for sim in fila.asistencias %}
                 <td>
@@ -239,5 +274,6 @@
             </div>
         </div>
     </div>
+    {% endfor %}
 </body>
 </html>

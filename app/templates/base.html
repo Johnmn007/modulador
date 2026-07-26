@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='base/base.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard/dash.css') }}" />
     
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -179,6 +183,58 @@
             });
         }, 5000);
     });
+
+    // Global form submission handler to prevent double submit and show loading state
+    document.addEventListener('submit', function(e) {
+        // Skip for forms with class 'no-loader' or search forms
+        if (e.target.classList.contains('no-loader') || e.target.id === 'search-form' || e.target.method.toLowerCase() === 'get') return;
+
+        var submitBtn = e.target.querySelector('button[type="submit"], input[type="submit"]');
+        if (submitBtn) {
+            // Check if it's already submitting
+            if (submitBtn.dataset.submitting) {
+                e.preventDefault();
+                return;
+            }
+            submitBtn.dataset.submitting = 'true';
+            
+            // Save original text and adjust visually
+            var originalContent = submitBtn.value || submitBtn.innerHTML;
+            submitBtn.dataset.originalContent = originalContent;
+            if(submitBtn.tagName.toLowerCase() === 'input') {
+                submitBtn.value = 'Procesando...';
+            } else {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+            }
+            submitBtn.classList.add('disabled');
+            submitBtn.style.opacity = '0.8';
+            submitBtn.style.pointerEvents = 'none';
+        }
+    });
+
+    // Global SweetAlert2 delete confirmation
+    function confirmDelete(event, formElement, itemName = 'este registro') {
+        event.preventDefault();
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Vas a eliminar ${itemName}. Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                confirmButton: 'btn btn-danger mx-2',
+                cancelButton: 'btn btn-secondary mx-2'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        });
+    }
     </script>
     
     {% block scripts %}{% endblock %}

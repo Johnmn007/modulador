@@ -84,6 +84,15 @@
                                             </ul>
                                         </div>
 
+                                        <!-- Editar Usuario -->
+                                        <button class="btn btn-sm btn-white border-end abrir-editar-usuario"
+                                                data-usuario-id="{{ usuario.id }}"
+                                                data-usuario-username="{{ usuario.username }}"
+                                                data-usuario-email="{{ usuario.email }}"
+                                                title="Editar Usuario">
+                                            <i class="fas fa-edit text-info"></i>
+                                        </button>
+
                                         <!-- Alternar Estado -->
                                         <button class="btn btn-sm btn-white border-end toggle-usuario" data-usuario-id="{{ usuario.id }}" {% if usuario.id == current_user.id %}disabled{% endif %} title="Alternar Estado">
                                             {% if usuario.activo %}
@@ -111,6 +120,54 @@
                 </div>
                 {% endif %}
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-navy text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-user-edit me-2 text-cyan"></i>
+                    Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarUsuario" method="POST" action="">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
+                        <input type="text" class="form-control bg-light border-0" name="username" id="edit_username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Correo Electrónico</label>
+                        <input type="email" class="form-control bg-light border-0" name="email" id="edit_email" required>
+                    </div>
+                    <hr class="my-3">
+                    <p class="small text-muted mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Deja la contraseña en blanco para conservar la actual.
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Nueva Contraseña</label>
+                            <input type="password" class="form-control bg-light border-0" id="edit_password" name="password" placeholder="••••••" autocomplete="new-password">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Confirmar Contraseña</label>
+                            <input type="password" class="form-control bg-light border-0" id="edit_confirm_password" name="confirm_password" placeholder="••••••" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info fw-bold px-4 text-white">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -211,12 +268,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Validación Passwords
+    // Validación Passwords - Crear usuario
     document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
         const p1 = document.getElementById('password').value;
         const p2 = document.getElementById('confirm_password').value;
         if (p1 !== p2) { e.preventDefault(); alert('Las contraseñas no coinciden'); }
         else if (p1.length < 6) { e.preventDefault(); alert('Mínimo 6 caracteres'); }
+    });
+
+    // Abrir modal de edición con datos del usuario seleccionado
+    document.querySelectorAll('.abrir-editar-usuario').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id       = this.dataset.usuarioId;
+            const username = this.dataset.usuarioUsername;
+            const email    = this.dataset.usuarioEmail;
+
+            // Rellenar campos del modal
+            document.getElementById('edit_username').value = username;
+            document.getElementById('edit_email').value    = email;
+            document.getElementById('edit_password').value = '';
+            document.getElementById('edit_confirm_password').value = '';
+
+            // Apuntar el action del formulario al usuario correcto
+            document.getElementById('formEditarUsuario').action = `/admin/usuarios/${id}/editar`;
+
+            // Abrir el modal
+            new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+        });
+    });
+
+    // Validación Passwords - Editar usuario
+    document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+        const p1 = document.getElementById('edit_password').value;
+        const p2 = document.getElementById('edit_confirm_password').value;
+        if (p1 && p1 !== p2) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+        } else if (p1 && p1.length < 6) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 6 caracteres');
+        }
     });
 });
 </script>

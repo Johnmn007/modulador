@@ -5,10 +5,8 @@ from app.decorators import roles_required
 from . import inscripciones_bp
 from app.models import Inscripcion, Estudiante, Curso, Asistencia, Nota, Evaluacion
 from app.extensions import db
-from .forms import InscripcionForm
+from .forms import InscripcionForm, MatriculaMasivaForm, MatriculaPorCicloForm
 from datetime import datetime, timezone
-from .forms import InscripcionForm, MatriculaMasivaForm 
-
 
 # PARA MATRICULAR DE UNA SOLA VEZ EN UN CICLO
 @inscripciones_bp.route('/matricula-masiva', methods=['GET', 'POST'])
@@ -53,7 +51,7 @@ def matricula_masiva():
                 estudiantes_subquery = db.session.query(Inscripcion.estudiante_id)\
                     .join(Curso).filter(Curso.ciclo_id == ciclo.id).subquery()
                 estudiantes = Estudiante.query.filter(
-                    Estudiante.activo == True,
+                    Estudiante.activo.is_(True),
                     ~Estudiante.id.in_(estudiantes_subquery)
                 ).all()
             
@@ -326,3 +324,144 @@ def eliminar(inscripcion_id):
     
     return redirect(url_for('inscripciones.index'))
 
+@inscripciones_bp.route('/api/cursos-semestre/<semestre>')
+@login_required
+def cursos_por_semestre(semestre):
+    from app.services.config_service import cargar_configuracion
+    from app.models import Ciclo
+    
+    config = cargar_configuracion()
+    periodo_actual = config.get('semestre_actual')
+    
+    ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+    if not ciclo:
+        return jsonify([])
+        
+    cursos = Curso.query.filter_by(semestre=semestre, ciclo_id=ciclo.id, activo=True).all()
+    
+    resultado = [{
+        'id': c.id,
+        'codigo_curso': c.codigo_curso,
+        'nombre_curso': c.nombre_curso,
+        'creditos': c.creditos
+    } for c in cursos]
+    
+    return jsonify(resultado)
+
+@inscripciones_bp.route('/matricula-por-ciclo', methods=['GET', 'POST'])
+@login_required
+@roles_required('administrador', 'coordinador')
+def matricula_por_ciclo():
+    """Matrícula de un estudiante a todos los cursos de un ciclo (semestre)"""
+    form = MatriculaPorCicloForm()
+    
+    if form.validate_on_submit():
+        try:
+            from app.services.config_service import cargar_configuracion
+            from app.models import Ciclo
+            
+            config = cargar_configuracion()
+            periodo_actual = config.get('semestre_actual')
+            
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            if not ciclo:
+                flash(f'Error: El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                return render_template('inscripciones/matricula_por_ciclo.html', form=form)
+            
+            estudiante_id = form.estudiante_id.data
+            nivel_malla = form.semestre.data
+            fecha_inscripcion = form.fecha_inscripcion.data
+            estado = form.estado.data
+            
+            estudiante = Estudiante.query.get(estudiante_id)
+            if not estudiante:
+                flash('El estudiante seleccionado no existe.', 'danger')
+                return render_template('inscripciones/matricula_por_ciclo.html', form=form)
+            
+            cursos_semestre = Curso.query.filter_by(semestre=nivel_malla, ciclo_id=ciclo.id, activo=True).all()
+            if not cursos_semestre:
+                flash(f'No hay cursos registrados para el nivel {nivel_malla} en el ciclo {periodo_actual}', 'warning')
+                return render_template('inscripciones/matricula_por_ciclo.html', form=form)
+            
+            matriculas_creadas = 0
+            matriculas_actualizadas = 0
+            
+            for curso in cursos_semestre:
+                inscripcion_existente = Inscripcion.query.filter_by(
+                    estudiante_id=estudiante_id,
+                    curso_id=curso.id
+                ).first()
+                
+                if inscripcion_existente:
+                    inscripcion_existente.estado = estado
+                    inscripcion_existente.fecha_inscripcion = fecha_inscripcion
+                    matriculas_actualizadas += 1
+                else:
+                    nueva_inscripcion = Inscripcion(
+                        estudiante_id=estudiante_id,
+                        curso_id=curso.id,
+                        fecha_inscripcion=fecha_inscripcion,
+                        estado=estado
+                    )
+                    db.session.add(nueva_inscripcion)
+                    matriculas_creadas += 1
+                    
+            db.session.commit()
+            
+            flash(
+                f'✅ Matrícula por ciclo completada para {estudiante.nombres} {estudiante.apellidos}: '
+                f'{matriculas_creadas} nuevas inscripciones, '
+                f'{matriculas_actualizadas} actualizadas.',
+                'success'
+            )
+            return redirect(url_for('inscripciones.index'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error en matrícula por ciclo: {str(e)}', 'danger')
+            
+    if request.method == 'GET':
+        form.fecha_inscripcion.data = datetime.now(timezone.utc).date()
+        
+    return render_template('inscripciones/matricula_por_ciclo.html', form=form)
+
+@inscripciones_bp.route('/buscar')
+@login_required
+def buscar():
+    """Endpoint AJAX para búsqueda en tiempo real de inscripciones"""
+    q = request.args.get('q', '').strip()
+    
+    if not q:
+        return jsonify({'inscripciones': [], 'total': 0})
+        
+    # Query base con joins para estudiante y curso
+    inscripciones_query = Inscripcion.query.join(Estudiante).join(Curso)
+    
+    # Búsqueda
+    resultados = inscripciones_query.filter(
+        db.or_(
+            Estudiante.nombres.ilike(f'%{q}%'),
+            Estudiante.apellidos.ilike(f'%{q}%'),
+            Estudiante.codigo_estudiante.ilike(f'%{q}%'),
+            Curso.nombre_curso.ilike(f'%{q}%'),
+            Curso.codigo_curso.ilike(f'%{q}%')
+        )
+    ).order_by(Inscripcion.fecha_inscripcion.desc()).limit(20).all()
+    
+    data = []
+    for i in resultados:
+        data.append({
+            'id': i.id,
+            'estudiante_iniciales': f"{i.estudiante.nombres[0]}{i.estudiante.apellidos[0]}",
+            'estudiante_nombre': f"{i.estudiante.nombres} {i.estudiante.apellidos}",
+            'estudiante_codigo': i.estudiante.codigo_estudiante,
+            'curso_nombre': i.curso.nombre_curso,
+            'curso_semestre': i.curso.semestre,
+            'fecha': i.fecha_inscripcion.strftime('%d/%m/%Y'),
+            'estado': i.estado,
+            'url_detalle': url_for('inscripciones.detalle', inscripcion_id=i.id),
+            'url_editar': url_for('inscripciones.editar', inscripcion_id=i.id),
+            'url_eliminar': url_for('inscripciones.eliminar', inscripcion_id=i.id)
+        })
+        
+    return jsonify({'inscripciones': data, 'total': len(data)})

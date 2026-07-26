@@ -135,7 +135,7 @@ class ReportGenerator:
         }
 
     def generar_reporte_asistencia_curso(self, curso_id):
-        """Genera una matriz de asistencia para todo un curso"""
+        """Genera una matriz de asistencia para todo un curso (Agrupado por mes)"""
         curso = Curso.query.get_or_404(curso_id)
         
         # Estudiantes inscritos
@@ -145,49 +145,94 @@ class ReportGenerator:
         fechas = db.session.query(Asistencia.fecha).join(Inscripcion).filter(
             Inscripcion.curso_id == curso_id
         ).distinct().order_by(Asistencia.fecha).all()
-        fechas = [f[0] for f in fechas]
+        todas_fechas = [f[0] for f in fechas]
         
-        # Matriz de datos
-        matriz = []
+        nombres_meses = {
+            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+            7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        }
+        
+        # Obtener meses únicos en orden
+        unique_months = []
+        for f in todas_fechas:
+            mes_key = (f.year, f.month)
+            if mes_key not in unique_months:
+                unique_months.append(mes_key)
+                
+        # Agrupar meses en bloques de 2
+        chunks = []
+        for i in range(0, len(unique_months), 2):
+            chunks.append(unique_months[i:i+2])
+            
+        # Pre-calcular el porcentaje global para cada estudiante
+        global_stats = {}
         for ins in inscripciones:
-            asistencias_est = Asistencia.query.filter_by(inscripcion_id=ins.id).all()
-            dict_asistencias = {a.fecha: a for a in asistencias_est}
+            asist_est = Asistencia.query.filter(
+                Asistencia.inscripcion_id == ins.id,
+                Asistencia.fecha.in_(todas_fechas)
+            ).all()
             
-            fila = {
-                'estudiante': ins.estudiante,
-                'asistencias': []
+            total_pres = sum(1 for a in asist_est if a.presente or a.justificado)
+            porcentaje = (total_pres / len(todas_fechas) * 100) if todas_fechas else 0
+            
+            # También guardamos el diccionario de asistencias para no volver a consultarlo por mes
+            dict_asist = {a.fecha: a for a in asist_est}
+            global_stats[ins.id] = {
+                'porcentaje': porcentaje,
+                'dict_asistencias': dict_asist
             }
+
+        meses_data = []
+        for chunk in chunks:
+            fechas_chunk = [f for f in todas_fechas if (f.year, f.month) in chunk]
             
-            total_presente = 0
-            for fecha in fechas:
-                estado = dict_asistencias.get(fecha)
-                if estado:
-                    if estado.presente: 
-                        simbolo = 'P'
-                        total_presente += 1
-                    elif estado.justificado: 
-                        simbolo = 'J'
-                        total_presente += 1
-                    else: 
-                        simbolo = 'F'
-                else:
-                    simbolo = '-'
-                fila['asistencias'].append(simbolo)
+            nombres = [f"{nombres_meses[m]} {y}" for y, m in chunk]
+            if len(nombres) > 1 and nombres[0].split()[-1] == nombres[1].split()[-1]:
+                nombre_chunk = f"{nombres_meses[chunk[0][1]]} - {nombres_meses[chunk[1][1]]} {chunk[0][0]}"
+            else:
+                nombre_chunk = " - ".join(nombres)
+                
+            matriz_chunk = []
             
-            fila['porcentaje'] = (total_presente / len(fechas) * 100) if fechas else 0
-            matriz.append(fila)
+            for ins in inscripciones:
+                dict_asistencias = global_stats[ins.id]['dict_asistencias']
+                
+                fila = {
+                    'estudiante': ins.estudiante,
+                    'asistencias': []
+                }
+                
+                for fecha in fechas_chunk:
+                    estado = dict_asistencias.get(fecha)
+                    if estado:
+                        if estado.presente: 
+                            simbolo = 'P'
+                        elif estado.justificado: 
+                            simbolo = 'J'
+                        else: 
+                            simbolo = 'F'
+                    else:
+                        simbolo = '-'
+                    fila['asistencias'].append(simbolo)
+                
+                fila['porcentaje'] = global_stats[ins.id]['porcentaje']
+                matriz_chunk.append(fila)
+                
+            meses_data.append({
+                'nombre': nombre_chunk,
+                'fechas': fechas_chunk,
+                'matriz': matriz_chunk
+            })
             
         html_content = render_template(
             'reportes/asistencia_grupal_pdf.html',
             curso=curso,
-            fechas=fechas,
-            matriz=matriz,
+            meses=meses_data,
             fecha_generacion=datetime.now().strftime('%d/%m/%Y %H:%M')
         )
         
         return {
             'html': html_content,
             'curso': curso,
-            'fechas': fechas,
-            'matriz': matriz
+            'meses': meses_data
         }
