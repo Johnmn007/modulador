@@ -4,6 +4,9 @@ Administrador	admin	admin123	admin@sades.edu	Acceso completo a todo el sistema
 Coordinador	coordinador	coord123	coordinador@sades.edu	Gestión de estudiantes y cursos
 Docente	docente	docente123	docente@sades.edu	Registro de notas y asistencias
 
+
+renato@sades.edu ----------  renato123
+ysaac@sades.edu ----------  ysaac123
 ---------------------------------------------------------------
 markdown
 # 📦 Guía de Actualización - Módulador
