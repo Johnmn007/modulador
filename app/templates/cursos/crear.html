@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Alta de Curso Académico - SADES{% endblock %}
 
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #f8f9fa !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 0.6rem 1rem !important;
+        font-weight: 700 !important;
+        min-height: 48px !important;
+    }
+    .ts-dropdown { border-radius: 8px !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important; z-index: 1050 !important; }
+    .ts-dropdown .option { padding: 0.5rem 1rem !important; }
+    .ts-dropdown .active { background-color: #06b6d4 !important; color: #fff !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-10 mx-auto">
@@ -98,4 +115,14 @@
     .form-control-lg { font-size: 1rem; border-radius: 12px; }
     .btn-primary { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: none; }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var docenteSel = document.getElementById('docente_id');
+        if (docenteSel) new TomSelect(docenteSel, { create: false, sortField: { field: 'text', direction: 'asc' }, placeholder: '-- Buscar docente --', maxOptions: null });
+    });
+</script>
 {% endblock %}

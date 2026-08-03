@@ -113,7 +113,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold m-0 text-primary-color text-uppercase small">Esquema de Evaluación</h6>
-                <a href="{{ url_for('evaluaciones.crear_evaluacion') }}" class="btn btn-sm btn-light fw-bold text-primary">+ Nueva</a>
+                <a href="{{ url_for('evaluaciones.crear_evaluacion', curso_id=curso.id) }}" class="btn btn-sm btn-light fw-bold text-primary">+ Nueva</a>
             </div>
             <div class="card-body p-0">
                 {% if evaluaciones %}

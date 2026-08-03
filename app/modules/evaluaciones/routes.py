@@ -101,8 +101,14 @@ def crear_evaluacion():
     if request.method == 'GET':
         form.fecha_creacion.data = datetime.now(timezone.utc).date()
         form.peso.data = 100.0  # Valor por defecto
+        # Preseleccionar el curso si viene como parámetro (desde detalle del curso)
+        curso_id = request.args.get('curso_id', type=int)
+        if curso_id:
+            form.curso_id.data = curso_id
     
-    return render_template('evaluaciones/crear_evaluacion.html', form=form)
+    # Mantener curso_id disponible para el template (para el botón "Volver al curso")
+    curso_id = request.args.get('curso_id', type=int)
+    return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id)
 
 @evaluaciones_bp.route('/<int:evaluacion_id>')
 @login_required
