@@ -1,5 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Seguimiento de Riesgo - SADES{% endblock %}
+
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-select .ts-control {
+        background-color: #fff !important;
+        border: 2px solid #dee2e6 !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 1rem !important;
+        min-height: 48px !important;
+    }
+    .ts-dropdown { border-radius: 0.5rem !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important; z-index: 1050 !important; }
+    .ts-dropdown .option { padding: 0.5rem 1rem !important; }
+    .ts-dropdown .active { background-color: #06b6d4 !important; color: #fff !important; }
+</style>
+{% endblock %}
+
 {% block content %} 
     <link rel="stylesheet" href="{{ url_for('static', filename='seguimiento/seguimiento.css') }}" />
 
@@ -133,4 +150,14 @@
         .hover-lift { transition: transform 0.2s; }
         .hover-lift:hover { transform: translateY(-3px); }
     </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var semestreSel = document.getElementById('semestre');
+        if (semestreSel) new TomSelect(semestreSel, { create: false, placeholder: '-- Seleccionar semestre --' });
+    });
+</script>
 {% endblock %}
