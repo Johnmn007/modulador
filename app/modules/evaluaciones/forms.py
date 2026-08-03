@@ -64,8 +64,8 @@ class NotaForm(FlaskForm):
         
         # Cargar evaluaciones activas del periodo actual
         self.evaluacion_id.choices = [
-            (eval.id, f"{eval.nombre_evaluacion} - {eval.curso.nombre_curso}")
-            for eval in Evaluacion.query.join(Curso).join(Ciclo).filter(
+            (evaluacion.id, f"{evaluacion.nombre_evaluacion} - {evaluacion.curso.nombre_curso}")
+            for evaluacion in Evaluacion.query.join(Curso).join(Ciclo).filter(
                 Curso.activo == True,
                 Ciclo.codigo_ciclo == periodo_actual
             ).order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()

@@ -40,7 +40,7 @@
                                     <div class="small text-muted">{{ reporte.fecha_generacion.strftime('%H:%M') }} hrs</div>
                                 </td>
                                 <td>
-                                    <span class="badge rounded-pill bg-navy bg-opacity-10 text-navy border border-navy border-opacity-10 px-3">
+                                    <span class="badge rounded-pill bg-light text-navy border px-3">
                                         {{ reporte.tipo_reporte.replace('_', ' ').title() }}
                                     </span>
                                 </td>
@@ -103,8 +103,4 @@
     </div>
 </div>
 
-<style>
-    .bg-navy { background-color: #0f172a !important; }
-    .text-cyan { color: #06b6d4 !important; }
-</style>
 {% endblock %}

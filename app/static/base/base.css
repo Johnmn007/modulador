@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    /* Paleta Premium */
-    --primary-color: #0f172a;    /* Navy profundo */
-    --accent-color: #06b6d4;     /* Cyan moderno */
+    /* Paleta Principal (Navy/Cyan) */
+    --primary-color: #0f172a;
+    --accent-color: #06b6d4;
     --accent-hover: #0891b2;
     --success-color: #10b981;
     --warning-color: #f59e0b;
@@ -17,7 +17,7 @@
     
     /* Texto */
     --text-main: #1e293b;
-    --text-muted: #64748b;
+    --text-muted: #6b7280;
     --text-light: #f8fafc;
     
     /* Sombras y Bordes */
@@ -25,6 +25,27 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --radius: 12px;
+    --radius-sm: 8px;
+    
+    /* Paleta de Riesgo */
+    --riesgo-sin-riesgo: #10b981;
+    --riesgo-alerta-amarilla: #f59e0b;
+    --riesgo-alerta-roja: #ef4444;
+    
+    /* Colores de Cards (migrados de dash.css) */
+    --card-navy: #0f172a;
+    --card-accent: #06b6d4;
+    --card-success: #10b981;
+    --card-warning: #f59e0b;
+    --card-danger: #ef4444;
+    
+    /* Variables legacy (compatibilidad) */
+    --bg-primary: #0f172a;
+    --celeste: #06b6d4;
+    --verde: #10b981;
+    --amarillo: #f59e0b;
+    --rojo: #ef4444;
+    --blanco: #ffffff;
 }
 
 body {
@@ -252,4 +273,43 @@ tbody tr {
     font-size: 3rem;
     color: #94a3b8;
     opacity: 0.7;
+}
+
+/* ======== RESPONSIVE DESIGN ======== */
+
+/* Headers flex-wrap en móvil */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    /* Tablas: ocultar columnas secundarias en móvil */
+    .d-none-mobile {
+        display: none !important;
+    }
+    
+    /* Cards: reducir padding */
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    /* Formularios: stack en móvil */
+    .row.g-3,
+    .row.g-4 {
+        --bs-gutter-y: 1rem;
+    }
+}
+
+/* Responsive para headers con gap */
+@media (max-width: 576px) {
+    .d-flex.gap-2 {
+        flex-wrap: wrap;
+    }
+    
+    /* Badges: full width en móvil */
+    .badge.rounded-pill {
+        white-space: normal;
+    }
 }

@@ -10,6 +10,7 @@ from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from . import admin_bp
+from .forms import ConfiguracionForm, CrearUsuarioForm, EditarUsuarioForm, CicloForm
 from app.models import Usuario
 from app.extensions import db
 import json
@@ -45,23 +46,22 @@ def configuracion():
         return redirect(url_for('dashboard.index'))
     
     config = cargar_configuracion()
+    form = ConfiguracionForm(data=config)
     
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         try:
-            # CONFIGURACIÓN ACTUALIZADA - 4 factores (Rendimiento, Asistencia, Distribución, Historial)
             nueva_config = {
-                'umbral_amarillo': float(request.form.get('umbral_amarillo', 0.4)),
-                'umbral_rojo': float(request.form.get('umbral_rojo', 0.7)),
-                'peso_rendimiento': float(request.form.get('peso_rendimiento', 0.35)),
-                'peso_asistencia': float(request.form.get('peso_asistencia', 0.25)),
-                'peso_distribucion': float(request.form.get('peso_distribucion', 0.20)),
-                'peso_historial': float(request.form.get('peso_historial', 0.20)),
+                'umbral_amarillo': form.umbral_amarillo.data,
+                'umbral_rojo': form.umbral_rojo.data,
+                'peso_rendimiento': form.peso_rendimiento.data,
+                'peso_asistencia': form.peso_asistencia.data,
+                'peso_distribucion': form.peso_distribucion.data,
+                'peso_historial': form.peso_historial.data,
                 'semestre_actual': request.form.get('semestre_actual', obtener_semestre_actual()),
-                'nota_minima_aprobatoria': float(request.form.get('nota_minima_aprobatoria', 11.0)),
-                'porcentaje_asistencia_minimo': float(request.form.get('porcentaje_asistencia_minimo', 80.0))
+                'nota_minima_aprobatoria': form.nota_minima_aprobatoria.data,
+                'porcentaje_asistencia_minimo': form.porcentaje_asistencia_minimo.data
             }
             
-            # VALIDACIÓN ACTUALIZADA - 4 factores
             total_pesos = (nueva_config['peso_rendimiento'] + 
                           nueva_config['peso_asistencia'] + 
                           nueva_config['peso_distribucion'] +
@@ -73,16 +73,14 @@ def configuracion():
                 guardar_configuracion(nueva_config)
                 flash('Configuración institucional actualizada exitosamente', 'success')
                 
-        except ValueError as e:
-            flash('Error en los valores ingresados. Verifique que sean números válidos.', 'danger')
         except Exception as e:
             app_logger.error(f"Error en admin: {str(e)}")
             db.session.rollback()
-            flash(f'Error: {str(e)}', 'danger')
+            flash('Ocurrió un error al guardar la configuración. Intente de nuevo.', 'danger')
         
         return redirect(url_for('admin.configuracion'))
     
-    return render_template('admin/configuracion.html', config=config)
+    return render_template('admin/configuracion.html', config=config, form=form)
 
 @admin_bp.route('/cambiar-semestre', methods=['POST'])
 @login_required
@@ -115,7 +113,7 @@ def cambiar_semestre():
         flash(f'Semestre cambiado exitosamente a {nuevo_semestre}', 'success')
         
     except Exception as e:
-        flash(f'Error al cambiar semestre: {str(e)}', 'danger')
+        flash('Ocurrió un error al cambiar el semestre. Intente de nuevo.', 'danger')
     
     return redirect(url_for('admin.configuracion'))
 
@@ -138,48 +136,38 @@ def crear_usuario():
         flash('No tiene permisos para esta acción', 'danger')
         return redirect(url_for('admin.usuarios'))
     
-    try:
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        rol = request.form.get('rol', 'docente')
-        
-        # Validaciones
-        if not all([username, email, password, confirm_password]):
-            flash('Todos los campos son obligatorios', 'danger')
-            return redirect(url_for('admin.usuarios'))
+    form = CrearUsuarioForm()
+    if form.validate_on_submit():
+        try:
+            if Usuario.query.filter_by(username=form.username.data).first():
+                flash('El nombre de usuario ya existe', 'danger')
+                return redirect(url_for('admin.usuarios'))
+                
+            if Usuario.query.filter_by(email=form.email.data).first():
+                flash('El email ya está registrado', 'danger')
+                return redirect(url_for('admin.usuarios'))
             
-        if password != confirm_password:
-            flash('Las contraseñas no coinciden', 'danger')
-            return redirect(url_for('admin.usuarios'))
+            nuevo_usuario = Usuario(
+                username=form.username.data,
+                email=form.email.data,
+                password_hash=generate_password_hash(form.password.data),
+                rol=form.rol.data,
+                activo=True
+            )
             
-        if Usuario.query.filter_by(username=username).first():
-            flash('El nombre de usuario ya existe', 'danger')
-            return redirect(url_for('admin.usuarios'))
+            db.session.add(nuevo_usuario)
+            db.session.commit()
             
-        if Usuario.query.filter_by(email=email).first():
-            flash('El email ya está registrado', 'danger')
-            return redirect(url_for('admin.usuarios'))
-        
-        # Crear usuario
-        nuevo_usuario = Usuario(
-            username=username,
-            email=email,
-            password_hash=generate_password_hash(password),
-            rol=rol,
-            activo=True
-        )
-        
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        
-        flash('Usuario creado exitosamente', 'success')
-        
-    except Exception as e:
-        app_logger.error(f"Error en admin: {str(e)}")
-        db.session.rollback()
-        flash(f'Error: {str(e)}', 'danger')
+            flash('Usuario creado exitosamente', 'success')
+            
+        except Exception as e:
+            app_logger.error(f"Error en admin: {str(e)}")
+            db.session.rollback()
+            flash('Ocurrió un error al crear el usuario. Intente de nuevo.', 'danger')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{getattr(form, field).label.text}: {error}', 'danger')
     
     return redirect(url_for('admin.usuarios'))
 
@@ -208,7 +196,7 @@ def toggle_usuario(usuario_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error al cambiar el estado del usuario'}), 500
 
 @admin_bp.route('/usuarios/<int:usuario_id>/cambiar-rol', methods=['POST'])
 @login_required
@@ -241,7 +229,7 @@ def cambiar_rol_usuario(usuario_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error al cambiar el rol del usuario'}), 500
 
 @admin_bp.route('/usuarios/<int:usuario_id>/eliminar', methods=['POST'])
 @login_required
@@ -264,55 +252,48 @@ def eliminar_usuario(usuario_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error al eliminar el usuario'}), 500
 
 @admin_bp.route('/usuarios/<int:usuario_id>/editar', methods=['POST'])
 @login_required
 def editar_usuario(usuario_id):
     """Editar datos de un usuario existente (username, email, contraseña)"""
     if current_user.rol != 'administrador':
-        return jsonify({'error': 'No autorizado'}), 403
+        flash('No tiene permisos para esta acción', 'danger')
+        return redirect(url_for('admin.usuarios'))
 
+    form = EditarUsuarioForm()
     try:
         usuario = Usuario.query.get_or_404(usuario_id)
 
-        nuevo_username = request.form.get('username', '').strip()
-        nuevo_email    = request.form.get('email', '').strip()
-        nueva_password = request.form.get('password', '').strip()
-        confirmar_pass = request.form.get('confirm_password', '').strip()
-
-        # Validaciones básicas
-        if not nuevo_username or not nuevo_email:
-            flash('El nombre de usuario y el email son obligatorios.', 'danger')
+        if not form.validate_on_submit():
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{getattr(form, field).label.text}: {error}', 'danger')
             return redirect(url_for('admin.usuarios'))
 
-        # Verificar duplicados excluyendo al propio usuario
+        nuevo_username = form.username.data.strip()
+        nuevo_email = form.email.data.strip()
+        nueva_password = form.password.data.strip() if form.password.data else ''
+
         if Usuario.query.filter(
             Usuario.username == nuevo_username,
             Usuario.id != usuario_id
         ).first():
-            flash(f'El nombre de usuario "{nuevo_username}" ya está en uso.', 'danger')
+            flash('El nombre de usuario ya está en uso.', 'danger')
             return redirect(url_for('admin.usuarios'))
 
         if Usuario.query.filter(
             Usuario.email == nuevo_email,
             Usuario.id != usuario_id
         ).first():
-            flash(f'El email "{nuevo_email}" ya está registrado.', 'danger')
+            flash('El email ya está registrado.', 'danger')
             return redirect(url_for('admin.usuarios'))
 
-        # Actualizar campos básicos
         usuario.username = nuevo_username
-        usuario.email    = nuevo_email
+        usuario.email = nuevo_email
 
-        # Actualizar contraseña solo si se proporcionó una nueva
         if nueva_password:
-            if len(nueva_password) < 6:
-                flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
-                return redirect(url_for('admin.usuarios'))
-            if nueva_password != confirmar_pass:
-                flash('Las contraseñas no coinciden.', 'danger')
-                return redirect(url_for('admin.usuarios'))
             usuario.password_hash = generate_password_hash(nueva_password)
 
         db.session.commit()
@@ -321,7 +302,7 @@ def editar_usuario(usuario_id):
     except Exception as e:
         app_logger.error(f"Error editando usuario {usuario_id}: {str(e)}")
         db.session.rollback()
-        flash(f'Error al actualizar: {str(e)}', 'danger')
+        flash('Ocurrió un error al actualizar el usuario. Intente de nuevo.', 'danger')
 
     return redirect(url_for('admin.usuarios'))
 
@@ -337,42 +318,39 @@ def ciclos():
     
     from app.models import Ciclo
     config = cargar_configuracion()
+    form = CicloForm()
     
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         try:
-            nombre = request.form.get('nombre')
-            codigo = request.form.get('codigo')  # Ej: 2025-2
-            fecha_inicio = datetime.strptime(request.form.get('fecha_inicio'), '%Y-%m-%d').date()
-            fecha_fin = datetime.strptime(request.form.get('fecha_fin'), '%Y-%m-%d').date()
-            
-            # Crear el nuevo ciclo
             nuevo_ciclo = Ciclo(
-                nombre=nombre,
-                codigo_ciclo=codigo,
-                fecha_inicio=fecha_inicio,
-                fecha_fin=fecha_fin,
+                nombre=form.nombre.data,
+                codigo_ciclo=form.codigo.data,
+                fecha_inicio=form.fecha_inicio.data,
+                fecha_fin=form.fecha_fin.data,
                 activo=True
             )
             
-            # Desactivar ciclos anteriores (opcional, pero recomendado para orden)
             Ciclo.query.update({Ciclo.activo: False})
             
             db.session.add(nuevo_ciclo)
             
-            # Actualizar configuración global
-            config['semestre_actual'] = codigo
+            config['semestre_actual'] = form.codigo.data
             guardar_configuracion(config)
             
             db.session.commit()
-            flash(f'¡Ciclo {nombre} iniciado exitosamente! El sistema ahora opera en el periodo {codigo}.', 'success')
+            flash(f'¡Ciclo {form.nombre.data} iniciado exitosamente! El sistema ahora opera en el periodo {form.codigo.data}.', 'success')
             return redirect(url_for('admin.ciclos'))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear ciclo: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear el ciclo. Intente de nuevo.', 'danger')
+    elif request.method == 'POST':
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{getattr(form, field).label.text}: {error}', 'danger')
     
     ciclos_historial = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all()
-    return render_template('admin/ciclos.html', ciclos=ciclos_historial, config=config)
+    return render_template('admin/ciclos.html', ciclos=ciclos_historial, config=config, form=form)
 
 @admin_bp.route('/backup')
 @login_required
@@ -392,10 +370,38 @@ def logs():
         flash('No tiene permisos para acceder a esta sección', 'danger')
         return redirect(url_for('dashboard.index'))
     
-    logs_sistema = [
-        {'fecha': '2024-10-02 10:30:00', 'nivel': 'INFO', 'mensaje': 'Sistema iniciado correctamente'},
-        {'fecha': '2024-10-02 10:35:00', 'nivel': 'INFO', 'mensaje': 'Cálculo de riesgo ejecutado para 5 estudiantes'},
-        {'fecha': '2024-10-02 11:00:00', 'nivel': 'WARNING', 'mensaje': 'Estudiante 2024EST001 detectado en alerta roja'},
-    ]
+    import os
+    from datetime import datetime
     
-    return render_template('admin/logs.html', logs=logs_sistema)
+    log_entries = []
+    log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'logs')
+    
+    if os.path.exists(log_dir):
+        for log_file in ['app.log', 'auth.log', 'riesgo.log']:
+            log_path = os.path.join(log_dir, log_file)
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        lines = f.readlines()[-50:]
+                        for line in lines:
+                            line = line.strip()
+                            if line:
+                                parts = line.split(' - ', 3)
+                                if len(parts) >= 4:
+                                    log_entries.append({
+                                        'fecha': parts[0],
+                                        'nivel': parts[2],
+                                        'mensaje': parts[3][:100]
+                                    })
+                except Exception:
+                    pass
+    
+    log_entries.sort(key=lambda x: x.get('fecha', ''), reverse=True)
+    log_entries = log_entries[:50]
+    
+    if not log_entries:
+        log_entries = [
+            {'fecha': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'nivel': 'INFO', 'mensaje': 'Sistema iniciado correctamente'},
+        ]
+    
+    return render_template('admin/logs.html', logs=log_entries)

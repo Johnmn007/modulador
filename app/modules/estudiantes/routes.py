@@ -119,7 +119,7 @@ def crear():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear estudiante: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear el estudiante. Intente de nuevo.', 'danger')
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
@@ -173,7 +173,7 @@ def editar(estudiante_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar estudiante: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar el estudiante. Intente de nuevo.', 'danger')
     
     return render_template('estudiantes/editar.html', form=form, estudiante=estudiante)
 
@@ -197,7 +197,7 @@ def eliminar(estudiante_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar estudiante: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar el estudiante. Intente de nuevo.', 'danger')
     
     return redirect(url_for('estudiantes.index'))
 

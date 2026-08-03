@@ -33,4 +33,7 @@ desktop.ini
 .env.local
 .env.production
 
+# Archivos sensibles - credenciales (solo desarrollador)
+CREDENCIALES_SOLO_DESARROLLADOR.md
+
 # Archivos de migraciones generados por Flask-Migrate

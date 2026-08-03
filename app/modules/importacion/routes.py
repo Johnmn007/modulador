@@ -46,7 +46,7 @@ def importar_estudiantes():
             else:
                 df = pd.read_excel(archivo)
         except Exception as e:
-            flash(f'Error al leer el archivo: {str(e)}. Verifique que el formato sea correcto.', 'danger')
+            flash(f'Error al leer el archivo. Verifique que el formato sea correcto.', 'danger')
             return redirect(url_for('importacion.index'))
         
         # Validar columnas requeridas
@@ -135,7 +135,7 @@ def importar_estudiantes():
                 SeguimientoService.recalcular_riesgo_semestre()
             except Exception as e:
                 db.session.rollback()
-                flash(f'❌ Error al guardar en base de datos: {str(e)}', 'danger')
+                flash('Error al guardar en base de datos. Intente de nuevo.', 'danger')
         else:
             if errores:
                 flash('❌ No se pudo importar ningún registro. Errores encontrados:', 'danger')
@@ -148,7 +148,7 @@ def importar_estudiantes():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'❌ Error general en importación: {str(e)}', 'danger')
+        flash('Error general en la importación. Intente de nuevo.', 'danger')
         return redirect(url_for('importacion.index'))
 
 @importacion_bp.route('/importar-cursos', methods=['POST'])
@@ -236,7 +236,7 @@ def importar_cursos():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'❌ Error en importación: {str(e)}', 'danger')
+        flash('Error en la importación. Intente de nuevo.', 'danger')
         return redirect(url_for('importacion.index'))
 
 @importacion_bp.route('/importar-notas', methods=['POST'])
@@ -352,7 +352,7 @@ def importar_notas():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'❌ Error en importación: {str(e)}', 'danger')
+        flash('Error en la importación. Intente de nuevo.', 'danger')
         return redirect(url_for('importacion.index'))
 
 @importacion_bp.route('/resultados')

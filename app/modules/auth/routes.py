@@ -6,6 +6,7 @@ from urllib.parse import urlparse, urljoin
 from . import auth_bp
 from .forms import LoginForm
 from app.models import Usuario
+from app.services.logger import auth_logger
 
 @auth_bp.route('/')
 def index():
@@ -26,6 +27,7 @@ def login():
         if usuario and check_password_hash(usuario.password_hash, form.password.data):
             if usuario.activo:
                 login_user(usuario)
+                auth_logger.info(f"Login exitoso: {usuario.email} desde {request.remote_addr}")
                 flash(f'Bienvenido {usuario.username}!', 'success')
                 
                 # Redirigir según el rol
@@ -36,8 +38,10 @@ def login():
                 # TODOS los roles van al dashboard
                 return redirect(url_for('dashboard.index'))
             else:
+                auth_logger.warning(f"Intento de login en cuenta desactivada: {form.email.data} desde {request.remote_addr}")
                 flash('Cuenta desactivada. Contacte al administrador.', 'danger')
         else:
+            auth_logger.warning(f"Login fallido: {form.email.data} desde {request.remote_addr}")
             flash('Email o contraseña incorrectos', 'danger')
     
     return render_template('auth/login.html', form=form)

@@ -27,7 +27,7 @@ def matricula_masiva():
             
             ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
             if not ciclo:
-                flash(f'Error: El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                flash(f'El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
                 return render_template('inscripciones/matricula_masiva.html', form=form)
             
             # El form.semestre.data en realidad trae el Nivel de Malla (ej. 'I', 'II')
@@ -100,7 +100,7 @@ def matricula_masiva():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'❌ Error en matrícula masiva: {str(e)}', 'danger')
+            flash(f'Error en matrícula masiva: {str(e)}', 'danger')
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
@@ -199,7 +199,7 @@ def crear():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear inscripción: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear la inscripción. Intente de nuevo.', 'danger')
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
@@ -292,7 +292,7 @@ def editar(inscripcion_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar inscripción: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar la inscripción. Intente de nuevo.', 'danger')
     
     return render_template('inscripciones/editar.html', form=form, inscripcion=inscripcion)
 
@@ -320,7 +320,7 @@ def eliminar(inscripcion_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar inscripción: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar la inscripción. Intente de nuevo.', 'danger')
     
     return redirect(url_for('inscripciones.index'))
 
@@ -365,7 +365,7 @@ def matricula_por_ciclo():
             
             ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
             if not ciclo:
-                flash(f'Error: El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                flash(f'El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
                 return render_template('inscripciones/matricula_por_ciclo.html', form=form)
             
             estudiante_id = form.estudiante_id.data
@@ -418,7 +418,7 @@ def matricula_por_ciclo():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'❌ Error en matrícula por ciclo: {str(e)}', 'danger')
+            flash(f'Error en matrícula por ciclo: {str(e)}', 'danger')
             
     if request.method == 'GET':
         form.fecha_inscripcion.data = datetime.now(timezone.utc).date()
@@ -434,8 +434,13 @@ def buscar():
     if not q:
         return jsonify({'inscripciones': [], 'total': 0})
         
+    from sqlalchemy.orm import joinedload
+    
     # Query base con joins para estudiante y curso
-    inscripciones_query = Inscripcion.query.join(Estudiante).join(Curso)
+    inscripciones_query = Inscripcion.query.options(
+        joinedload(Inscripcion.estudiante),
+        joinedload(Inscripcion.curso)
+    ).join(Estudiante).join(Curso)
     
     # Búsqueda
     resultados = inscripciones_query.filter(

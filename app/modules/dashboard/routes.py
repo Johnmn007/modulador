@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from . import dashboard_bp
 from app.models import Estudiante, SeguimientoRiesgo, Curso, Inscripcion
 from app.extensions import db
+from app.services.config_service import cargar_configuracion
 
 @dashboard_bp.route('/')
 @dashboard_bp.route('/index')
@@ -23,7 +24,8 @@ def index():
                          total_estudiantes=total_estudiantes,
                          total_cursos=total_cursos,
                          estudiantes_riesgo=estudiantes_riesgo,
-                         usuario_actual=current_user)
+                         usuario_actual=current_user,
+                         config=cargar_configuracion())
 
 @dashboard_bp.route('/estadisticas')
 @login_required
@@ -47,4 +49,4 @@ def estadisticas():
         return jsonify(estadisticas)
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error al cargar las estadísticas'}), 500

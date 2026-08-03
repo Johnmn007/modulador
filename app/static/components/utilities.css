@@ -1,0 +1,123 @@
+/* ======== UTILITIES CONSOLIDADAS ======== */
+
+/* Fondos de Color */
+.bg-navy {
+    background-color: var(--primary-color);
+}
+.bg-accent {
+    background-color: var(--accent-color) !important;
+}
+.bg-success-custom {
+    background-color: var(--success-color) !important;
+}
+.bg-warning-custom {
+    background-color: var(--warning-color) !important;
+}
+.bg-danger-custom {
+    background-color: var(--danger-color) !important;
+}
+
+/* Colores de Texto */
+.text-navy {
+    color: var(--primary-color) !important;
+}
+.text-accent {
+    color: var(--accent-color) !important;
+}
+.text-success-custom {
+    color: var(--success-color) !important;
+}
+
+/* Fondos de Cards (migrados de dash.css) */
+.bg-cards {
+    background-color: var(--card-accent);
+}
+.bg-cards2 {
+    background-color: var(--card-success);
+}
+.bg-cards3 {
+    background-color: #a8fbd3;
+}
+.bg-cards0 {
+    background-color: var(--card-navy);
+}
+
+/* Colores de Semáforo (migrados de dash.css/seguimiento.css) */
+.bg-verde {
+    background-color: var(--success-color);
+}
+.bg-amarillo {
+    background-color: var(--warning-color);
+}
+.bg-rojo {
+    background-color: var(--danger-color);
+}
+.bg-azul {
+    background-color: var(--primary-color);
+}
+.bg-celeste {
+    background-color: var(--accent-color);
+}
+.bg-ama {
+    background-color: var(--warning-color);
+}
+
+/* Hover Effects */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.hover-lift:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    border-color: var(--accent-color) !important;
+}
+
+/* Animations */
+@keyframes fadeInRow {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Spinner */
+.live-search-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #dee2e6;
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Botones de Acción */
+.btn-white {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: var(--text-main);
+}
+.btn-white:hover {
+    background: #f8fafc;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+.empty-state-icon {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.empty-state-icon i {
+    font-size: 3rem;
+    color: #94a3b8;
+    opacity: 0.7;
+}

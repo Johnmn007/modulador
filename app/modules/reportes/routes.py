@@ -161,7 +161,7 @@ def generar_individual():
                 response = send_file(temp.name, as_attachment=True, download_name=filename)
                 return response
             except Exception as e:
-                flash(f'Error al generar PDF: {str(e)}', 'warning')
+                flash('Ocurrió un error al generar el PDF. Intente de nuevo.', 'warning')
                 return resultado['html']
         
         return render_template('reportes/vista_previa.html', 
@@ -172,7 +172,7 @@ def generar_individual():
     
     except Exception as e:
         db.session.rollback()
-        flash(f'Error generando reporte: {str(e)}', 'danger')
+        flash('Ocurrió un error al generar el reporte. Intente de nuevo.', 'danger')
         return redirect(url_for('reportes.individual'))
 
 @reportes_bp.route('/asistencias')
@@ -226,7 +226,7 @@ def generar_asistencia_grupal():
                 response = send_file(temp.name, as_attachment=True, download_name=filename)
                 return response
             except Exception as e:
-                flash(f'Error al generar PDF: {str(e)}', 'warning')
+                flash('Ocurrió un error al generar el PDF. Intente de nuevo.', 'warning')
                 return resultado['html']
         
         return render_template('reportes/vista_previa.html', 
@@ -236,7 +236,7 @@ def generar_asistencia_grupal():
                              datetime=datetime)
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al generar reporte: {str(e)}', 'danger')
+        flash('Ocurrió un error al generar el reporte. Intente de nuevo.', 'danger')
         return redirect(url_for('reportes.asistencias_index'))
 
 @reportes_bp.route('/historial')

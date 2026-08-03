@@ -22,12 +22,12 @@ try:
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = conn.cursor()
     
-    cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{db_name}'")
+    cursor.execute("SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s", (db_name,))
     exists = cursor.fetchone()
     
     if not exists:
         print(f"Creando base de datos: {db_name}...")
-        cursor.execute(f"CREATE DATABASE {db_name};")
+        cursor.execute("CREATE DATABASE %s;", (db_name,))
         print("Base de datos creada exitosamente.")
     else:
         print(f"La base de datos {db_name} ya existe.")

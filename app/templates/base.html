@@ -13,7 +13,9 @@
     
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="{{ url_for('static', filename='base/base.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard/dash.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/utilities.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/tom-select.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/forms.css') }}" />
     
     <!-- SweetAlert2 -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
@@ -22,15 +24,18 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
+    <!-- Skip to content (Accesibilidad) -->
+    <a href="#main-content" class="visually-hidden-focusable">Saltar al contenido principal</a>
+
     <!-- Navbar Principal -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-azul">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-azul" aria-label="Navegación principal">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">
-                <img class="logo_see" src="{{url_for('static', filename='img/logo_see_f.png')}}" alt="logo">
+                <img class="logo_see" src="{{url_for('static', filename='img/logo_see_f.png')}}" alt="SADES - Sistema Analítico de Desempeño Estudiantil">
                 <span class="separador">SADES</span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Alternar navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -132,7 +137,8 @@
     </nav>
 
     <!-- Contenido Principal -->
-    <main class="container mt-4">
+    <main id="main-content" class="container mt-4">
+        <h1 class="visually-hidden">Sistema Analítico de Desempeño Estudiantil</h1>
         <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -155,7 +161,7 @@
     <!-- Footer -->
     <footer class="bg-light mt-5 py-4">
         <div class="container text-center text-muted">
-            <small>Sistema Analítico de Desempeño Estudiantil &copy; 2025</small>
+            <small>Sistema Analítico de Desempeño Estudiantil &copy; 2026</small>
         </div>
     </footer>
 
@@ -182,6 +188,19 @@
                 } catch(e) {}
             });
         }, 5000);
+
+        // Auto-save warning: Advertir al usuario si tiene cambios sin guardar
+        let formDirty = false;
+        document.querySelectorAll('form:not(.no-loader):not(#search-form)').forEach(form => {
+            form.addEventListener('input', () => formDirty = true);
+            form.addEventListener('submit', () => formDirty = false);
+        });
+        window.addEventListener('beforeunload', (e) => {
+            if (formDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     });
 
     // Global form submission handler to prevent double submit and show loading state

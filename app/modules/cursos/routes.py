@@ -101,7 +101,7 @@ def crear():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear curso: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear el curso. Intente de nuevo.', 'danger')
     
     return render_template('cursos/crear.html', form=form)
 
@@ -204,7 +204,7 @@ def editar(curso_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar curso: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar el curso. Intente de nuevo.', 'danger')
     
     return render_template('cursos/editar.html', form=form, curso=curso)
 
@@ -232,7 +232,7 @@ def eliminar(curso_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar curso: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar el curso. Intente de nuevo.', 'danger')
     return redirect(url_for('cursos.index'))
 
 @cursos_bp.route('/buscar')

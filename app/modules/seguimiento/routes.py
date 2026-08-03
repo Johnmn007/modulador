@@ -77,4 +77,4 @@ def calcular_estudiante(estudiante_id):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error al calcular el riesgo del estudiante'}), 500

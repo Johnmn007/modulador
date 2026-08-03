@@ -55,8 +55,7 @@
                             </div>
 
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm py-3" 
-                                        onclick="return confirm('¿Está seguro de cerrar el ciclo actual y abrir uno nuevo? Esta acción cambiará el contexto global del sistema.')">
+                                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm py-3" id="btnNuevoCiclo">
                                     <i class="fas fa-rocket me-2"></i> Iniciar Nuevo Ciclo
                                 </button>
                             </div>
@@ -144,4 +143,32 @@
     .btn-primary { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: none; }
     .form-control-lg { border-radius: 12px; }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnNuevoCiclo = document.getElementById('btnNuevoCiclo');
+    if (btnNuevoCiclo) {
+        btnNuevoCiclo.addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = this.closest('form');
+            Swal.fire({
+                title: '¿Iniciar nuevo ciclo?',
+                text: 'Se cerrará el ciclo actual y se abrirá uno nuevo. Esta acción cambiará el contexto global del sistema.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#06b6d4',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, iniciar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

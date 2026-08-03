@@ -24,7 +24,8 @@
             <div class="card-body p-0">
                 {% if usuarios %}
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" aria-label="Listado de usuarios">
+                        <caption class="visually-hidden">Listado de usuarios del sistema</caption>
                         <thead class="bg-light text-muted small text-uppercase fw-bold">
                             <tr>
                                 <th class="ps-4">Usuario</th>
@@ -236,8 +237,23 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.toggle-usuario').forEach(button => {
         button.addEventListener('click', function() {
             const usuarioId = this.getAttribute('data-usuario-id');
-            fetch(`/admin/usuarios/${usuarioId}/toggle`, { method: 'POST' })
-            .then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
+            Swal.fire({
+                title: '¿Cambiar estado?',
+                text: 'Se cambiará el estado del usuario',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#06b6d4',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/usuarios/${usuarioId}/toggle`, { method: 'POST' })
+                    .then(r => r.json()).then(d => d.error ? 
+                        Swal.fire('Error', d.error, 'error') : 
+                        Swal.fire('Éxito', 'Estado actualizado', 'success').then(() => location.reload()));
+                }
+            });
         });
     });
 
@@ -246,13 +262,26 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function() {
             const id = this.getAttribute('data-usuario-id');
             const rol = this.getAttribute('data-rol');
-            if (confirm(`¿Cambiar rol a ${rol}?`)) {
-                fetch(`/admin/usuarios/${id}/cambiar-rol`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rol: rol })
-                }).then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
-            }
+            Swal.fire({
+                title: '¿Cambiar rol?',
+                text: `¿Desea cambiar el rol a "${rol}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#06b6d4',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/usuarios/${id}/cambiar-rol`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rol: rol })
+                    }).then(r => r.json()).then(d => d.error ? 
+                        Swal.fire('Error', d.error, 'error') : 
+                        Swal.fire('Éxito', 'Rol actualizado', 'success').then(() => location.reload()));
+                }
+            });
         });
     });
 
@@ -261,10 +290,23 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const id = this.getAttribute('data-usuario-id');
             const name = this.getAttribute('data-usuario-name');
-            if (confirm(`¿Eliminar al usuario "${name}" definitivamente?`)) {
-                fetch(`/admin/usuarios/${id}/eliminar`, { method: 'POST' })
-                .then(r => r.json()).then(d => d.error ? alert(d.error) : location.reload());
-            }
+            Swal.fire({
+                title: '¿Eliminar usuario?',
+                text: `¿Está seguro de eliminar a "${name}"? Esta acción no se puede deshacer.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/usuarios/${id}/eliminar`, { method: 'POST' })
+                    .then(r => r.json()).then(d => d.error ? 
+                        Swal.fire('Error', d.error, 'error') : 
+                        Swal.fire('Eliminado', 'Usuario eliminado correctamente', 'success').then(() => location.reload()));
+                }
+            });
         });
     });
 
@@ -272,8 +314,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
         const p1 = document.getElementById('password').value;
         const p2 = document.getElementById('confirm_password').value;
-        if (p1 !== p2) { e.preventDefault(); alert('Las contraseñas no coinciden'); }
-        else if (p1.length < 6) { e.preventDefault(); alert('Mínimo 6 caracteres'); }
+        if (p1 !== p2) { 
+            e.preventDefault(); 
+            Swal.fire('Error', 'Las contraseñas no coinciden', 'error');
+        } else if (p1.length < 6) { 
+            e.preventDefault(); 
+            Swal.fire('Error', 'La contraseña debe tener al menos 6 caracteres', 'error');
+        }
     });
 
     // Abrir modal de edición con datos del usuario seleccionado
@@ -303,10 +350,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const p2 = document.getElementById('edit_confirm_password').value;
         if (p1 && p1 !== p2) {
             e.preventDefault();
-            alert('Las contraseñas no coinciden');
+            Swal.fire('Error', 'Las contraseñas no coinciden', 'error');
         } else if (p1 && p1.length < 6) {
             e.preventDefault();
-            alert('La contraseña debe tener al menos 6 caracteres');
+            Swal.fire('Error', 'La contraseña debe tener al menos 6 caracteres', 'error');
         }
     });
 });

@@ -9,6 +9,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app/static/uploads')
     REPORTS_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app/static/reports')
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -24,9 +27,6 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SECRET_KEY = os.getenv("PROD_SECRET_KEY") or os.getenv("SECRET_KEY") or secrets.token_hex(32)
-    SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or (
         f"postgresql://{os.getenv('PROD_DB_USER')}:{os.getenv('PROD_DB_PASSWORD')}"
         f"@{os.getenv('PROD_DB_HOST')}:{os.getenv('PROD_DB_PORT', '5432')}/{os.getenv('PROD_DB_NAME')}"

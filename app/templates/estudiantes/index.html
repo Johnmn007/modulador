@@ -51,7 +51,8 @@
             <div class="card-body p-0" id="tabla-container">
                 {% if estudiantes.items %}
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tabla-estudiantes">
+                    <table class="table table-hover align-middle mb-0" id="tabla-estudiantes" aria-label="Listado de estudiantes">
+                        <caption class="visually-hidden">Listado de estudiantes del sistema</caption>
                         <thead class="bg-light text-muted small text-uppercase fw-bold">
                             <tr>
                                 <th class="ps-4" style="width: 350px;">Estudiante</th>

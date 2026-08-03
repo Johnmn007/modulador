@@ -1,12 +1,15 @@
+# Módulador - Sistema Analítico de Desempeño Estudiantil
 
-Rol	Usuario	Contraseña	Email	Permisos
-Administrador	admin	admin123	admin@sades.edu	Acceso completo a todo el sistema
-Coordinador	coordinador	coord123	coordinador@sades.edu	Gestión de estudiantes y cursos
-Docente	docente	docente123	docente@sades.edu	Registro de notas y asistencias
+## Acceso al Sistema
 
+Para obtener las credenciales de acceso, contacte al administrador del sistema o revise el archivo `CREDENCIALES_SOLO_DESARROLLADOR.md` (solo para desarrolladores).
 
-renato@sades.edu ----------  renato123
-ysaac@sades.edu ----------  ysaac123
+## Roles del Sistema
+
+- **Administrador:** Acceso completo a todo el sistema
+- **Coordinador:** Gestión de estudiantes y cursos
+- **Docente:** Registro de notas y asistencias
+
 ---------------------------------------------------------------
 markdown
 # 📦 Guía de Actualización - Módulador

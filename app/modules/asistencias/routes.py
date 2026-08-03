@@ -90,7 +90,7 @@ def crear():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al registrar asistencia: {str(e)}', 'danger')
+            flash('Ocurrió un error al registrar la asistencia. Intente de nuevo.', 'danger')
     
     return render_template('asistencias/crear.html', form=form)
 
@@ -120,7 +120,7 @@ def crear_masiva():
                                  inscripciones=inscripciones)
             
         except Exception as e:
-            flash(f'Error al generar formulario masivo: {str(e)}', 'danger')
+            flash('Ocurrió un error al generar el formulario masivo. Intente de nuevo.', 'danger')
     
     return render_template('asistencias/crear_masiva.html', form=form)
 
@@ -186,7 +186,7 @@ def procesar_masiva():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al procesar asistencias masivas: {str(e)}', 'danger')
+        flash('Ocurrió un error al procesar las asistencias. Intente de nuevo.', 'danger')
     
     return redirect(url_for('asistencias.index'))
 
@@ -234,7 +234,7 @@ def editar(asistencia_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar asistencia: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar la asistencia. Intente de nuevo.', 'danger')
     
     return render_template('asistencias/editar.html', form=form, asistencia=asistencia)
 
@@ -253,7 +253,7 @@ def eliminar(asistencia_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar asistencia: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar la asistencia. Intente de nuevo.', 'danger')
     
     return redirect(url_for('asistencias.index'))
 

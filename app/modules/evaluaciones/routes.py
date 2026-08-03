@@ -95,7 +95,7 @@ def crear_evaluacion():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear evaluación: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear la evaluación. Intente de nuevo.', 'danger')
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
@@ -177,7 +177,7 @@ def editar_evaluacion(evaluacion_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar evaluación: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar la evaluación. Intente de nuevo.', 'danger')
     
     return render_template('evaluaciones/editar_evaluacion.html', form=form, evaluacion=evaluacion)
 
@@ -201,7 +201,7 @@ def eliminar_evaluacion(evaluacion_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar evaluación: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar la evaluación. Intente de nuevo.', 'danger')
     
     return redirect(url_for('evaluaciones.index'))
 
@@ -329,7 +329,7 @@ def crear_nota():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear nota: {str(e)}', 'danger')
+            flash('Ocurrió un error al crear la nota. Intente de nuevo.', 'danger')
     
     # Para GET request, establecer fecha actual como default
     if request.method == 'GET':
@@ -372,7 +372,7 @@ def editar_nota(nota_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al actualizar nota: {str(e)}', 'danger')
+            flash('Ocurrió un error al actualizar la nota. Intente de nuevo.', 'danger')
     
     return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
 
@@ -391,7 +391,7 @@ def eliminar_nota(nota_id):
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar nota: {str(e)}', 'danger')
+        flash('Ocurrió un error al eliminar la nota. Intente de nuevo.', 'danger')
     
         return redirect(url_for('evaluaciones.notas_index'))
 
@@ -487,5 +487,5 @@ def procesar_masiva():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al procesar calificaciones: {str(e)}', 'danger')
+        flash('Ocurrió un error al procesar las calificaciones. Intente de nuevo.', 'danger')
         return redirect(url_for('evaluaciones.index'))

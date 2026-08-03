@@ -189,21 +189,41 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
-            alert('Copia de seguridad generada con éxito (Simulación)');
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'Copia de seguridad generada con éxito',
+                icon: 'success',
+                confirmButtonColor: '#06b6d4'
+            });
         }, 2000);
     });
 
     document.getElementById('btn-restore').addEventListener('click', function() {
-        if (confirm('¿CONFIRMAR RESTAURACIÓN? Se perderán todos los datos actuales.')) {
-            const btn = this;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Restaurando Base de Datos...';
-            btn.disabled = true;
-            
-            setTimeout(() => {
-                alert('Sistema restaurado a un estado previo (Simulación)');
-                location.reload();
-            }, 3000);
-        }
+        Swal.fire({
+            title: '¿Confirmar restauración?',
+            text: 'Se perderán todos los datos actuales. Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, restaurar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btn-restore');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Restaurando Base de Datos...';
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    Swal.fire({
+                        title: '¡Restaurado!',
+                        text: 'Sistema restaurado a un estado previo',
+                        icon: 'success',
+                        confirmButtonColor: '#06b6d4'
+                    }).then(() => location.reload());
+                }, 3000);
+            }
+        });
     });
 });
 </script>

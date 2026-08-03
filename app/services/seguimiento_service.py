@@ -50,19 +50,31 @@ class SeguimientoService:
                 semestre = config.get('semestre_actual')
 
             calculador = CalculatorRiesgoIntrasemestral(config)
-            estudiantes = Estudiante.query.filter_by(activo=True).all()
+            
+            page = 1
+            per_page = 100
             procesados = 0
+            
+            while True:
+                estudiantes_pagina = Estudiante.query.filter_by(activo=True).paginate(
+                    page=page, per_page=per_page, error_out=False
+                )
+                
+                if not estudiantes_pagina.items:
+                    break
+                
+                for estudiante in estudiantes_pagina.items:
+                    try:
+                        resultado = calculador.calcular_riesgo_estudiante(estudiante.id, semestre, db)
+                        SeguimientoService._actualizar_seguimiento(estudiante.id, semestre, resultado)
+                        procesados += 1
+                    except Exception as e:
+                        riesgo_logger.error(f"Error procesando estudiante {estudiante.id}: {e}")
+                        continue
+                
+                db.session.commit()
+                page += 1
 
-            for estudiante in estudiantes:
-                try:
-                    resultado = calculador.calcular_riesgo_estudiante(estudiante.id, semestre, db)
-                    SeguimientoService._actualizar_seguimiento(estudiante.id, semestre, resultado)
-                    procesados += 1
-                except Exception as e:
-                    riesgo_logger.error(f"Error procesando estudiante {estudiante.id}: {e}")
-                    continue
-
-            db.session.commit()
             return True, f"Se procesaron {procesados} estudiantes."
         except Exception as e:
             db.session.rollback()
