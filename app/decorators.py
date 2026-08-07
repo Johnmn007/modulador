@@ -2,9 +2,27 @@ from functools import wraps
 from flask import flash, redirect, url_for
 from flask_login import current_user
 
+# Jerarquía de roles: cada rol incluye los permisos de los roles que le siguen
+JERARQUIA_ROLES = {
+    'administrador': {'administrador', 'coordinador', 'docente'},
+    'coordinador': {'coordinador', 'docente'},
+    'docente': {'docente'}
+}
+
+def usuario_tiene_permiso(rol_usuario, *roles_requeridos):
+    """Verifica si un usuario tiene al menos uno de los roles requeridos (considerando herencia)."""
+    roles_disponibles = JERARQUIA_ROLES.get(rol_usuario, {rol_usuario})
+    return bool(roles_disponibles & set(roles_requeridos))
+
+def usuario_es_docente(usuario=None):
+    """Verifica si un usuario tiene permisos de docente (coordinadores incluidos)."""
+    u = usuario or current_user
+    return u.rol in ('docente', 'coordinador')
+
 def roles_required(*roles):
     """
     Decorador para restringir el acceso a ciertas rutas basado en roles.
+    Implementa herencia de permisos: coordinador hereda permisos de docente.
     Uso: @roles_required('administrador', 'coordinador')
     """
     def wrapper(fn):
@@ -13,7 +31,7 @@ def roles_required(*roles):
             if not current_user.is_authenticated:
                 return redirect(url_for('auth.login'))
             
-            if current_user.rol not in roles:
+            if not usuario_tiene_permiso(current_user.rol, *roles):
                 flash('No tiene permisos para acceder a esta sección.', 'danger')
                 return redirect(url_for('dashboard.index'))
                 

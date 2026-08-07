@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from app.models import Curso, Inscripcion, Evaluacion, Estudiante, Usuario, Ciclo
 from app.extensions import db
 from app.services.config_service import cargar_configuracion
-from app.decorators import roles_required
+from app.decorators import roles_required, usuario_es_docente
 from .forms import CursoForm
 
 @cursos_bp.route('/')
@@ -49,7 +49,11 @@ def crear():
     """Crear nuevo curso"""
     form = CursoForm()
     
-    docentes = Usuario.query.filter_by(rol='docente', activo=True).all()
+    # Coordinadores también pueden ser docentes (tienen cursos a su cargo)
+    docentes = Usuario.query.filter(
+        Usuario.rol.in_(['docente', 'coordinador']),
+        Usuario.activo == True
+    ).all()
     form.docente_id.choices = [(0, '--- Seleccionar Docente ---')] + [(d.id, f"{d.username}") for d in docentes]
     
     if form.validate_on_submit():
@@ -150,7 +154,11 @@ def editar(curso_id):
     curso = Curso.query.get_or_404(curso_id)
     form = CursoForm(obj=curso)
     
-    docentes = Usuario.query.filter_by(rol='docente', activo=True).all()
+    # Coordinadores también pueden ser docentes (tienen cursos a su cargo)
+    docentes = Usuario.query.filter(
+        Usuario.rol.in_(['docente', 'coordinador']),
+        Usuario.activo == True
+    ).all()
     form.docente_id.choices = [(0, '--- Seleccionar Docente ---')] + [(d.id, f"{d.username}") for d in docentes]
     
     # Preseleccionar el docente actual (form obj=curso ya hace esto si es None)

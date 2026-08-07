@@ -73,7 +73,7 @@
                         <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Créditos Académicos</label>
-                                {{ form.creditos(class="form-control form-control-lg bg-light border-0", type="number", min="1", max="10") }}
+                                {{ form.creditos(class="form-control form-control-lg bg-light border-0", type="number", min="0", max="10") }}
                                 {% if form.creditos.errors %}
                                     <div class="text-danger small mt-1">{% for error in form.creditos.errors %}{{ error }}{% endfor %}</div>
                                 {% endif %}

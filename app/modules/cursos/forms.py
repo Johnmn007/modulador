@@ -9,7 +9,7 @@ class CursoForm(FlaskForm):
     nombre_curso = StringField('Nombre del Curso', 
                               validators=[DataRequired(), Length(max=100)])
     creditos = IntegerField('Créditos', 
-                           validators=[DataRequired(), NumberRange(min=1, max=10)],
+                           validators=[Optional(), NumberRange(min=0, max=10)],
                            default=3)
     semestre = StringField('Semestre', 
                           validators=[DataRequired(), Length(max=10)])
