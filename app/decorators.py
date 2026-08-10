@@ -38,3 +38,15 @@ def roles_required(*roles):
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
+
+def curso_pertenece_al_usuario(curso, usuario=None):
+    """
+    Verifica si un curso pertenece al usuario actual.
+    - Administradores ven todos los cursos.
+    - Coordinadores y docentes solo ven sus cursos asignados.
+    Retorna True si el usuario tiene acceso al curso.
+    """
+    u = usuario or current_user
+    if u.rol == 'administrador':
+        return True
+    return curso.docente_id == u.id

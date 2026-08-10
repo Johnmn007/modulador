@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from . import asistencias_bp
 from app.models import Asistencia, Inscripcion, Estudiante, Curso
 from app.extensions import db
-from app.decorators import roles_required
+from app.decorators import roles_required, curso_pertenece_al_usuario
 from .forms import AsistenciaForm, AsistenciaMasivaForm
 from datetime import datetime
 
@@ -18,6 +18,10 @@ def index():
 
     # Query base con joins
     asistencias_query = Asistencia.query.join(Inscripcion).join(Estudiante).join(Curso)
+
+    # Filtro por rol: docentes y coordinadores solo ven asistencias de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        asistencias_query = asistencias_query.filter(Curso.docente_id == current_user.id)
 
     # Filtros
     estudiante_id = request.args.get('estudiante_id', type=int)
@@ -41,9 +45,12 @@ def index():
         Asistencia.fecha.desc(), Curso.nombre_curso, Estudiante.apellidos
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
-    cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
     return render_template('asistencias/index.html',
                          asistencias=asistencias,
@@ -63,6 +70,13 @@ def crear():
     
     if form.validate_on_submit():
         try:
+            # Verificar pertenencia del curso (docentes y coordinadores)
+            if current_user.rol in ('docente', 'coordinador'):
+                inscripcion = Inscripcion.query.get(form.inscripcion_id.data)
+                if not inscripcion or not curso_pertenece_al_usuario(inscripcion.curso):
+                    flash('No tiene permisos para registrar asistencias en este curso', 'danger')
+                    return redirect(url_for('asistencias.index'))
+            
             # Verificar si ya existe registro para esta inscripción y fecha
             asistencia_existente = Asistencia.query.filter_by(
                 inscripcion_id=form.inscripcion_id.data,
@@ -101,14 +115,25 @@ def crear_masiva():
     """Registro masivo de asistencias por curso"""
     form = AsistenciaMasivaForm()
     
+    # Docentes y coordinadores solo ven sus cursos en el selector
+    if current_user.rol in ('docente', 'coordinador'):
+        form.curso_id.query = Curso.query.filter_by(activo=True, docente_id=current_user.id).all()
+    
     if form.validate_on_submit():
         try:
+            # Verificar pertenencia del curso (docentes y coordinadores)
+            if current_user.rol in ('docente', 'coordinador'):
+                curso = Curso.query.get(form.curso_id.data)
+                if not curso or not curso_pertenece_al_usuario(curso):
+                    flash('No tiene permisos para registrar asistencias en este curso', 'danger')
+                    return redirect(url_for('asistencias.index'))
+            
             # Obtener todas las inscripciones activas del curso
             inscripciones = Inscripcion.query.join(Estudiante).filter(
                 Inscripcion.curso_id == form.curso_id.data,
                 Inscripcion.estado == 'ACTIVO',
                 Estudiante.activo == True
-            ).all()
+            ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
             
             if not inscripciones:
                 flash('No hay estudiantes inscritos en este curso', 'warning')
@@ -134,11 +159,18 @@ def procesar_masiva():
         fecha_str = request.form.get('fecha')
         fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
         
+        # Verificar pertenencia del curso (docentes y coordinadores)
+        if current_user.rol in ('docente', 'coordinador'):
+            curso = Curso.query.get(curso_id)
+            if not curso or not curso_pertenece_al_usuario(curso):
+                flash('No tiene permisos para registrar asistencias en este curso', 'danger')
+                return redirect(url_for('asistencias.index'))
+        
         # Obtener todas las inscripciones del curso
-        inscripciones = Inscripcion.query.filter_by(
-            curso_id=curso_id,
-            estado='ACTIVO'
-        ).all()
+        inscripciones = Inscripcion.query.join(Estudiante).filter(
+            Inscripcion.curso_id == curso_id,
+            Inscripcion.estado == 'ACTIVO'
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
         
         registros_procesados = 0
         
@@ -197,6 +229,13 @@ def detalle(asistencia_id):
     """Detalle de una asistencia específica"""
     asistencia = Asistencia.query.get_or_404(asistencia_id)
     
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        inscripcion = Inscripcion.query.get(asistencia.inscripcion_id)
+        if not inscripcion or not curso_pertenece_al_usuario(inscripcion.curso):
+            flash('No tiene permisos para ver esta asistencia', 'danger')
+            return redirect(url_for('asistencias.index'))
+    
     return render_template('asistencias/detalle.html', asistencia=asistencia)
 
 @asistencias_bp.route('/<int:asistencia_id>/editar', methods=['GET', 'POST'])
@@ -205,6 +244,14 @@ def detalle(asistencia_id):
 def editar(asistencia_id):
     """Editar asistencia existente"""
     asistencia = Asistencia.query.get_or_404(asistencia_id)
+    
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        inscripcion = Inscripcion.query.get(asistencia.inscripcion_id)
+        if not inscripcion or not curso_pertenece_al_usuario(inscripcion.curso):
+            flash('No tiene permisos para editar esta asistencia', 'danger')
+            return redirect(url_for('asistencias.index'))
+    
     form = AsistenciaForm(obj=asistencia)
     
     if form.validate_on_submit():
@@ -279,6 +326,10 @@ def estadisticas():
         db.func.sum(db.cast(Asistencia.justificado, db.Integer)).label('justificadas')
     ).join(Curso).join(Estudiante).join(Asistencia, isouter=True)
     
+    # Filtro por rol: docentes y coordinadores solo ven estadísticas de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        query = query.filter(Curso.docente_id == current_user.id)
+    
     # Aplicar filtros
     if curso_id:
         query = query.filter(Inscripcion.curso_id == curso_id)
@@ -316,9 +367,13 @@ def estadisticas():
             'porcentaje_efectiva': porcentaje_efectiva
         })
     
-    # Para los filtros
-    cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
     semestres = db.session.query(Curso.semestre).distinct().order_by(Curso.semestre.desc()).all()
     
     return render_template('asistencias/estadisticas.html',

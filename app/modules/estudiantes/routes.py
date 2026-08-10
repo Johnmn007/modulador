@@ -218,7 +218,7 @@ def buscar():
             Estudiante.codigo_estudiante.ilike(f'%{q}%'),
             Estudiante.email.ilike(f'%{q}%'),
         )
-    ).order_by(Estudiante.apellidos).limit(20).all()
+    ).order_by(Estudiante.nombres, Estudiante.apellidos).limit(20).all()
     
     data = []
     for e in resultados:

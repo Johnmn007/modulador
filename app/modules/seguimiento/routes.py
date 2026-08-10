@@ -6,6 +6,7 @@ from app.models import SeguimientoRiesgo, Estudiante
 from app.services.seguimiento_service import SeguimientoService
 from app.services.config_service import cargar_configuracion
 from app.services.riesgo_calculator_v2 import CalculatorRiesgoIntrasemestral
+from app.decorators import roles_required
 
 @seguimiento_bp.route('/')
 @login_required
@@ -15,6 +16,7 @@ def index():
 
 @seguimiento_bp.route('/calcular-riesgo', methods=['POST'])
 @login_required
+@roles_required('administrador', 'coordinador')
 def calcular_riesgo():
     """Ejecutar cálculo de riesgo para todos los estudiantes"""
     # OBTENER SEMESTRE DE CONFIGURACIÓN
@@ -54,6 +56,7 @@ def resultados():
 
 @seguimiento_bp.route('/api/calcular-estudiante/<int:estudiante_id>')
 @login_required
+@roles_required('administrador', 'coordinador')
 def calcular_estudiante(estudiante_id):
     """API para calcular riesgo de un estudiante específico"""
     try:

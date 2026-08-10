@@ -30,7 +30,7 @@ class AsistenciaForm(FlaskForm):
                 Estudiante.activo == True,
                 Curso.activo == True,
                 Ciclo.codigo_ciclo == periodo_actual
-            ).order_by(Curso.nombre_curso, Estudiante.apellidos).all()
+            ).order_by(Curso.nombre_curso, Estudiante.nombres, Estudiante.apellidos).all()
         ]
 
 class AsistenciaMasivaForm(FlaskForm):

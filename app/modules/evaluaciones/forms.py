@@ -79,5 +79,5 @@ class NotaForm(FlaskForm):
                 Estudiante.activo == True,
                 Curso.activo == True,
                 Ciclo.codigo_ciclo == periodo_actual
-            ).order_by(Estudiante.apellidos, Curso.nombre_curso).all()
+            ).order_by(Estudiante.nombres, Estudiante.apellidos, Curso.nombre_curso).all()
         ]

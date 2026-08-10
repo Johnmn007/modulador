@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from . import evaluaciones_bp
 from app.models import Evaluacion, Curso, Nota, Inscripcion, Estudiante
 from app.extensions import db
-from app.decorators import roles_required
+from app.decorators import roles_required, curso_pertenece_al_usuario
 from .forms import EvaluacionForm, NotaForm
 from datetime import datetime, timezone
 
@@ -20,6 +20,10 @@ def index():
 
     # Query base con join para curso
     evaluaciones_query = Evaluacion.query.join(Curso)
+
+    # Filtro por rol: docentes y coordinadores solo ven evaluaciones de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        evaluaciones_query = evaluaciones_query.filter(Curso.docente_id == current_user.id)
 
     # Búsqueda
     search = request.args.get('search', '')
@@ -45,8 +49,12 @@ def index():
         Curso.semestre.desc(), Curso.nombre_curso, Evaluacion.nombre_evaluacion
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros
-    cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    
     tipos_evaluacion = [
         'PARCIAL', 'QUIZ', 'TRABAJO', 'PROYECTO', 'LABORATORIO', 'EXAMEN_FINAL', 'OTRO'
     ]
@@ -66,8 +74,24 @@ def crear_evaluacion():
     """Crear nueva evaluación"""
     form = EvaluacionForm()
     
+    # Para GET request, establecer fecha actual como default
+    if request.method == 'GET':
+        form.fecha_creacion.data = datetime.now(timezone.utc).date()
+        form.peso.data = 100.0  # Valor por defecto
+        # Preseleccionar el curso si viene como parámetro (desde detalle del curso)
+        curso_id = request.args.get('curso_id', type=int)
+        if curso_id:
+            form.curso_id.data = curso_id
+    
     if form.validate_on_submit():
         try:
+            # Verificar que el curso pertenece al usuario (docentes y coordinadores)
+            if current_user.rol in ('docente', 'coordinador'):
+                curso = Curso.query.get(form.curso_id.data)
+                if not curso or not curso_pertenece_al_usuario(curso):
+                    flash('No tiene permisos para crear evaluaciones en este curso', 'danger')
+                    return redirect(url_for('evaluaciones.index'))
+            
             # Verificar si ya existe la evaluación en el mismo curso
             evaluacion_existente = Evaluacion.query.filter_by(
                 nombre_evaluacion=form.nombre_evaluacion.data,
@@ -97,15 +121,6 @@ def crear_evaluacion():
             db.session.rollback()
             flash('Ocurrió un error al crear la evaluación. Intente de nuevo.', 'danger')
     
-    # Para GET request, establecer fecha actual como default
-    if request.method == 'GET':
-        form.fecha_creacion.data = datetime.now(timezone.utc).date()
-        form.peso.data = 100.0  # Valor por defecto
-        # Preseleccionar el curso si viene como parámetro (desde detalle del curso)
-        curso_id = request.args.get('curso_id', type=int)
-        if curso_id:
-            form.curso_id.data = curso_id
-    
     # Mantener curso_id disponible para el template (para el botón "Volver al curso")
     curso_id = request.args.get('curso_id', type=int)
     return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id)
@@ -117,10 +132,16 @@ def detalle_evaluacion(evaluacion_id):
     """Detalle de una evaluación específica"""
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
     
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(evaluacion.curso):
+            flash('No tiene permisos para ver esta evaluación', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+    
     # Obtener notas de esta evaluación
     notas = Nota.query.filter_by(
         evaluacion_id=evaluacion_id
-    ).join(Inscripcion).join(Estudiante).order_by(Estudiante.apellidos).all()
+    ).join(Inscripcion).join(Estudiante).order_by(Estudiante.nombres, Estudiante.apellidos).all()
     
     # Estadísticas
     total_notas = len(notas)
@@ -148,6 +169,13 @@ def detalle_evaluacion(evaluacion_id):
 def editar_evaluacion(evaluacion_id):
     """Editar evaluación existente"""
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
+    
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(evaluacion.curso):
+            flash('No tiene permisos para editar esta evaluación', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+    
     form = EvaluacionForm(obj=evaluacion)
     
     if form.validate_on_submit():
@@ -217,6 +245,10 @@ def buscar():
         
     evaluaciones_query = Evaluacion.query.join(Curso)
     
+    # Filtro por rol: docentes y coordinadores solo ven evaluaciones de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        evaluaciones_query = evaluaciones_query.filter(Curso.docente_id == current_user.id)
+    
     resultados = evaluaciones_query.filter(
         db.or_(
             Evaluacion.nombre_evaluacion.ilike(f'%{q}%'),
@@ -257,6 +289,10 @@ def notas_index():
     # Query base con joins
     notas_query = Nota.query.join(Inscripcion).join(Estudiante).join(Evaluacion).join(Curso)
 
+    # Filtro por rol: docentes y coordinadores solo ven notas de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        notas_query = notas_query.filter(Curso.docente_id == current_user.id)
+
     # Filtros
     estudiante_id = request.args.get('estudiante_id', type=int)
     curso_id = request.args.get('curso_id', type=int)
@@ -273,9 +309,13 @@ def notas_index():
         Nota.fecha_registro.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
-    cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    
     evaluaciones = Evaluacion.query.join(Curso).filter(
         Curso.activo == True
     ).order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()
@@ -300,8 +340,19 @@ def crear_nota():
     """Crear nueva nota"""
     form = NotaForm()
     
+    # Para GET request, establecer fecha actual como default
+    if request.method == 'GET':
+        form.fecha_registro.data = datetime.now(timezone.utc).date()
+    
     if form.validate_on_submit():
         try:
+            # Verificar pertenencia del curso (docentes y coordinadores)
+            if current_user.rol in ('docente', 'coordinador'):
+                evaluacion = Evaluacion.query.get(form.evaluacion_id.data)
+                if not evaluacion or not curso_pertenece_al_usuario(evaluacion.curso):
+                    flash('No tiene permisos para crear notas en este curso', 'danger')
+                    return redirect(url_for('evaluaciones.notas_index'))
+            
             # Verificar si ya existe la nota para esta inscripción y evaluación
             nota_existente = Nota.query.filter_by(
                 inscripcion_id=form.inscripcion_id.data,
@@ -331,10 +382,6 @@ def crear_nota():
             db.session.rollback()
             flash('Ocurrió un error al crear la nota. Intente de nuevo.', 'danger')
     
-    # Para GET request, establecer fecha actual como default
-    if request.method == 'GET':
-        form.fecha_registro.data = datetime.now(timezone.utc).date()
-    
     return render_template('evaluaciones/crear_nota.html', form=form)
 
 @evaluaciones_bp.route('/notas/<int:nota_id>/editar', methods=['GET', 'POST'])
@@ -343,6 +390,14 @@ def crear_nota():
 def editar_nota(nota_id):
     """Editar nota existente"""
     nota = Nota.query.get_or_404(nota_id)
+    
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        evaluacion = Evaluacion.query.get(nota.evaluacion_id)
+        if not evaluacion or not curso_pertenece_al_usuario(evaluacion.curso):
+            flash('No tiene permisos para editar esta nota', 'danger')
+            return redirect(url_for('evaluaciones.notas_index'))
+    
     form = NotaForm(obj=nota)
     
     if form.validate_on_submit():
@@ -402,7 +457,12 @@ def eliminar_nota(nota_id):
 @roles_required('administrador', 'coordinador', 'docente')
 def registro_masivo():
     """Formulario inicial para registro masivo de notas"""
-    cursos = Curso.query.filter_by(activo=True).all()
+    # Docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).all()
+    
     evaluaciones = []
     
     curso_id = request.args.get('curso_id', type=int)
@@ -422,11 +482,17 @@ def formulario_masivo():
     evaluacion_id = request.form.get('evaluacion_id', type=int)
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
     
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(evaluacion.curso):
+            flash('No tiene permisos para registrar notas en este curso', 'danger')
+            return redirect(url_for('evaluaciones.registro_masivo'))
+    
     # Estudiantes inscritos
     inscripciones = Inscripcion.query.filter_by(
         curso_id=evaluacion.curso_id, 
         estado='ACTIVO'
-    ).join(Estudiante).order_by(Estudiante.apellidos).all()
+    ).join(Estudiante).order_by(Estudiante.nombres, Estudiante.apellidos).all()
     
     # Obtener notas existentes si las hay
     notas_existentes = {n.inscripcion_id: n for n in Nota.query.filter_by(evaluacion_id=evaluacion_id).all()}
@@ -445,8 +511,16 @@ def procesar_masiva():
         evaluacion_id = request.form.get('evaluacion_id', type=int)
         evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
         
+        # Verificar pertenencia del curso (docentes y coordinadores)
+        if current_user.rol in ('docente', 'coordinador'):
+            if not curso_pertenece_al_usuario(evaluacion.curso):
+                flash('No tiene permisos para registrar notas en este curso', 'danger')
+                return redirect(url_for('evaluaciones.registro_masivo'))
+        
         # Obtener todas las inscripciones del curso
-        inscripciones = Inscripcion.query.filter_by(curso_id=evaluacion.curso_id).all()
+        inscripciones = Inscripcion.query.join(Estudiante).filter(
+            Inscripcion.curso_id == evaluacion.curso_id
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
         
         for inscripcion in inscripciones:
             nota_valor = request.form.get(f'nota_{inscripcion.id}')

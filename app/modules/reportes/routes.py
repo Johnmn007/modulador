@@ -10,8 +10,9 @@ from . import reportes_bp
 from app.services.report_generator import ReportGenerator
 from app.services.config_service import cargar_configuracion
 from app.services.logger import app_logger
-from app.models import Reporte, Estudiante, Curso
+from app.models import Reporte, Estudiante, Curso, Inscripcion
 from app.extensions import db
+from app.decorators import curso_pertenece_al_usuario
 
 def get_pdf_config():
     """Configuración portable para pdfkit en diferentes sistemas"""
@@ -55,7 +56,18 @@ def index():
 @login_required
 def individual():
     """Reporte individual de estudiantes"""
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos).all()
+    # Docentes y coordinadores solo ven estudiantes de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+            Curso.docente_id == current_user.id
+        ).distinct().subquery()
+        estudiantes = Estudiante.query.filter(
+            Estudiante.activo == True,
+            Estudiante.id.in_(estudiantes_ids)
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    else:
+        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    
     config = cargar_configuracion()
     return render_template('reportes/individual.html', estudiantes=estudiantes, config=config)
 
@@ -179,8 +191,20 @@ def generar_individual():
 @login_required
 def asistencias_index():
     """Pantalla inicial de reportes de asistencia"""
-    cursos = Curso.query.filter_by(activo=True).order_by(Curso.semestre, Curso.nombre_curso).all()
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos).all()
+    # Docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by(Curso.semestre, Curso.nombre_curso).all()
+        estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+            Curso.docente_id == current_user.id
+        ).distinct().subquery()
+        estudiantes = Estudiante.query.filter(
+            Estudiante.activo == True,
+            Estudiante.id.in_(estudiantes_ids)
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by(Curso.semestre, Curso.nombre_curso).all()
+        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    
     config = cargar_configuracion()
     return render_template('reportes/asistencias_filter.html', cursos=cursos, estudiantes=estudiantes, config=config)
 
@@ -191,6 +215,13 @@ def generar_asistencia_grupal():
     try:
         curso_id = request.form.get('curso_id', type=int)
         formato = request.form.get('formato', 'html')
+        
+        # Verificar pertenencia del curso (docentes y coordinadores)
+        if current_user.rol in ('docente', 'coordinador'):
+            curso = Curso.query.get(curso_id)
+            if not curso or not curso_pertenece_al_usuario(curso):
+                flash('No tiene permisos para generar reportes de este curso', 'danger')
+                return redirect(url_for('reportes.asistencias_index'))
         
         generator = ReportGenerator()
         resultado = generator.generar_reporte_asistencia_curso(curso_id)

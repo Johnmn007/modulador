@@ -1,7 +1,7 @@
 # app/modules/inscripciones/routes.py
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
-from app.decorators import roles_required
+from app.decorators import roles_required, curso_pertenece_al_usuario
 from . import inscripciones_bp
 from app.models import Inscripcion, Estudiante, Curso, Asistencia, Nota, Evaluacion
 from app.extensions import db
@@ -122,6 +122,10 @@ def index():
     # Query base con joins para estudiante y curso
     inscripciones_query = Inscripcion.query.join(Estudiante).join(Curso)
 
+    # Filtro por rol: docentes y coordinadores solo ven inscripciones de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        inscripciones_query = inscripciones_query.filter(Curso.docente_id == current_user.id)
+
     # Búsqueda
     search = request.args.get('search', '')
     if search:
@@ -151,9 +155,12 @@ def index():
         Inscripcion.fecha_inscripcion.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
-    cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    else:
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
     return render_template('inscripciones/index.html',
                          inscripciones=inscripciones,
@@ -215,6 +222,12 @@ def crear():
 def detalle(inscripcion_id):
     """Detalle de una inscripción específica"""
     inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
+    
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(inscripcion.curso):
+            flash('No tiene permisos para ver esta inscripción', 'danger')
+            return redirect(url_for('inscripciones.index'))
     
     # Obtener asistencias
     asistencias = (
@@ -336,8 +349,15 @@ def cursos_por_semestre(semestre):
     ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
     if not ciclo:
         return jsonify([])
+    
+    # Query base
+    cursos_query = Curso.query.filter_by(semestre=semestre, ciclo_id=ciclo.id, activo=True)
+    
+    # Filtro por rol: docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos_query = cursos_query.filter(Curso.docente_id == current_user.id)
         
-    cursos = Curso.query.filter_by(semestre=semestre, ciclo_id=ciclo.id, activo=True).all()
+    cursos = cursos_query.all()
     
     resultado = [{
         'id': c.id,
@@ -441,6 +461,10 @@ def buscar():
         joinedload(Inscripcion.estudiante),
         joinedload(Inscripcion.curso)
     ).join(Estudiante).join(Curso)
+    
+    # Filtro por rol: docentes y coordinadores solo ven inscripciones de sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        inscripciones_query = inscripciones_query.filter(Curso.docente_id == current_user.id)
     
     # Búsqueda
     resultados = inscripciones_query.filter(

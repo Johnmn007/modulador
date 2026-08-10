@@ -24,7 +24,7 @@ class InscripcionForm(FlaskForm):
         # Cargar estudiantes activos
         self.estudiante_id.choices = [(0, '')] + [
             (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
-            for est in Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
+            for est in Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
         ]
         from app.services.config_service import cargar_configuracion
         from app.models import Ciclo
@@ -107,7 +107,7 @@ class MatriculaPorCicloForm(FlaskForm):
         # Cargar estudiantes activos
         self.estudiante_id.choices = [(0, '')] + [
             (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
-            for est in Estudiante.query.filter_by(activo=True).order_by('apellidos').all()
+            for est in Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
         ]
         
         with current_app.app_context():
