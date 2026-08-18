@@ -93,3 +93,6 @@ Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
 Flask-WTF
+
+pandas
+openpyxl
