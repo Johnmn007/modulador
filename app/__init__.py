@@ -3,6 +3,7 @@ import re
 from flask import Flask, render_template, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from whitenoise import WhiteNoise
 from app.extensions import db, migrate, login_manager
 from config import config_by_name
 from app.services.logger import app_logger
@@ -11,6 +12,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 def create_app(config_name=None):
     app = Flask(__name__)
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root='app/static/', prefix='static/')
     
     config_name = config_name or os.getenv("FLASK_CONFIG", "development")
     app.config.from_object(config_by_name[config_name])

@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "gunicorn run:app"
+releaseCommand = "python init_db.py"
+
+[env]
+TZ = "America/Lima"
