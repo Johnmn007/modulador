@@ -46,10 +46,8 @@ def index():
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Para los filtros: cursos del ciclo activo
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
-    config = cargar_configuracion()
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    from app.services.config_service import get_ciclo_activo
+    ciclo = get_ciclo_activo()
 
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
     if ciclo:
@@ -124,10 +122,8 @@ def crear_masiva():
     form = AsistenciaMasivaForm()
     
     # Todos los usuarios solo ven cursos del ciclo activo en el selector
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
-    config = cargar_configuracion()
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    from app.services.config_service import get_ciclo_activo
+    ciclo = get_ciclo_activo()
     ciclo_id_actual = ciclo.id if ciclo else None
 
     if ciclo_id_actual:
@@ -403,10 +399,8 @@ def estadisticas():
         })
     
     # Para los filtros: cursos del ciclo activo
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
-    config = cargar_configuracion()
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    from app.services.config_service import get_ciclo_activo
+    ciclo = get_ciclo_activo()
     if ciclo:
         if current_user.rol in ('docente', 'coordinador'):
             cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()

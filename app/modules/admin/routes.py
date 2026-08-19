@@ -110,6 +110,14 @@ def cambiar_semestre():
         # Guardar configuración actualizada
         guardar_configuracion(config)
         
+        # Sincronizar campo activo en la BD
+        from app.models import Ciclo
+        Ciclo.query.update({Ciclo.activo: False})
+        ciclo_nuevo = Ciclo.query.filter_by(codigo_ciclo=nuevo_semestre).first()
+        if ciclo_nuevo:
+            ciclo_nuevo.activo = True
+            db.session.commit()
+        
         flash(f'Semestre cambiado exitosamente a {nuevo_semestre}', 'success')
         
     except Exception as e:

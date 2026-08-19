@@ -340,13 +340,9 @@ def eliminar(inscripcion_id):
 @inscripciones_bp.route('/api/cursos-semestre/<semestre>')
 @login_required
 def cursos_por_semestre(semestre):
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
+    from app.services.config_service import get_ciclo_activo
     
-    config = cargar_configuracion()
-    periodo_actual = config.get('semestre_actual')
-    
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+    ciclo = get_ciclo_activo()
     if not ciclo:
         return jsonify([])
     

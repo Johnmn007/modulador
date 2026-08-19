@@ -253,10 +253,8 @@ def buscar():
         return jsonify({'cursos': [], 'total': 0})
     
     # Query base: filtrar por ciclo activo
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
-    config = cargar_configuracion()
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    from app.services.config_service import get_ciclo_activo
+    ciclo = get_ciclo_activo()
     if not ciclo:
         return jsonify({'cursos': [], 'total': 0})
     cursos_query = Curso.query.filter_by(ciclo_id=ciclo.id)

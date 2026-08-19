@@ -26,20 +26,17 @@ class InscripcionForm(FlaskForm):
             (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
             for est in Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
         ]
-        from app.services.config_service import cargar_configuracion
-        from app.models import Ciclo
+        from app.services.config_service import get_ciclo_activo
         
-        config = cargar_configuracion()
-        periodo_actual = config.get('semestre_actual')
+        ciclo = get_ciclo_activo()
         
-        # Cargar cursos activos del periodo actual
-        self.curso_id.choices = [(0, '')] + [
-            (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre} | {curso.ciclo.codigo_ciclo})")
-            for curso in Curso.query.join(Ciclo).filter(
-                Curso.activo.is_(True),
-                Ciclo.codigo_ciclo == periodo_actual
-            ).order_by('semestre', 'nombre_curso').all()
-        ]
+        if ciclo:
+            self.curso_id.choices = [(0, '')] + [
+                (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre})")
+                for curso in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+            ]
+        else:
+            self.curso_id.choices = [(0, '')]
         
 # ------------------------------------------------------------------
 # MATRICULAS MASIVAS    

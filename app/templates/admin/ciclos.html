@@ -84,12 +84,10 @@
                                 </thead>
                                 <tbody>
                                     {% for ciclo in ciclos %}
-                                    <tr class="{{ 'bg-primary bg-opacity-10' if ciclo.codigo_ciclo == config.semestre_actual else '' }}">
+                                    <tr class="{{ 'bg-primary bg-opacity-10' if ciclo.activo else '' }}">
                                         <td class="ps-4">
-                                            {% if ciclo.codigo_ciclo == config.semestre_actual %}
+                                            {% if ciclo.activo %}
                                                 <span class="badge rounded-pill bg-success px-3">OPERATIVO</span>
-                                            {% elif ciclo.activo %}
-                                                <span class="badge rounded-pill bg-info px-3">DISPONIBLE</span>
                                             {% else %}
                                                 <span class="badge rounded-pill bg-light text-muted px-3 border">ARCHIVADO</span>
                                             {% endif %}
@@ -103,7 +101,7 @@
                                             <div class="small"><i class="fas fa-calendar-check me-2 text-muted"></i>{{ ciclo.fecha_fin.strftime('%d/%m/%Y') }}</div>
                                         </td>
                                         <td class="text-end pe-4">
-                                            {% if ciclo.codigo_ciclo != config.semestre_actual %}
+                                            {% if not ciclo.activo %}
                                             <form method="POST" action="{{ url_for('admin.cambiar_semestre') }}" style="display: inline;">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                 <input type="hidden" name="semestre" value="{{ ciclo.codigo_ciclo }}">
