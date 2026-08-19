@@ -141,6 +141,7 @@
                                         </a>
                                         <form method="POST" action="{{ url_for('inscripciones.eliminar', inscripcion_id=inscripcion.id) }}" 
                                               class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar esta inscripción?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                                                 <i class="fas fa-trash text-danger"></i>
                                             </button>
@@ -244,6 +245,7 @@
 
     const userRol = "{{ current_user.rol }}";
     const canEdit = (userRol === 'administrador' || userRol === 'coordinador');
+    const csrfToken = "{{ csrf_token() }}";
 
     const DEBOUNCE_MS = 300;
     let debounceTimer = null;
@@ -283,6 +285,7 @@
                    </a>
                    <form method="POST" action="${i.url_eliminar}" class="d-inline"
                          onsubmit="return confirmDelete(event, this, '¿Eliminar esta inscripción?');">
+                       <input type="hidden" name="csrf_token" value="${csrfToken}"/>
                        <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                            <i class="fas fa-trash text-danger"></i>
                        </button>
