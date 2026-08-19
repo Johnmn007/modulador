@@ -136,10 +136,24 @@ def crear_masiva():
     
     if form.validate_on_submit():
         try:
+            # Verificar que el curso pertenece al ciclo activo
+            from app.services.config_service import cargar_configuracion
+            from app.models import Ciclo
+            config = cargar_configuracion()
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+            curso = Curso.query.get(form.curso_id.data)
+
+            if not curso:
+                flash('El curso seleccionado no existe', 'danger')
+                return redirect(url_for('asistencias.crear_masiva'))
+
+            if ciclo and curso.ciclo_id != ciclo.id:
+                flash('Este curso no pertenece al ciclo actual. Solo puede pasar lista de cursos del ciclo activo.', 'danger')
+                return redirect(url_for('asistencias.crear_masiva'))
+
             # Verificar pertenencia del curso (docentes y coordinadores)
             if current_user.rol in ('docente', 'coordinador'):
-                curso = Curso.query.get(form.curso_id.data)
-                if not curso or not curso_pertenece_al_usuario(curso):
+                if not curso_pertenece_al_usuario(curso):
                     flash('No tiene permisos para registrar asistencias en este curso', 'danger')
                     return redirect(url_for('asistencias.index'))
             
