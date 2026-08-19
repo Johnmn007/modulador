@@ -19,16 +19,14 @@ def matricula_masiva():
     
     if form.validate_on_submit():
         try:
-            from app.services.config_service import cargar_configuracion
-            from app.models import Ciclo
+            from app.services.config_service import get_ciclo_activo
             
-            config = cargar_configuracion()
-            periodo_actual = config.get('semestre_actual')
-            
-            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            ciclo = get_ciclo_activo()
             if not ciclo:
-                flash(f'El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                flash('No hay un ciclo activo configurado. Debe configurar el ciclo primero.', 'danger')
                 return render_template('inscripciones/matricula_masiva.html', form=form)
+            
+            periodo_actual = ciclo.codigo_ciclo
             
             # El form.semestre.data en realidad trae el Nivel de Malla (ej. 'I', 'II')
             nivel_malla = form.semestre.data
@@ -373,16 +371,14 @@ def matricula_por_ciclo():
     
     if form.validate_on_submit():
         try:
-            from app.services.config_service import cargar_configuracion
-            from app.models import Ciclo
+            from app.services.config_service import get_ciclo_activo
             
-            config = cargar_configuracion()
-            periodo_actual = config.get('semestre_actual')
-            
-            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            ciclo = get_ciclo_activo()
             if not ciclo:
-                flash(f'El ciclo actual ({periodo_actual}) no existe. Debe configurar el ciclo o importar cursos primero.', 'danger')
+                flash('No hay un ciclo activo configurado. Debe configurar el ciclo primero.', 'danger')
                 return render_template('inscripciones/matricula_por_ciclo.html', form=form)
+            
+            periodo_actual = ciclo.codigo_ciclo
             
             estudiante_id = form.estudiante_id.data
             nivel_malla = form.semestre.data

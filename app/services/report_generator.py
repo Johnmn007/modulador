@@ -16,8 +16,9 @@ class ReportGenerator:
         estudiante = Estudiante.query.get_or_404(estudiante_id)
         
         if not semestre:
-            config = cargar_configuracion()
-            semestre = config.get('semestre_actual')
+            from app.services.config_service import get_ciclo_activo
+            ciclo = get_ciclo_activo()
+            semestre = ciclo.codigo_ciclo if ciclo else None
         
         # Obtener seguimiento de riesgo más reciente
         seguimiento = SeguimientoRiesgo.query.filter_by(
@@ -82,8 +83,9 @@ class ReportGenerator:
     def generar_reporte_riesgo_general(self, semestre=None, categoria_filtro=None):
         """Genera reporte general de riesgo para todos los estudiantes"""
         if not semestre:
-            config = cargar_configuracion()
-            semestre = config.get('semestre_actual')
+            from app.services.config_service import get_ciclo_activo
+            ciclo = get_ciclo_activo()
+            semestre = ciclo.codigo_ciclo if ciclo else None
         
         # Obtener estudiantes en riesgo
         query = db.session.query(Estudiante, SeguimientoRiesgo).join(

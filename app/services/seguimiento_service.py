@@ -47,7 +47,9 @@ class SeguimientoService:
         try:
             config = cargar_configuracion()
             if not semestre:
-                semestre = config.get('semestre_actual')
+                from app.services.config_service import get_ciclo_activo
+                ciclo = get_ciclo_activo()
+                semestre = ciclo.codigo_ciclo if ciclo else config.get('semestre_actual')
 
             calculador = CalculatorRiesgoIntrasemestral(config)
             
@@ -86,7 +88,9 @@ class SeguimientoService:
         try:
             config = cargar_configuracion()
             if not semestre:
-                semestre = config.get('semestre_actual')
+                from app.services.config_service import get_ciclo_activo
+                ciclo = get_ciclo_activo()
+                semestre = ciclo.codigo_ciclo if ciclo else config.get('semestre_actual')
 
             calculador = CalculatorRiesgoIntrasemestral(config)
             resultado = calculador.calcular_riesgo_estudiante(estudiante_id, semestre, db)
