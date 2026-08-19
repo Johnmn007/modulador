@@ -171,7 +171,9 @@ def actualizar_semestre(nuevo_semestre):
 def get_ciclo_activo():
     """Obtiene el ciclo activo desde la BD (campo activo=True).
     Si no hay ninguno, intenta con semestre_actual del config.
-    Retorna el objeto Ciclo o None."""
+    Retorna el objeto Ciclo o None.
+    NOTA: Esta funcion NO modifica la BD. Si hay un desajuste,
+    el admin debe corregirlo desde la interfaz."""
     from app.models import Ciclo
     
     # Prioridad 1: buscar por campo activo en la BD
@@ -179,17 +181,12 @@ def get_ciclo_activo():
     if ciclo:
         return ciclo
     
-    # Prioridad 2: buscar por semestre_actual en config
+    # Prioridad 2: buscar por semestre_actual en config (sin modificar BD)
     config = cargar_configuracion()
     semestre = config.get('semestre_actual')
     if semestre:
         ciclo = Ciclo.query.filter_by(codigo_ciclo=semestre).first()
         if ciclo:
-            # Sincronizar: marcar como activo en la BD
-            Ciclo.query.update({Ciclo.activo: False})
-            ciclo.activo = True
-            from app.extensions import db
-            db.session.commit()
             return ciclo
     
     return None
