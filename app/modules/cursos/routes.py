@@ -64,21 +64,11 @@ def crear():
         try:
             semestre_val = form.semestre.data
             
-            config = cargar_configuracion()
-            periodo_actual = config.get('semestre_actual', '2024-1')
-            
-            # Buscar o crear el ciclo del periodo actual
-            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            from app.services.config_service import get_ciclo_activo
+            ciclo = get_ciclo_activo()
             if not ciclo:
-                ciclo = Ciclo(
-                    nombre=f"Ciclo {periodo_actual}",
-                    codigo_ciclo=periodo_actual,
-                    fecha_inicio=datetime.now(timezone.utc).date(),
-                    fecha_fin=datetime.now(timezone.utc).date(),
-                    activo=True
-                )
-                db.session.add(ciclo)
-                db.session.flush()
+                flash('No hay un ciclo activo configurado', 'danger')
+                return render_template('cursos/crear.html', form=form)
 
             # Verificar si el código de curso ya existe en este ciclo
             curso_existente = Curso.query.filter_by(
@@ -173,26 +163,16 @@ def editar(curso_id):
         try:
             semestre_val = form.semestre.data
             
-            config = cargar_configuracion()
-            periodo_actual = config.get('semestre_actual', '2024-1')
-            
-            # Buscar o crear el ciclo del periodo actual
-            ciclo = Ciclo.query.filter_by(codigo_ciclo=periodo_actual).first()
+            from app.services.config_service import get_ciclo_activo
+            ciclo = get_ciclo_activo()
             if not ciclo:
-                ciclo = Ciclo(
-                    nombre=f"Ciclo {periodo_actual}",
-                    codigo_ciclo=periodo_actual,
-                    fecha_inicio=datetime.now(timezone.utc).date(),
-                    fecha_fin=datetime.now(timezone.utc).date(),
-                    activo=True
-                )
-                db.session.add(ciclo)
-                db.session.flush()
+                flash('No hay un ciclo activo configurado', 'danger')
+                return render_template('cursos/editar.html', form=form, curso=curso)
 
             # Verificar si el código de curso ya existe en este ciclo (excluyendo el actual)
             curso_existente = Curso.query.filter(
                 Curso.codigo_curso == form.codigo_curso.data,
-                Curso.ciclo_id == ciclo.id,
+                Curso.ciclo_id == curso.ciclo_id,
                 Curso.id != curso_id
             ).first()
             
@@ -200,12 +180,11 @@ def editar(curso_id):
                 flash('Ya existe un curso con este código en el periodo actual', 'danger')
                 return render_template('cursos/editar.html', form=form, curso=curso)
 
-            # Actualizar curso
+            # Actualizar curso (sin cambiar ciclo_id)
             curso.codigo_curso = form.codigo_curso.data
             curso.nombre_curso = form.nombre_curso.data
             curso.creditos = form.creditos.data
             curso.semestre = semestre_val
-            curso.ciclo_id = ciclo.id
             curso.docente_id = form.docente_id.data if form.docente_id.data != 0 else None
             curso.activo = form.activo.data
             
