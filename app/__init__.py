@@ -4,6 +4,7 @@ from flask import Flask, render_template, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
+from flask_wtf.csrf import CSRFProtect
 from app.extensions import db, migrate, login_manager
 from config import config_by_name
 from app.services.logger import app_logger
@@ -25,6 +26,7 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     limiter.init_app(app)
+    CSRFProtect(app)
     
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
@@ -34,6 +36,8 @@ def create_app(config_name=None):
             Usuario, Estudiante, Curso, Inscripcion, 
             Asistencia, Evaluacion, Nota, 
             SeguimientoRiesgo, Intervencion, Ciclo, Reporte)
+        
+        db.create_all()
         
         @login_manager.user_loader
         def load_user(user_id):
