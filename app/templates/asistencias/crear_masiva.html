@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(json => {
                         var options = json.cursos.map(c => ({
                             id: c.id,
-                            text: `${c.codigo_curso} - ${c.nombre_curso} (Nivel ${c.semestre})`
+                            text: `${c.codigo_curso} - ${c.nombre_curso} (Nivel ${c.semestre} | ${c.ciclo})`
                         }));
                         callback(options);
                     }).catch(()=>{

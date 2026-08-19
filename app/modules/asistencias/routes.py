@@ -128,28 +128,32 @@ def crear_masiva():
     from app.models import Ciclo
     config = cargar_configuracion()
     ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
-    if ciclo:
+    ciclo_id_actual = ciclo.id if ciclo else None
+
+    if ciclo_id_actual:
         if current_user.rol in ('docente', 'coordinador'):
-            form.curso_id.query = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).all()
+            cursos_disponibles = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo_id_actual).all()
         else:
-            form.curso_id.query = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).all()
+            cursos_disponibles = Curso.query.filter_by(activo=True, ciclo_id=ciclo_id_actual).all()
     else:
-        form.curso_id.query = []
+        cursos_disponibles = []
+
+    form.curso_id.choices = [(c.id, f"{c.codigo_curso} - {c.nombre_curso} (Nivel {c.semestre})") for c in cursos_disponibles]
     
     if form.validate_on_submit():
         try:
-            # Verificar que el curso pertenece al ciclo activo
-            from app.services.config_service import cargar_configuracion
-            from app.models import Ciclo
-            config = cargar_configuracion()
-            ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
-            curso = Curso.query.get(form.curso_id.data)
+            curso_id_seleccionado = form.curso_id.data
+            curso = Curso.query.get(curso_id_seleccionado)
 
             if not curso:
                 flash('El curso seleccionado no existe', 'danger')
                 return redirect(url_for('asistencias.crear_masiva'))
 
-            if ciclo and curso.ciclo_id != ciclo.id:
+            if not ciclo_id_actual:
+                flash('No hay un ciclo activo configurado. No se pueden registrar asistencias.', 'danger')
+                return redirect(url_for('asistencias.crear_masiva'))
+
+            if curso.ciclo_id != ciclo_id_actual:
                 flash('Este curso no pertenece al ciclo actual. Solo puede pasar lista de cursos del ciclo activo.', 'danger')
                 return redirect(url_for('asistencias.crear_masiva'))
 

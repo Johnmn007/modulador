@@ -288,6 +288,7 @@ def buscar():
             'activo': c.activo,
             'docente': docente_nombre,
             'inscritos': len(c.inscripciones),
+            'ciclo': c.ciclo.codigo_ciclo if c.ciclo else '',
             'url_detalle': url_for('cursos.detalle', curso_id=c.id),
             'url_editar': url_for('cursos.editar', curso_id=c.id),
             'url_eliminar': url_for('cursos.eliminar', curso_id=c.id)
