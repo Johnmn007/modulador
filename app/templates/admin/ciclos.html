@@ -30,6 +30,7 @@
                         </div>
 
                         <form method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Nombre del Ciclo</label>
                                 <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" 
@@ -104,6 +105,7 @@
                                         <td class="text-end pe-4">
                                             {% if ciclo.codigo_ciclo != config.semestre_actual %}
                                             <form method="POST" action="{{ url_for('admin.cambiar_semestre') }}" style="display: inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                 <input type="hidden" name="semestre" value="{{ ciclo.codigo_ciclo }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-primary border-2 fw-bold">
                                                     Reactivar
