@@ -5,19 +5,23 @@ from . import cursos_bp
 from datetime import datetime, timezone
 from app.models import Curso, Inscripcion, Evaluacion, Estudiante, Usuario, Ciclo
 from app.extensions import db
-from app.services.config_service import cargar_configuracion
+from app.services.config_service import cargar_configuracion, get_ciclo_activo
 from app.decorators import roles_required, usuario_es_docente
 from .forms import CursoForm
 
 @cursos_bp.route('/')
 @login_required
 def index():
-    """Lista de todos los cursos"""
+    """Lista de cursos del ciclo activo"""
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
-    # Query base
-    cursos_query = Curso.query
+    # Query base: filtrar por ciclo activo
+    ciclo = get_ciclo_activo()
+    if ciclo:
+        cursos_query = Curso.query.filter_by(ciclo_id=ciclo.id)
+    else:
+        cursos_query = Curso.query.none()
     
     # Filtro por rol
     if current_user.rol == 'docente':
