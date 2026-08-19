@@ -26,6 +26,7 @@
                 </a>
                 <form method="POST" action="{{ url_for('cursos.eliminar', curso_id=curso.id) }}" 
                       class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar curso del catálogo académico?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
                         <i class="fas fa-trash"></i>
                     </button>

@@ -103,7 +103,8 @@
                                             <i class="fas fa-edit text-warning"></i>
                                         </a>
                                         <form method="POST" action="{{ url_for('cursos.eliminar', curso_id=curso.id) }}" 
-                                              class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar curso del sistema?');">
+                                               class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar curso del sistema?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                                                 <i class="fas fa-trash text-danger"></i>
                                             </button>
@@ -188,6 +189,7 @@
 
     const userRol = "{{ current_user.rol }}";
     const canEdit = (userRol === 'administrador' || userRol === 'coordinador');
+    const csrfToken = "{{ csrf_token() }}";
 
     const DEBOUNCE_MS = 300;
     let debounceTimer = null;
@@ -229,7 +231,8 @@
                        <i class="fas fa-edit text-warning"></i>
                    </a>
                    <form method="POST" action="${c.url_eliminar}" class="d-inline"
-                         onsubmit="return confirmDelete(event, this, '¿Eliminar curso del sistema?');">
+                          onsubmit="return confirmDelete(event, this, '¿Eliminar curso del sistema?');">
+                       <input type="hidden" name="csrf_token" value="${csrfToken}"/>
                        <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                            <i class="fas fa-trash text-danger"></i>
                        </button>
