@@ -316,7 +316,7 @@ def ciclos():
         flash('No tiene permisos para acceder a esta sección', 'danger')
         return redirect(url_for('dashboard.index'))
     
-    from app.models import Ciclo
+    from app.models import Ciclo, Curso
     config = cargar_configuracion()
     form = CicloForm()
     
@@ -333,16 +333,54 @@ def ciclos():
             Ciclo.query.update({Ciclo.activo: False})
             
             db.session.add(nuevo_ciclo)
+            db.session.flush()
+            
+            ciclo_anterior = Ciclo.query\
+                .filter(Ciclo.id != nuevo_ciclo.id)\
+                .order_by(Ciclo.fecha_inicio.desc())\
+                .first()
+            
+            cursos_copiados = 0
+            if ciclo_anterior:
+                cursos_anteriores = Curso.query.filter_by(
+                    ciclo_id=ciclo_anterior.id,
+                    activo=True
+                ).all()
+                
+                for curso in cursos_anteriores:
+                    existe = Curso.query.filter_by(
+                        codigo_curso=curso.codigo_curso,
+                        ciclo_id=nuevo_ciclo.id
+                    ).first()
+                    
+                    if not existe:
+                        nuevo_curso = Curso(
+                            codigo_curso=curso.codigo_curso,
+                            nombre_curso=curso.nombre_curso,
+                            creditos=curso.creditos,
+                            semestre=curso.semestre,
+                            ciclo_id=nuevo_ciclo.id,
+                            activo=True
+                        )
+                        db.session.add(nuevo_curso)
+                        cursos_copiados += 1
             
             config['semestre_actual'] = form.codigo.data
             guardar_configuracion(config)
             
             db.session.commit()
-            flash(f'¡Ciclo {form.nombre.data} iniciado exitosamente! El sistema ahora opera en el periodo {form.codigo.data}.', 'success')
+            
+            mensaje = f'¡Ciclo {form.nombre.data} iniciado exitosamente!'
+            if cursos_copiados > 0:
+                mensaje += f' Se copiaron {cursos_copiados} cursos del ciclo anterior.'
+            else:
+                mensaje += ' No se encontraron cursos del ciclo anterior para copiar.'
+            flash(mensaje, 'success')
             return redirect(url_for('admin.ciclos'))
             
         except Exception as e:
             db.session.rollback()
+            app_logger.error(f"Error creando ciclo: {str(e)}")
             flash('Ocurrió un error al crear el ciclo. Intente de nuevo.', 'danger')
     elif request.method == 'POST':
         for field, errors in form.errors.items():
