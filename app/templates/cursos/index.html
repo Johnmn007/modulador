@@ -299,6 +299,20 @@
             const q = this.value.trim();
             debounceTimer = setTimeout(() => doSearch(q), DEBOUNCE_MS);
         });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                doSearch(this.value.trim());
+            }
+        });
+    }
+
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            doSearch(input ? input.value.trim() : '');
+        });
     }
 })();
 </script>
