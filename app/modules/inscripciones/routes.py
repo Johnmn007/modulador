@@ -160,13 +160,15 @@ def index():
     from app.models import Ciclo
     config = cargar_configuracion()
     ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
-    filtro_ciclo = {'ciclo_id': ciclo.id} if ciclo else {}
 
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, **filtro_ciclo).order_by('semestre', 'nombre_curso').all()
+    if ciclo:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True, **filtro_ciclo).order_by('semestre', 'nombre_curso').all()
+        cursos = []
 
     return render_template('inscripciones/index.html',
                          inscripciones=inscripciones,

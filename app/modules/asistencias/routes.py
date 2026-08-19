@@ -45,12 +45,20 @@ def index():
         Asistencia.fecha.desc(), Curso.nombre_curso, Estudiante.apellidos
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros: docentes y coordinadores solo ven sus cursos
+    # Para los filtros: cursos del ciclo activo
+    from app.services.config_service import cargar_configuracion
+    from app.models import Ciclo
+    config = cargar_configuracion()
+    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    if ciclo:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+        cursos = []
 
     return render_template('asistencias/index.html',
                          asistencias=asistencias,
@@ -115,9 +123,16 @@ def crear_masiva():
     """Registro masivo de asistencias por curso"""
     form = AsistenciaMasivaForm()
     
-    # Docentes y coordinadores solo ven sus cursos en el selector
+    # Docentes y coordinadores solo ven sus cursos del ciclo activo en el selector
     if current_user.rol in ('docente', 'coordinador'):
-        form.curso_id.query = Curso.query.filter_by(activo=True, docente_id=current_user.id).all()
+        from app.services.config_service import cargar_configuracion
+        from app.models import Ciclo
+        config = cargar_configuracion()
+        ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+        if ciclo:
+            form.curso_id.query = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).all()
+        else:
+            form.curso_id.query = []
     
     if form.validate_on_submit():
         try:
@@ -367,11 +382,18 @@ def estadisticas():
             'porcentaje_efectiva': porcentaje_efectiva
         })
     
-    # Para los filtros: docentes y coordinadores solo ven sus cursos
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    # Para los filtros: cursos del ciclo activo
+    from app.services.config_service import cargar_configuracion
+    from app.models import Ciclo
+    config = cargar_configuracion()
+    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    if ciclo:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+        cursos = []
     
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
     semestres = db.session.query(Curso.semestre).distinct().order_by(Curso.semestre.desc()).all()
