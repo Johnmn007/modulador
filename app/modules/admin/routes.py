@@ -424,16 +424,22 @@ def copiar_cursos_ciclo(ciclo_id):
 
     cursos_copiados = 0
     for curso in cursos_fuente:
-        nuevo_curso = Curso(
+        existe = Curso.query.filter_by(
             codigo_curso=curso.codigo_curso,
-            nombre_curso=curso.nombre_curso,
-            creditos=curso.creditos,
-            semestre=curso.semestre,
-            ciclo_id=ciclo_destino.id,
-            activo=True
-        )
-        db.session.add(nuevo_curso)
-        cursos_copiados += 1
+            ciclo_id=ciclo_destino.id
+        ).first()
+
+        if not existe:
+            nuevo_curso = Curso(
+                codigo_curso=curso.codigo_curso,
+                nombre_curso=curso.nombre_curso,
+                creditos=curso.creditos,
+                semestre=curso.semestre,
+                ciclo_id=ciclo_destino.id,
+                activo=True
+            )
+            db.session.add(nuevo_curso)
+            cursos_copiados += 1
 
     db.session.commit()
     flash(f'Se copiaron {cursos_copiados} cursos del ciclo {ciclo_fuente.codigo_ciclo} al ciclo {ciclo_destino.codigo_ciclo}.', 'success')

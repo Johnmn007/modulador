@@ -252,8 +252,12 @@ def buscar():
     if not q:
         return jsonify({'cursos': [], 'total': 0})
     
-    # Query base
-    cursos_query = Curso.query
+    # Query base: filtrar por ciclo activo
+    from app.services.config_service import cargar_configuracion
+    from app.models import Ciclo
+    config = cargar_configuracion()
+    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    cursos_query = Curso.query.filter_by(ciclo_id=ciclo.id) if ciclo else Curso.query
     
     # Filtro por rol
     if current_user.rol == 'docente':
