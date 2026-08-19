@@ -111,6 +111,14 @@
                                                     Reactivar
                                                 </button>
                                             </form>
+                                            {% if cursos_por_ciclo.get(ciclo.id, 0) == 0 %}
+                                            <form method="POST" action="{{ url_for('admin.copiar_cursos_ciclo', ciclo_id=ciclo.id) }}" style="display: inline;" class="no-loader">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-warning border-2 fw-bold ms-1" title="Copiar cursos del ciclo anterior">
+                                                    <i class="fas fa-copy me-1"></i> Copiar cursos
+                                                </button>
+                                            </form>
+                                            {% endif %}
                                             {% else %}
                                                 <i class="fas fa-check-circle text-success fa-lg"></i>
                                             {% endif %}

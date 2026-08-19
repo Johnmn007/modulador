@@ -388,7 +388,56 @@ def ciclos():
                 flash(f'{getattr(form, field).label.text}: {error}', 'danger')
     
     ciclos_historial = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all()
-    return render_template('admin/ciclos.html', ciclos=ciclos_historial, config=config, form=form)
+    cursos_por_ciclo = {c.id: Curso.query.filter_by(ciclo_id=c.id).count() for c in ciclos_historial}
+    return render_template('admin/ciclos.html', ciclos=ciclos_historial, config=config, form=form, cursos_por_ciclo=cursos_por_ciclo)
+
+@admin_bp.route('/ciclos/<int:ciclo_id>/copiar-cursos', methods=['POST'])
+@login_required
+def copiar_cursos_ciclo(ciclo_id):
+    """Copiar cursos del ciclo más reciente con cursos a un ciclo específico"""
+    if current_user.rol != 'administrador':
+        flash('No tiene permisos para acceder a esta sección', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    from app.models import Ciclo, Curso
+    ciclo_destino = Ciclo.query.get_or_404(ciclo_id)
+
+    cursos_existentes = Curso.query.filter_by(ciclo_id=ciclo_destino.id).count()
+    if cursos_existentes > 0:
+        flash(f'El ciclo {ciclo_destino.codigo_ciclo} ya tiene {cursos_existentes} cursos. No se realizó ninguna copia.', 'warning')
+        return redirect(url_for('admin.ciclos'))
+
+    ciclo_fuente = Ciclo.query\
+        .filter(Ciclo.id != ciclo_destino.id)\
+        .order_by(Ciclo.fecha_inicio.desc())\
+        .first()
+
+    if not ciclo_fuente:
+        flash('No se encontró ningún ciclo anterior con cursos para copiar.', 'danger')
+        return redirect(url_for('admin.ciclos'))
+
+    cursos_fuente = Curso.query.filter_by(ciclo_id=ciclo_fuente.id, activo=True).all()
+
+    if not cursos_fuente:
+        flash(f'El ciclo {ciclo_fuente.codigo_ciclo} no tiene cursos activos para copiar.', 'warning')
+        return redirect(url_for('admin.ciclos'))
+
+    cursos_copiados = 0
+    for curso in cursos_fuente:
+        nuevo_curso = Curso(
+            codigo_curso=curso.codigo_curso,
+            nombre_curso=curso.nombre_curso,
+            creditos=curso.creditos,
+            semestre=curso.semestre,
+            ciclo_id=ciclo_destino.id,
+            activo=True
+        )
+        db.session.add(nuevo_curso)
+        cursos_copiados += 1
+
+    db.session.commit()
+    flash(f'Se copiaron {cursos_copiados} cursos del ciclo {ciclo_fuente.codigo_ciclo} al ciclo {ciclo_destino.codigo_ciclo}.', 'success')
+    return redirect(url_for('admin.ciclos'))
 
 @admin_bp.route('/backup')
 @login_required
