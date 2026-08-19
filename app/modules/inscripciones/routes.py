@@ -155,20 +155,12 @@ def index():
         Inscripcion.fecha_inscripcion.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros: cursos del ciclo activo
-    from app.services.config_service import cargar_configuracion
-    from app.models import Ciclo
-    config = cargar_configuracion()
-    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
-
+    # Para los filtros: docentes y coordinadores solo ven sus cursos
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
-    if ciclo:
-        if current_user.rol in ('docente', 'coordinador'):
-            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
-        else:
-            cursos = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = []
+        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
     return render_template('inscripciones/index.html',
                          inscripciones=inscripciones,
