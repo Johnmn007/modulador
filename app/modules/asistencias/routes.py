@@ -123,16 +123,18 @@ def crear_masiva():
     """Registro masivo de asistencias por curso"""
     form = AsistenciaMasivaForm()
     
-    # Docentes y coordinadores solo ven sus cursos del ciclo activo en el selector
-    if current_user.rol in ('docente', 'coordinador'):
-        from app.services.config_service import cargar_configuracion
-        from app.models import Ciclo
-        config = cargar_configuracion()
-        ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
-        if ciclo:
+    # Todos los usuarios solo ven cursos del ciclo activo en el selector
+    from app.services.config_service import cargar_configuracion
+    from app.models import Ciclo
+    config = cargar_configuracion()
+    ciclo = Ciclo.query.filter_by(codigo_ciclo=config.get('semestre_actual')).first()
+    if ciclo:
+        if current_user.rol in ('docente', 'coordinador'):
             form.curso_id.query = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).all()
         else:
-            form.curso_id.query = []
+            form.curso_id.query = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).all()
+    else:
+        form.curso_id.query = []
     
     if form.validate_on_submit():
         try:
