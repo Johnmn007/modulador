@@ -376,6 +376,28 @@ def crear_nota():
     if request.method == 'GET':
         form.fecha_registro.data = datetime.now(timezone.utc).date()
     
+    # Si hay curso_id en el POST, cargar las choices dinámicas
+    if request.method == 'POST' and form.curso_id.data:
+        curso_id = form.curso_id.data
+        
+        # Cargar estudiantes del curso seleccionado
+        inscripciones = Inscripcion.query.join(Estudiante).filter(
+            Inscripcion.curso_id == curso_id,
+            Inscripcion.estado == 'ACTIVO',
+            Estudiante.activo == True
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        form.estudiante_id.choices = [
+            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}")
+            for ins in inscripciones
+        ]
+        
+        # Cargar evaluaciones del curso seleccionado
+        evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(Evaluacion.nombre_evaluacion).all()
+        form.evaluacion_id.choices = [
+            (e.id, f"{e.nombre_evaluacion} ({e.tipo_evaluacion})")
+            for e in evaluaciones
+        ]
+    
     if form.validate_on_submit():
         try:
             # Resolver inscripcion_id desde curso_id + estudiante_id
@@ -436,12 +458,12 @@ def editar_nota(nota_id):
     
     # Verificar pertenencia del curso (docentes y coordinadores)
     if current_user.rol in ('docente', 'coordinador'):
-        evaluacion = Evaluacion.query.get(nota.evaluacion_id)
-        if not evaluacion or not curso_pertenece_al_usuario(evaluacion.curso):
+        evaluacion_check = Evaluacion.query.get(nota.evaluacion_id)
+        if not evaluacion_check or not curso_pertenece_al_usuario(evaluacion_check.curso):
             flash('No tiene permisos para editar esta nota', 'danger')
             return redirect(url_for('evaluaciones.notas_index'))
     
-    # Pre-cargar el formulario con los datos actuales
+    # Pre-cargar el formulario con los datos actuales en GET
     if request.method == 'GET':
         inscripcion = Inscripcion.query.get(nota.inscripcion_id)
         form = NotaForm()
@@ -452,27 +474,40 @@ def editar_nota(nota_id):
         form.fecha_registro.data = nota.fecha_registro
         form.observaciones.data = nota.observaciones
         
-        # Cargar choices para los selects
-        from app.services.config_service import get_ciclo_activo
-        ciclo = get_ciclo_activo()
-        if ciclo:
-            from app.models import Curso, Estudiante
-            form.curso_id.choices = [('', '-- Seleccionar curso --')] + [
-                (c.id, f"{c.codigo_curso} - {c.nombre_curso} (Nivel {c.semestre})")
-                for c in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
-            ]
-            form.estudiante_id.choices = [
-                (inscripcion.estudiante_id, f"{inscripcion.estudiante.codigo_estudiante} - {inscripcion.estudiante.nombres} {inscripcion.estudiante.apellidos}")
-            ]
-            form.evaluacion_id.choices = [
-                (nota.evaluacion_id, f"{nota.evaluacion.nombre_evaluacion} ({nota.evaluacion.tipo_evaluacion})")
-            ]
-    else:
-        form = NotaForm()
+        # Cargar choices con los datos actuales
+        form.estudiante_id.choices = [
+            (inscripcion.estudiante_id, f"{inscripcion.estudiante.codigo_estudiante} - {inscripcion.estudiante.nombres} {inscripcion.estudiante.apellidos}")
+        ]
+        form.evaluacion_id.choices = [
+            (nota.evaluacion_id, f"{nota.evaluacion.nombre_evaluacion} ({nota.evaluacion.tipo_evaluacion})")
+        ]
+        
+        return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
+    
+    # POST: reconstruir form y cargar choices dinámicamente
+    form = NotaForm()
+    
+    if form.curso_id.data:
+        curso_id = form.curso_id.data
+        
+        inscripciones = Inscripcion.query.join(Estudiante).filter(
+            Inscripcion.curso_id == curso_id,
+            Inscripcion.estado == 'ACTIVO',
+            Estudiante.activo == True
+        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        form.estudiante_id.choices = [
+            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}")
+            for ins in inscripciones
+        ]
+        
+        evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(Evaluacion.nombre_evaluacion).all()
+        form.evaluacion_id.choices = [
+            (e.id, f"{e.nombre_evaluacion} ({e.tipo_evaluacion})")
+            for e in evaluaciones
+        ]
     
     if form.validate_on_submit():
         try:
-            # Resolver inscripcion_id desde curso_id + estudiante_id
             inscripcion = Inscripcion.query.filter_by(
                 curso_id=form.curso_id.data,
                 estudiante_id=form.estudiante_id.data,
@@ -483,7 +518,6 @@ def editar_nota(nota_id):
                 flash('No se encontró una inscripción activa para este estudiante en el curso seleccionado', 'danger')
                 return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
             
-            # Verificar si ya existe la nota (excluyendo la actual)
             nota_existente = Nota.query.filter(
                 Nota.inscripcion_id == inscripcion.id,
                 Nota.evaluacion_id == form.evaluacion_id.data,
@@ -494,7 +528,6 @@ def editar_nota(nota_id):
                 flash('Ya existe una nota para este estudiante en esta evaluación', 'danger')
                 return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
             
-            # Actualizar nota
             nota.inscripcion_id = inscripcion.id
             nota.evaluacion_id = form.evaluacion_id.data
             nota.nota = form.nota.data

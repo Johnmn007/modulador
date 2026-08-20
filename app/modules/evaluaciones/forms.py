@@ -33,12 +33,12 @@ class EvaluacionForm(FlaskForm):
         ciclo = get_ciclo_activo()
         
         if ciclo:
-            self.curso_id.choices = [('', '-- Seleccionar curso --')] + [
+            self.curso_id.choices = [
                 (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre})")
                 for curso in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
             ]
         else:
-            self.curso_id.choices = [('', '-- No hay ciclo activo --')]
+            self.curso_id.choices = []
 
 class NotaForm(FlaskForm):
     curso_id = SelectField('Curso', coerce=int, validators=[DataRequired()])
@@ -54,18 +54,18 @@ class NotaForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(NotaForm, self).__init__(*args, **kwargs)
-        from app.models import Curso
+        from app.models import Curso, Estudiante, Evaluacion, Inscripcion
         from app.services.config_service import get_ciclo_activo
         
         ciclo = get_ciclo_activo()
         
         if ciclo:
-            self.curso_id.choices = [('', '-- Seleccionar curso --')] + [
+            self.curso_id.choices = [
                 (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre})")
                 for curso in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
             ]
         else:
-            self.curso_id.choices = [('', '-- No hay ciclo activo --')]
+            self.curso_id.choices = []
         
-        self.estudiante_id.choices = [('', '-- Seleccione primero un curso --')]
-        self.evaluacion_id.choices = [('', '-- Seleccione primero un curso --')]
+        self.estudiante_id.choices = []
+        self.evaluacion_id.choices = []
