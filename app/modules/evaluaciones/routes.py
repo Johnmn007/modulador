@@ -276,6 +276,38 @@ def buscar():
         
     return jsonify({'evaluaciones': data, 'total': len(data)})
 
+@evaluaciones_bp.route('/api/estudiantes-por-curso/<int:curso_id>')
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def estudiantes_por_curso(curso_id):
+    """API: Obtener estudiantes inscritos en un curso"""
+    inscripciones = Inscripcion.query.join(Estudiante).filter(
+        Inscripcion.curso_id == curso_id,
+        Inscripcion.estado == 'ACTIVO',
+        Estudiante.activo == True
+    ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    
+    data = [{
+        'id': ins.estudiante.id,
+        'texto': f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}"
+    } for ins in inscripciones]
+    
+    return jsonify({'estudiantes': data})
+
+@evaluaciones_bp.route('/api/evaluaciones-por-curso/<int:curso_id>')
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def evaluaciones_por_curso(curso_id):
+    """API: Obtener evaluaciones de un curso"""
+    evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(Evaluacion.nombre_evaluacion).all()
+    
+    data = [{
+        'id': e.id,
+        'texto': f"{e.nombre_evaluacion} ({e.tipo_evaluacion})"
+    } for e in evaluaciones]
+    
+    return jsonify({'evaluaciones': data})
+
 # ===== RUTAS PARA NOTAS =====
 
 @evaluaciones_bp.route('/notas')
@@ -346,6 +378,17 @@ def crear_nota():
     
     if form.validate_on_submit():
         try:
+            # Resolver inscripcion_id desde curso_id + estudiante_id
+            inscripcion = Inscripcion.query.filter_by(
+                curso_id=form.curso_id.data,
+                estudiante_id=form.estudiante_id.data,
+                estado='ACTIVO'
+            ).first()
+            
+            if not inscripcion:
+                flash('No se encontró una inscripción activa para este estudiante en el curso seleccionado', 'danger')
+                return render_template('evaluaciones/crear_nota.html', form=form)
+            
             # Verificar pertenencia del curso (docentes y coordinadores)
             if current_user.rol in ('docente', 'coordinador'):
                 evaluacion = Evaluacion.query.get(form.evaluacion_id.data)
@@ -355,7 +398,7 @@ def crear_nota():
             
             # Verificar si ya existe la nota para esta inscripción y evaluación
             nota_existente = Nota.query.filter_by(
-                inscripcion_id=form.inscripcion_id.data,
+                inscripcion_id=inscripcion.id,
                 evaluacion_id=form.evaluacion_id.data
             ).first()
             
@@ -365,7 +408,7 @@ def crear_nota():
             
             # Crear nueva nota
             nueva_nota = Nota(
-                inscripcion_id=form.inscripcion_id.data,
+                inscripcion_id=inscripcion.id,
                 evaluacion_id=form.evaluacion_id.data,
                 nota=form.nota.data,
                 fecha_registro=form.fecha_registro.data,
@@ -398,13 +441,51 @@ def editar_nota(nota_id):
             flash('No tiene permisos para editar esta nota', 'danger')
             return redirect(url_for('evaluaciones.notas_index'))
     
-    form = NotaForm(obj=nota)
+    # Pre-cargar el formulario con los datos actuales
+    if request.method == 'GET':
+        inscripcion = Inscripcion.query.get(nota.inscripcion_id)
+        form = NotaForm()
+        form.curso_id.data = inscripcion.curso_id
+        form.estudiante_id.data = inscripcion.estudiante_id
+        form.evaluacion_id.data = nota.evaluacion_id
+        form.nota.data = nota.nota
+        form.fecha_registro.data = nota.fecha_registro
+        form.observaciones.data = nota.observaciones
+        
+        # Cargar choices para los selects
+        from app.services.config_service import get_ciclo_activo
+        ciclo = get_ciclo_activo()
+        if ciclo:
+            from app.models import Curso, Estudiante
+            form.curso_id.choices = [('', '-- Seleccionar curso --')] + [
+                (c.id, f"{c.codigo_curso} - {c.nombre_curso} (Nivel {c.semestre})")
+                for c in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+            ]
+            form.estudiante_id.choices = [
+                (inscripcion.estudiante_id, f"{inscripcion.estudiante.codigo_estudiante} - {inscripcion.estudiante.nombres} {inscripcion.estudiante.apellidos}")
+            ]
+            form.evaluacion_id.choices = [
+                (nota.evaluacion_id, f"{nota.evaluacion.nombre_evaluacion} ({nota.evaluacion.tipo_evaluacion})")
+            ]
+    else:
+        form = NotaForm()
     
     if form.validate_on_submit():
         try:
+            # Resolver inscripcion_id desde curso_id + estudiante_id
+            inscripcion = Inscripcion.query.filter_by(
+                curso_id=form.curso_id.data,
+                estudiante_id=form.estudiante_id.data,
+                estado='ACTIVO'
+            ).first()
+            
+            if not inscripcion:
+                flash('No se encontró una inscripción activa para este estudiante en el curso seleccionado', 'danger')
+                return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
+            
             # Verificar si ya existe la nota (excluyendo la actual)
             nota_existente = Nota.query.filter(
-                Nota.inscripcion_id == form.inscripcion_id.data,
+                Nota.inscripcion_id == inscripcion.id,
                 Nota.evaluacion_id == form.evaluacion_id.data,
                 Nota.id != nota_id
             ).first()
@@ -414,7 +495,7 @@ def editar_nota(nota_id):
                 return render_template('evaluaciones/editar_nota.html', form=form, nota=nota)
             
             # Actualizar nota
-            nota.inscripcion_id = form.inscripcion_id.data
+            nota.inscripcion_id = inscripcion.id
             nota.evaluacion_id = form.evaluacion_id.data
             nota.nota = form.nota.data
             nota.fecha_registro = form.fecha_registro.data

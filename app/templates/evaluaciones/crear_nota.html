@@ -15,6 +15,14 @@
     .ts-dropdown { border-radius: 0.375rem !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important; z-index: 1050 !important; }
     .ts-dropdown .option { padding: 0.5rem 0.75rem !important; }
     .ts-dropdown .active { background-color: #06b6d4 !important; color: #fff !important; }
+    .ts-wrapper.single:not(.has-items):not(.focus) .ts-control input {
+        opacity: 1 !important;
+        left: 0 !important;
+        position: relative !important;
+        width: auto !important;
+        min-width: 7rem !important;
+    }
+    .field-loading { opacity: 0.5; pointer-events: none; }
 </style>
 {% endblock %}
 
@@ -49,28 +57,45 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('evaluaciones.crear_nota') }}">
+                <form method="POST" action="{{ url_for('evaluaciones.crear_nota') }}" id="notaForm">
                     {{ form.hidden_tag() }}
                     
+                    <!-- Paso 1: Curso -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                {{ form.inscripcion_id.label(class="form-label") }}
-                                {{ form.inscripcion_id(class="form-select") }}
-                                {% if form.inscripcion_id.errors %}
+                                {{ form.curso_id.label(class="form-label fw-bold") }}
+                                {{ form.curso_id(class="form-select", id="select-curso") }}
+                                {% if form.curso_id.errors %}
                                     <div class="text-danger">
-                                        {% for error in form.inscripcion_id.errors %}
+                                        {% for error in form.curso_id.errors %}
                                             <small>{{ error }}</small>
                                         {% endfor %}
                                     </div>
                                 {% endif %}
-                                <div class="form-text">Seleccione la inscripción (estudiante + curso)</div>
+                                <div class="form-text">1. Seleccione el curso</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <!-- Paso 2: Estudiante -->
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                {{ form.evaluacion_id.label(class="form-label") }}
-                                {{ form.evaluacion_id(class="form-select") }}
+                                {{ form.estudiante_id.label(class="form-label fw-bold") }}
+                                {{ form.estudiante_id(class="form-select", id="select-estudiante", disabled=true) }}
+                                {% if form.estudiante_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.estudiante_id.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">2. Seleccione el estudiante</div>
+                            </div>
+                        </div>
+                        <!-- Paso 3: Evaluación -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.evaluacion_id.label(class="form-label fw-bold") }}
+                                {{ form.evaluacion_id(class="form-select", id="select-evaluacion", disabled=true) }}
                                 {% if form.evaluacion_id.errors %}
                                     <div class="text-danger">
                                         {% for error in form.evaluacion_id.errors %}
@@ -78,11 +103,14 @@
                                         {% endfor %}
                                     </div>
                                 {% endif %}
-                                <div class="form-text">Seleccione la evaluación</div>
+                                <div class="form-text">3. Seleccione la evaluación</div>
                             </div>
                         </div>
                     </div>
 
+                    <hr class="my-4">
+
+                    <!-- Nota y Fecha -->
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
@@ -128,7 +156,7 @@
 
                     <div class="d-flex justify-content-end gap-3 border-top pt-4 mt-2">
                         <a href="{{ url_for('evaluaciones.notas_index') }}" class="btn btn-light fw-bold px-4">Cancelar</a>
-                        {{ form.submit(class="btn btn-primary fw-bold px-5 shadow-sm") }}
+                        {{ form.submit(class="btn btn-primary fw-bold px-5 shadow-sm", id="btn-submit", disabled=true) }}
                     </div>
                 </form>
             </div>
@@ -140,11 +168,99 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var inscripcionSel = document.getElementById('inscripcion_id');
-        if (inscripcionSel) new TomSelect(inscripcionSel, { create: false, sortField: { field: 'text', direction: 'asc' }, placeholder: '-- Buscar estudiante/curso --', maxOptions: null });
-        var evaluacionSel = document.getElementById('evaluacion_id');
-        if (evaluacionSel) new TomSelect(evaluacionSel, { create: false, sortField: { field: 'text', direction: 'asc' }, placeholder: '-- Buscar evaluación --', maxOptions: null });
+document.addEventListener('DOMContentLoaded', function() {
+    let tsCurso, tsEstudiante, tsEvaluacion;
+
+    // Inicializar selects con Tom Select
+    tsCurso = new TomSelect('#select-curso', {
+        create: false,
+        sortField: { field: 'text', direction: 'asc' },
+        placeholder: '-- Buscar curso --',
+        allowEmptyOption: true,
+        maxOptions: null
     });
+
+    tsEstudiante = new TomSelect('#select-estudiante', {
+        create: false,
+        sortField: { field: 'text', direction: 'asc' },
+        placeholder: '-- Seleccione primero un curso --',
+        allowEmptyOption: true,
+        maxOptions: null
+    });
+
+    tsEvaluacion = new TomSelect('#select-evaluacion', {
+        create: false,
+        sortField: { field: 'text', direction: 'asc' },
+        placeholder: '-- Seleccione primero un curso --',
+        allowEmptyOption: true,
+        maxOptions: null
+    });
+
+    // Cuando cambia el curso, cargar estudiantes y evaluaciones
+    tsCurso.on('change', function(cursoId) {
+        const btnSubmit = document.getElementById('btn-submit');
+        
+        if (!cursoId) {
+            // Limpiar y deshabilitar
+            tsEstudiante.clear();
+            tsEstudiante.disable();
+            tsEstudiante.settings.placeholder = '-- Seleccione primero un curso --';
+            tsEstudiante.updateOptions();
+
+            tsEvaluacion.clear();
+            tsEvaluacion.disable();
+            tsEvaluacion.settings.placeholder = '-- Seleccione primero un curso --';
+            tsEvaluacion.updateOptions();
+
+            btnSubmit.disabled = true;
+            return;
+        }
+
+        // Cargar estudiantes del curso
+        fetch(`/evaluaciones/api/estudiantes-por-curso/${cursoId}`)
+            .then(r => r.json())
+            .then(data => {
+                const opciones = data.estudiantes.map(e => ({ value: e.id, text: e.texto }));
+                tsEstudiante.clear();
+                tsEstudiante.settings.placeholder = '-- Buscar estudiante --';
+                tsEstudiante.enable();
+                tsEstudiante.clearOptions();
+                tsEstudiante.addOption(opciones);
+                tsEstudiante.updateOptions();
+            });
+
+        // Cargar evaluaciones del curso
+        fetch(`/evaluaciones/api/evaluaciones-por-curso/${cursoId}`)
+            .then(r => r.json())
+            .then(data => {
+                const opciones = data.evaluaciones.map(e => ({ value: e.id, text: e.texto }));
+                tsEvaluacion.clear();
+                tsEvaluacion.settings.placeholder = '-- Buscar evaluación --';
+                tsEvaluacion.enable();
+                tsEvaluacion.clearOptions();
+                tsEvaluacion.addOption(opciones);
+                tsEvaluacion.updateOptions();
+            });
+
+        btnSubmit.disabled = true;
+    });
+
+    // Habilitar submit solo cuando estudiante y evaluación estén seleccionados
+    tsEstudiante.on('change', function() {
+        validarFormulario();
+    });
+
+    tsEvaluacion.on('change', function() {
+        validarFormulario();
+    });
+
+    function validarFormulario() {
+        const btnSubmit = document.getElementById('btn-submit');
+        const cursoOk = tsCurso.getValue() !== '';
+        const estudianteOk = tsEstudiante.getValue() !== '';
+        const evaluacionOk = tsEvaluacion.getValue() !== '';
+        btnSubmit.disabled = !(cursoOk && estudianteOk && evaluacionOk);
+    }
+});
 </script>
 {% endblock %}
