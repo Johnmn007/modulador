@@ -45,7 +45,7 @@ class CrearUsuarioForm(FlaskForm):
     username = StringField('Nombre de usuario', validators=[
         DataRequired(message='El nombre de usuario es obligatorio'),
         Length(min=3, max=80, message='Debe tener entre 3 y 80 caracteres'),
-        Regexp(r'^[a-zA-Z0-9_]+$', message='Solo letras, números y guiones bajos')
+        Regexp(r'^[a-zA-ZáéíóúñÑÁÉÍÓÚüÜ\s]+$', message='Solo letras y espacios')
     ])
     email = StringField('Email', validators=[
         DataRequired(message='El email es obligatorio'),
@@ -71,7 +71,7 @@ class EditarUsuarioForm(FlaskForm):
     username = StringField('Nombre de usuario', validators=[
         DataRequired(message='El nombre de usuario es obligatorio'),
         Length(min=3, max=80, message='Debe tener entre 3 y 80 caracteres'),
-        Regexp(r'^[a-zA-Z0-9_]+$', message='Solo letras, números y guiones bajos')
+        Regexp(r'^[a-zA-ZáéíóúñÑÁÉÍÓÚüÜ\s]+$', message='Solo letras y espacios')
     ])
     email = StringField('Email', validators=[
         DataRequired(message='El email es obligatorio'),
