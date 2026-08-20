@@ -177,6 +177,21 @@ class Usuario(UserMixin, db.Model):
     def __repr__(self):
         return f'<Usuario {self.username}>'
 
+class PreguntaSeguridad(db.Model):
+    __tablename__ = 'preguntas_seguridad'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    pregunta = db.Column(db.String(200), nullable=False)
+    respuesta_hash = db.Column(db.String(512), nullable=False)
+    fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relación
+    usuario = db.relationship('Usuario', backref='preguntas_seguridad')
+    
+    def __repr__(self):
+        return f'<PreguntaSeguridad {self.usuario_id}: {self.pregunta[:30]}>'
+
 class Reporte(db.Model):
     __tablename__ = 'reportes'
     

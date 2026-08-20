@@ -127,6 +127,12 @@
                     {% endif %}
                     
                     <li class="nav-item ms-lg-3">
+                        <a class="nav-link px-2" href="{{ url_for('auth.configurar_preguntas') }}" title="Preguntas de Seguridad">
+                            <i class="fas fa-shield-alt fa-lg"></i>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item ms-lg-3">
                         <a class="nav-link px-2" href="{{ url_for('auth.change_password') }}" title="Cambiar Contraseña">
                             <i class="fas fa-key fa-lg"></i>
                         </a>
