@@ -37,6 +37,7 @@
             </div>
             <div class="card-body p-4 p-md-5">
                 <form id="reportForm" method="POST" action="{{ url_for('reportes.generar_general') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <!-- Campo oculto para el formato -->
                     <input type="hidden" name="formato" id="inputFormato" value="html">
                     

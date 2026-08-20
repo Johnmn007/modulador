@@ -27,6 +27,7 @@
                 </a>
                 <form method="POST" action="{{ url_for('estudiantes.eliminar', estudiante_id=estudiante.id) }}"
                       class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar registro definitivo?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-outline-danger border-2 fw-bold">
                         <i class="fas fa-trash"></i>
                     </button>

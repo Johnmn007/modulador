@@ -26,6 +26,7 @@
                 </a>
                 <form method="POST" action="{{ url_for('evaluaciones.eliminar_evaluacion', evaluacion_id=evaluacion.id) }}" 
                       class="d-inline" onsubmit="return confirmDelete(event, this, '¿Está seguro de eliminar esta evaluación?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Eliminar Evaluación
                     </button>
@@ -171,6 +172,7 @@
                                         </a>
                                         <form method="POST" action="{{ url_for('evaluaciones.eliminar_nota', nota_id=nota.id) }}" 
                                               class="d-inline" onsubmit="return confirmDelete(event, this, '¿Está seguro de eliminar esta nota?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="fas fa-trash"></i> Eliminar
                                             </button>

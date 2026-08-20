@@ -137,6 +137,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="formEditarUsuario" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
@@ -185,6 +186,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="formCrearUsuario" method="POST" action="{{ url_for('admin.crear_usuario') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
@@ -233,6 +235,10 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function getCsrfToken() {
+        return document.querySelector('input[name="csrf_token"]').value;
+    }
+
     // Toggle estado de usuario
     document.querySelectorAll('.toggle-usuario').forEach(button => {
         button.addEventListener('click', function() {
@@ -248,7 +254,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(`/admin/usuarios/${usuarioId}/toggle`, { method: 'POST' })
+                    fetch(`/admin/usuarios/${usuarioId}/toggle`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCsrfToken() }
+                    })
                     .then(r => r.json()).then(d => d.error ? 
                         Swal.fire('Error', d.error, 'error') : 
                         Swal.fire('Éxito', 'Estado actualizado', 'success').then(() => location.reload()));
@@ -275,7 +284,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     fetch(`/admin/usuarios/${id}/cambiar-rol`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
                         body: JSON.stringify({ rol: rol })
                     }).then(r => r.json()).then(d => d.error ? 
                         Swal.fire('Error', d.error, 'error') : 
@@ -301,7 +313,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(`/admin/usuarios/${id}/eliminar`, { method: 'POST' })
+                    fetch(`/admin/usuarios/${id}/eliminar`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCsrfToken() }
+                    })
                     .then(r => r.json()).then(d => d.error ? 
                         Swal.fire('Error', d.error, 'error') : 
                         Swal.fire('Eliminado', 'Usuario eliminado correctamente', 'success').then(() => location.reload()));

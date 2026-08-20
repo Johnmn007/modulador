@@ -207,6 +207,7 @@
                                         </a>
                                         <form method="POST" action="{{ url_for('evaluaciones.eliminar_nota', nota_id=nota.id) }}"
                                               class="d-inline" onsubmit="return confirmDelete(event, this, '¿Eliminar esta calificación?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-white" title="Eliminar">
                                                 <i class="fas fa-trash text-danger"></i>
                                             </button>

@@ -26,6 +26,7 @@
                     <div class="card-body p-4 d-flex flex-column">
                         <p class="small text-muted mb-4">Sincroniza el padrón de alumnos con la base de datos institucional.</p>
                         <form method="POST" action="{{ url_for('importacion.importar_estudiantes') }}" enctype="multipart/form-data" class="mt-auto">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
                                 <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>
@@ -51,6 +52,7 @@
                     <div class="card-body p-4 d-flex flex-column">
                         <p class="small text-muted mb-4">Importa la oferta académica y códigos de curso para el nuevo ciclo.</p>
                         <form method="POST" action="{{ url_for('importacion.importar_cursos') }}" enctype="multipart/form-data" class="mt-auto">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
                                 <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>
@@ -76,6 +78,7 @@
                     <div class="card-body p-4 d-flex flex-column">
                         <p class="small text-muted mb-4">Carga masiva de notas finales o parciales para análisis de riesgo.</p>
                         <form method="POST" action="{{ url_for('importacion.importar_notas') }}" enctype="multipart/form-data" class="mt-auto">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Archivo .xlsx / .csv</label>
                                 <input class="form-control form-control-sm border-dashed" type="file" name="archivo" required>

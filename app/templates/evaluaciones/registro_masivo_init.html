@@ -49,6 +49,7 @@
 
                 {% if curso_id %}
                 <form method="POST" action="{{ url_for('evaluaciones.formulario_masivo') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-4">
                         <label class="form-label fw-bold small">2. Seleccionar Evaluación</label>
                         <select class="form-select form-select-lg shadow-sm" name="evaluacion_id" id="evaluacion_id" required>

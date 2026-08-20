@@ -27,6 +27,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('evaluaciones.procesar_masiva') }}" id="gradesForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="evaluacion_id" value="{{ evaluacion.id }}">
 
             <div class="card border-0 shadow-sm overflow-hidden">

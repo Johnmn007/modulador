@@ -15,6 +15,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('admin.configuracion') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row g-4">
                 <!-- Columna Izquierda: Algoritmo de Riesgo -->
                 <div class="col-lg-8">

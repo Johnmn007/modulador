@@ -98,6 +98,7 @@
                         <p class="text-muted small mb-4">Genera una sábana completa de asistencia con todas las sesiones del periodo para un curso específico.</p>
                         
                         <form id="formGrupal" method="POST" action="{{ url_for('reportes.generar_asistencia_grupal') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="formato" id="formatoGrupal" value="html">
                             
                             <div class="form-group mb-5">
@@ -137,6 +138,7 @@
                         <p class="text-muted small mb-4">Análisis detallado de inasistencias y justificaciones para un estudiante en todas sus asignaturas.</p>
                         
                         <form id="formIndividual" method="POST" action="{{ url_for('reportes.generar_individual') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="formato" id="formatoIndividual" value="html">
                             
                             <div class="form-group mb-4">
