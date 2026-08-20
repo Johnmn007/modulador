@@ -68,7 +68,12 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.curso_id.label(class="form-label") }}
-                                {{ form.curso_id(class="form-select", **{'data-preselected': 'true' if curso_preselected else 'false'}) }}
+                                <select name="curso_id" id="curso_id" class="form-select">
+                                    <option value="">-- Buscar curso --</option>
+                                    {% for choices in form.curso_id.choices %}
+                                    <option value="{{ choices[0] }}" {% if form.curso_id.data == choices[0] %}selected{% endif %}>{{ choices[1] }}</option>
+                                    {% endfor %}
+                                </select>
                                 {% if form.curso_id.errors %}
                                     <div class="text-danger">
                                         {% for error in form.curso_id.errors %}
@@ -160,16 +165,12 @@
         // Buscador en tiempo real para Curso
         var cursoSel = document.getElementById('curso_id');
         if (cursoSel) {
-            var tsCurso = new TomSelect(cursoSel, {
+            new TomSelect(cursoSel, {
                 create: false,
                 sortField: { field: 'text', direction: 'asc' },
                 placeholder: '-- Buscar curso --',
                 maxOptions: null
             });
-            // Limpiar selección para mostrar placeholder
-            if (!cursoSel.dataset.preselected) {
-                tsCurso.clear();
-            }
         }
         // Buscador en tiempo real para Tipo de Evaluación
         var tipoSel = document.getElementById('tipo_evaluacion');
