@@ -63,7 +63,12 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 {{ form.curso_id.label(class="form-label fw-bold") }}
-                                {{ form.curso_id(class="form-select", id="select-curso") }}
+                                <select name="curso_id" id="select-curso" class="form-select">
+                                    <option value="">-- Buscar curso --</option>
+                                    {% for choices in form.curso_id.choices %}
+                                    <option value="{{ choices[0] }}" {% if form.curso_id.data == choices[0] %}selected{% endif %}>{{ choices[1] }}</option>
+                                    {% endfor %}
+                                </select>
                                 {% if form.curso_id.errors %}
                                     <div class="text-danger">
                                         {% for error in form.curso_id.errors %}
@@ -76,7 +81,12 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 {{ form.estudiante_id.label(class="form-label fw-bold") }}
-                                {{ form.estudiante_id(class="form-select", id="select-estudiante") }}
+                                <select name="estudiante_id" id="select-estudiante" class="form-select">
+                                    <option value="">-- Buscar estudiante --</option>
+                                    {% for choices in form.estudiante_id.choices %}
+                                    <option value="{{ choices[0] }}" {% if form.estudiante_id.data == choices[0] %}selected{% endif %}>{{ choices[1] }}</option>
+                                    {% endfor %}
+                                </select>
                                 {% if form.estudiante_id.errors %}
                                     <div class="text-danger">
                                         {% for error in form.estudiante_id.errors %}
@@ -89,7 +99,12 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 {{ form.evaluacion_id.label(class="form-label fw-bold") }}
-                                {{ form.evaluacion_id(class="form-select", id="select-evaluacion") }}
+                                <select name="evaluacion_id" id="select-evaluacion" class="form-select">
+                                    <option value="">-- Buscar evaluación --</option>
+                                    {% for choices in form.evaluacion_id.choices %}
+                                    <option value="{{ choices[0] }}" {% if form.evaluacion_id.data == choices[0] %}selected{% endif %}>{{ choices[1] }}</option>
+                                    {% endfor %}
+                                </select>
                                 {% if form.evaluacion_id.errors %}
                                     <div class="text-danger">
                                         {% for error in form.evaluacion_id.errors %}

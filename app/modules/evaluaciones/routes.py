@@ -123,7 +123,7 @@ def crear_evaluacion():
     
     # Mantener curso_id disponible para el template (para el botón "Volver al curso")
     curso_id = request.args.get('curso_id', type=int)
-    return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id)
+    return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id, curso_preselected=bool(curso_id))
 
 @evaluaciones_bp.route('/<int:evaluacion_id>')
 @login_required
