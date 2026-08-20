@@ -18,6 +18,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('asistencias.procesar_masiva') }}" id="attendanceForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="curso_id" value="{{ curso_id }}">
             <input type="hidden" name="fecha" value="{{ fecha }}">
 
