@@ -141,7 +141,9 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
-                        <input type="text" class="form-control bg-light border-0" name="username" id="edit_username" required>
+                        <input type="text" class="form-control bg-light border-0" name="username" id="edit_username" 
+                               pattern="[a-zA-Z0-9_]+" minlength="3" maxlength="80" required>
+                        <div class="form-text">Sin espacios. Solo letras, números y guiones bajos</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Correo Electrónico</label>
@@ -190,7 +192,9 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
-                        <input type="text" class="form-control bg-light border-0" name="username" required>
+                        <input type="text" class="form-control bg-light border-0" name="username" 
+                               placeholder="Ej: maria_solsol" pattern="[a-zA-Z0-9_]+" minlength="3" maxlength="80" required>
+                        <div class="form-text">Sin espacios. Solo letras, números y guiones bajos (Ej: maria_solsol, juan_perez)</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Correo Institucional</label>
