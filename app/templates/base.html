@@ -188,19 +188,6 @@
                 } catch(e) {}
             });
         }, 5000);
-
-        // Auto-save warning: Advertir al usuario si tiene cambios sin guardar
-        let formDirty = false;
-        document.querySelectorAll('form:not(.no-loader):not(#search-form)').forEach(form => {
-            form.addEventListener('input', () => formDirty = true);
-            form.addEventListener('submit', () => formDirty = false);
-        });
-        window.addEventListener('beforeunload', (e) => {
-            if (formDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
     });
 
     // Global form submission handler to prevent double submit and show loading state
