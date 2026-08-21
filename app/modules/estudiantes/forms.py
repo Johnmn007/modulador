@@ -7,10 +7,10 @@ from wtforms.widgets import TextArea
 class EstudianteForm(FlaskForm):
     codigo_estudiante = StringField('Código de Estudiante', 
                                    validators=[DataRequired(), Length(max=20)])
-    nombres = StringField('Nombres', 
-                         validators=[DataRequired(), Length(max=100)])
     apellidos = StringField('Apellidos', 
                            validators=[DataRequired(), Length(max=100)])
+    nombres = StringField('Nombres', 
+                         validators=[DataRequired(), Length(max=100)])
     email = StringField('Email', 
                        validators=[DataRequired(), Email(), Length(max=150)])
     telefono = StringField('Teléfono', 

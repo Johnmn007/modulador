@@ -45,19 +45,19 @@
 
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label class="form-label small fw-bold text-muted text-uppercase">Nombre completo</label>
-                                {{ form.nombres(class="form-control form-control-lg bg-light border-0", placeholder="Nombres completos") }}
-                                {% if form.nombres.errors %}
-                                    <div class="text-danger small mt-1">{% for error in form.nombres.errors %}{{ error }}{% endfor %}</div>
+                                <label class="form-label small fw-bold text-muted text-uppercase">Apellidos</label>
+                                {{ form.apellidos(class="form-control form-control-lg bg-light border-0", placeholder="Apellidos completos") }}
+                                {% if form.apellidos.errors %}
+                                    <div class="text-danger small mt-1">{% for error in form.apellidos.errors %}{{ error }}{% endfor %}</div>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label class="form-label small fw-bold text-muted text-uppercase">Apellidos</label>
-                                {{ form.apellidos(class="form-control form-control-lg bg-light border-0", placeholder="Apellidos paterno y materno") }}
-                                {% if form.apellidos.errors %}
-                                    <div class="text-danger small mt-1">{% for error in form.apellidos.errors %}{{ error }}{% endfor %}</div>
+                                <label class="form-label small fw-bold text-muted text-uppercase">Nombres</label>
+                                {{ form.nombres(class="form-control form-control-lg bg-light border-0", placeholder="Nombres completos") }}
+                                {% if form.nombres.errors %}
+                                    <div class="text-danger small mt-1">{% for error in form.nombres.errors %}{{ error }}{% endfor %}</div>
                                 {% endif %}
                             </div>
                         </div>

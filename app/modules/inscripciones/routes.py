@@ -43,7 +43,7 @@ def matricula_masiva():
             
             # Obtener estudiantes según criterio
             if grupo == 'todos':
-                estudiantes = Estudiante.query.filter_by(activo=True).all()
+                estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
             else:  # 'nuevos'
                 # Estudiantes sin ninguna inscripción en el ciclo actual
                 estudiantes_subquery = db.session.query(Inscripcion.estudiante_id)\
@@ -51,7 +51,7 @@ def matricula_masiva():
                 estudiantes = Estudiante.query.filter(
                     Estudiante.activo.is_(True),
                     ~Estudiante.id.in_(estudiantes_subquery)
-                ).all()
+                ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
             
             if not estudiantes:
                 flash('No hay estudiantes que cumplan con el criterio seleccionado', 'warning')

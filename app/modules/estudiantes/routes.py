@@ -16,7 +16,7 @@ def index():
     per_page = 10
     
     # Query base
-    estudiantes_query = Estudiante.query.filter_by(activo=True)
+    estudiantes_query = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres)
     
     # Búsqueda
     search = request.args.get('search', '')
@@ -65,7 +65,7 @@ def en_riesgo():
     ).filter(
         SeguimientoRiesgo.categoria_riesgo != 'SIN_RIESGO',
         Estudiante.activo == True
-    ).order_by(SeguimientoRiesgo.puntaje_riesgo.desc()).paginate(
+    ).order_by(SeguimientoRiesgo.puntaje_riesgo.desc(), Estudiante.apellidos, Estudiante.nombres).paginate(
         page=page, per_page=per_page, error_out=False
     )
     
