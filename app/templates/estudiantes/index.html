@@ -68,10 +68,10 @@
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-circle me-3 bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 12px;">
-                                            {{ estudiante.nombres[0] }}{{ estudiante.apellidos[0] }}
+                                            {{ estudiante.apellidos[0] }}{{ estudiante.nombres[0] }}
                                         </div>
                                         <div>
-                                            <div class="fw-bold text-primary-color">{{ estudiante.nombres }} {{ estudiante.apellidos }}</div>
+                                            <div class="fw-bold text-primary-color">{{ estudiante.apellidos }} {{ estudiante.nombres }}</div>
                                             <div class="small text-muted">{{ estudiante.email }}</div>
                                         </div>
                                     </div>
@@ -212,7 +212,7 @@
         }
 
         return list.map(e => {
-            const ini = (e.nombres[0] || '') + (e.apellidos[0] || '');
+            const ini = (e.apellidos[0] || '') + (e.nombres[0] || '');
             const editBtns = canEdit
                 ? `<a href="${e.url_editar}" class="btn btn-sm btn-white border-end" title="Editar">
                        <i class="fas fa-edit text-warning"></i>
@@ -233,7 +233,7 @@
                                     d-flex align-items-center justify-content-center"
                              style="width:42px;height:42px;border-radius:12px;">${ini}</div>
                         <div>
-                            <div class="fw-bold text-primary-color">${e.nombres} ${e.apellidos}</div>
+                            <div class="fw-bold text-primary-color">${e.apellidos} ${e.nombres}</div>
                             <div class="small text-muted">${e.email}</div>
                         </div>
                     </div>

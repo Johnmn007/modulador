@@ -57,7 +57,7 @@
                                     <option value="">Todos los estudiantes</option>
                                     {% for estudiante in estudiantes %}
                                     <option value="{{ estudiante.id }}" {% if estudiante_id == estudiante.id %}selected{% endif %}>
-                                        {{ estudiante.codigo_estudiante }} - {{ estudiante.nombres }} {{ estudiante.apellidos }}
+                                        {{ estudiante.codigo_estudiante }} - {{ estudiante.apellidos }} {{ estudiante.nombres }}
                                     </option>
                                     {% endfor %}
                                 </select>

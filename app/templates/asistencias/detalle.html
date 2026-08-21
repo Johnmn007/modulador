@@ -48,7 +48,7 @@
                             <div class="col-sm-4 fw-bold">Estudiante:</div>
                             <div class="col-sm-8">
                                 <a href="{{ url_for('estudiantes.detalle', estudiante_id=asistencia.inscripcion.estudiante.id) }}">
-                                    {{ asistencia.inscripcion.estudiante.nombres }} {{ asistencia.inscripcion.estudiante.apellidos }}
+                                    {{ asistencia.inscripcion.estudiante.apellidos }} {{ asistencia.inscripcion.estudiante.nombres }}
                                 </a><br>
                                 <small class="text-muted">{{ asistencia.inscripcion.estudiante.codigo_estudiante }}</small>
                             </div>

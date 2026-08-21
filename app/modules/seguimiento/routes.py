@@ -74,7 +74,7 @@ def calcular_estudiante(estudiante_id):
             'estudiante': {
                 'id': estudiante.id,
                 'codigo': estudiante.codigo_estudiante,
-                'nombre': f"{estudiante.nombres} {estudiante.apellidos}"
+                'nombre': f"{estudiante.apellidos} {estudiante.nombres}"
             },
             'resultado': resultado
         })

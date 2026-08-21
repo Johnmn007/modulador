@@ -421,7 +421,7 @@ def matricula_por_ciclo():
             db.session.commit()
             
             flash(
-                f'✅ Matrícula por ciclo completada para {estudiante.nombres} {estudiante.apellidos}: '
+                f'✅ Matrícula por ciclo completada para {estudiante.apellidos} {estudiante.nombres}: '
                 f'{matriculas_creadas} nuevas inscripciones, '
                 f'{matriculas_actualizadas} actualizadas.',
                 'success'

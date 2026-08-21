@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-primary-color m-0">Actualizar Expediente</h2>
-                <p class="text-muted mb-0">Modificando registro de: <strong>{{ estudiante.nombres }} {{ estudiante.apellidos }}</strong></p>
+                <p class="text-muted mb-0">Modificando registro de: <strong>{{ estudiante.apellidos }} {{ estudiante.nombres }}</strong></p>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('estudiantes.detalle', estudiante_id=estudiante.id) }}" class="btn btn-outline-primary border-2 fw-bold">

@@ -54,7 +54,7 @@
                                 <option value="">Todos los Estudiantes</option>
                                 {% for est in estudiantes %}
                                 <option value="{{ est.id }}" {% if estudiante_id == est.id %}selected{% endif %}>
-                                    {{ est.nombres }} {{ est.apellidos }}
+                                    {{ est.apellidos }} {{ est.nombres }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -107,10 +107,10 @@
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-circle me-3 bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 10px;">
-                                            {{ asistencia.inscripcion.estudiante.nombres[0] }}{{ asistencia.inscripcion.estudiante.apellidos[0] }}
+                                            {{ asistencia.inscripcion.estudiante.apellidos[0] }}{{ asistencia.inscripcion.estudiante.nombres[0] }}
                                         </div>
                                         <div>
-                                            <div class="fw-bold text-primary-color">{{ asistencia.inscripcion.estudiante.nombres }} {{ asistencia.inscripcion.estudiante.apellidos }}</div>
+                                            <div class="fw-bold text-primary-color">{{ asistencia.inscripcion.estudiante.apellidos }} {{ asistencia.inscripcion.estudiante.nombres }}</div>
                                             <div class="small text-muted">{{ asistencia.inscripcion.estudiante.codigo_estudiante }}</div>
                                         </div>
                                     </div>

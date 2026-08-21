@@ -23,7 +23,7 @@ class Estudiante(db.Model):
     intervenciones = db.relationship('Intervencion', backref='estudiante', lazy=True)
     
     def __repr__(self):
-        return f'<Estudiante {self.codigo_estudiante}: {self.nombres} {self.apellidos}>'
+        return f'<Estudiante {self.codigo_estudiante}: {self.apellidos} {self.nombres}>'
 
 class Ciclo(db.Model):
     __tablename__ = 'ciclos'

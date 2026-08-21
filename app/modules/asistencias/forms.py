@@ -22,13 +22,13 @@ class AsistenciaForm(FlaskForm):
         
         if ciclo:
             self.inscripcion_id.choices = [
-                (ins.id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos} - {ins.curso.nombre_curso}")
+                (ins.id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.apellidos} {ins.estudiante.nombres} - {ins.curso.nombre_curso}")
                 for ins in Inscripcion.query.join(Estudiante).join(Curso).filter(
                     Inscripcion.estado == 'ACTIVO',
                     Estudiante.activo == True,
                     Curso.activo == True,
                     Curso.ciclo_id == ciclo.id
-                ).order_by(Curso.nombre_curso, Estudiante.nombres, Estudiante.apellidos).all()
+                ).order_by(Curso.nombre_curso, Estudiante.apellidos, Estudiante.nombres).all()
             ]
         else:
             self.inscripcion_id.choices = []

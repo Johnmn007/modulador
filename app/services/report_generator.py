@@ -141,7 +141,7 @@ class ReportGenerator:
         curso = Curso.query.get_or_404(curso_id)
         
         # Estudiantes inscritos
-        inscripciones = Inscripcion.query.filter_by(curso_id=curso_id, estado='ACTIVO').join(Estudiante).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        inscripciones = Inscripcion.query.filter_by(curso_id=curso_id, estado='ACTIVO').join(Estudiante).order_by(Estudiante.apellidos, Estudiante.nombres).all()
         
         # Todas las fechas de asistencia para este curso
         fechas = db.session.query(Asistencia.fecha).join(Inscripcion).filter(

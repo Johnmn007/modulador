@@ -119,7 +119,7 @@ def detalle(curso_id):
         Inscripcion.query
         .filter_by(curso_id=curso_id)
         .join(Inscripcion.estudiante)               
-        .order_by(Estudiante.nombres, Estudiante.apellidos)           
+        .order_by(Estudiante.apellidos, Estudiante.nombres)           
         .all()
     )
     

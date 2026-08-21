@@ -64,9 +64,9 @@ def individual():
         estudiantes = Estudiante.query.filter(
             Estudiante.activo == True,
             Estudiante.id.in_(estudiantes_ids)
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     else:
-        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     config = cargar_configuracion()
     return render_template('reportes/individual.html', estudiantes=estudiantes, config=config)
@@ -141,7 +141,7 @@ def generar_individual():
         # Guardar en base de datos
         reporte = Reporte(
             tipo_reporte='INDIVIDUAL_RIESGO',
-            titulo=f'Reporte de Riesgo - {resultado["estudiante"].nombres} {resultado["estudiante"].apellidos}',
+            titulo=f'Reporte de Riesgo - {resultado["estudiante"].apellidos} {resultado["estudiante"].nombres}',
             descripcion=f'Reporte individual de riesgo académico para el semestre {semestre}',
             parametros={
                 'estudiante_id': estudiante_id,
@@ -200,10 +200,10 @@ def asistencias_index():
         estudiantes = Estudiante.query.filter(
             Estudiante.activo == True,
             Estudiante.id.in_(estudiantes_ids)
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     else:
         cursos = Curso.query.filter_by(activo=True).order_by(Curso.semestre, Curso.nombre_curso).all()
-        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     config = cargar_configuracion()
     return render_template('reportes/asistencias_filter.html', cursos=cursos, estudiantes=estudiantes, config=config)

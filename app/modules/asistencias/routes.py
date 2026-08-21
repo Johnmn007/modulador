@@ -49,7 +49,7 @@ def index():
     from app.services.config_service import get_ciclo_activo
     ciclo = get_ciclo_activo()
 
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
     if ciclo:
         if current_user.rol in ('docente', 'coordinador'):
             cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
@@ -164,7 +164,7 @@ def crear_masiva():
                 Inscripcion.curso_id == form.curso_id.data,
                 Inscripcion.estado == 'ACTIVO',
                 Estudiante.activo == True
-            ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+            ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
             
             if not inscripciones:
                 flash('No hay estudiantes inscritos en este curso', 'warning')
@@ -201,7 +201,7 @@ def procesar_masiva():
         inscripciones = Inscripcion.query.join(Estudiante).filter(
             Inscripcion.curso_id == curso_id,
             Inscripcion.estado == 'ACTIVO'
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
         
         registros_procesados = 0
         
@@ -390,7 +390,7 @@ def estadisticas():
         
         estadisticas_con_porcentajes.append({
             'curso': stat.nombre_curso,
-            'estudiante': f"{stat.nombres} {stat.apellidos}",
+            'estudiante': f"{stat.apellidos} {stat.nombres}",
             'total_clases': total_clases,
             'asistencias': asistencias,
             'justificadas': justificadas,
@@ -409,7 +409,7 @@ def estadisticas():
     else:
         cursos = []
     
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
     semestres = db.session.query(Curso.semestre).distinct().order_by(Curso.semestre.desc()).all()
     
     return render_template('asistencias/estadisticas.html',

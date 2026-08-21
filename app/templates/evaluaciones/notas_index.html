@@ -180,7 +180,7 @@
                             {% for nota in notas.items %}
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold text-primary-color">{{ nota.inscripcion.estudiante.nombres }} {{ nota.inscripcion.estudiante.apellidos }}</div>
+                                    <div class="fw-bold text-primary-color">{{ nota.inscripcion.estudiante.apellidos }} {{ nota.inscripcion.estudiante.nombres }}</div>
                                     <div class="small text-muted">{{ nota.inscripcion.estudiante.codigo_estudiante }}</div>
                                 </td>
                                 <td>
@@ -262,9 +262,9 @@
     {% for estudiante in estudiantes %}
     <li class="student-option"
         data-id="{{ estudiante.id }}"
-        data-label="{{ estudiante.codigo_estudiante }} - {{ estudiante.nombres }} {{ estudiante.apellidos }}">
+        data-label="{{ estudiante.codigo_estudiante }} - {{ estudiante.apellidos }} {{ estudiante.nombres }}">
         <span class="fw-semibold">{{ estudiante.codigo_estudiante }}</span>
-        <span class="text-muted ms-1">{{ estudiante.nombres }} {{ estudiante.apellidos }}</span>
+        <span class="text-muted ms-1">{{ estudiante.apellidos }} {{ estudiante.nombres }}</span>
     </li>
     {% endfor %}
 </ul>

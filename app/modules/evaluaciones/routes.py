@@ -141,7 +141,7 @@ def detalle_evaluacion(evaluacion_id):
     # Obtener notas de esta evaluación
     notas = Nota.query.filter_by(
         evaluacion_id=evaluacion_id
-    ).join(Inscripcion).join(Estudiante).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    ).join(Inscripcion).join(Estudiante).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     # Estadísticas
     total_notas = len(notas)
@@ -285,11 +285,11 @@ def estudiantes_por_curso(curso_id):
         Inscripcion.curso_id == curso_id,
         Inscripcion.estado == 'ACTIVO',
         Estudiante.activo == True
-    ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     data = [{
         'id': ins.estudiante.id,
-        'texto': f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}"
+        'texto': f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.apellidos} {ins.estudiante.nombres}"
     } for ins in inscripciones]
     
     return jsonify({'estudiantes': data})
@@ -342,7 +342,7 @@ def notas_index():
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Para los filtros: docentes y coordinadores solo ven sus cursos
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
     if current_user.rol in ('docente', 'coordinador'):
         cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
     else:
@@ -385,9 +385,9 @@ def crear_nota():
             Inscripcion.curso_id == curso_id,
             Inscripcion.estado == 'ACTIVO',
             Estudiante.activo == True
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
         form.estudiante_id.choices = [
-            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}")
+            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.apellidos} {ins.estudiante.nombres}")
             for ins in inscripciones
         ]
         
@@ -476,7 +476,7 @@ def editar_nota(nota_id):
         
         # Cargar choices con los datos actuales
         form.estudiante_id.choices = [
-            (inscripcion.estudiante_id, f"{inscripcion.estudiante.codigo_estudiante} - {inscripcion.estudiante.nombres} {inscripcion.estudiante.apellidos}")
+            (inscripcion.estudiante_id, f"{inscripcion.estudiante.codigo_estudiante} - {inscripcion.estudiante.apellidos} {inscripcion.estudiante.nombres}")
         ]
         form.evaluacion_id.choices = [
             (nota.evaluacion_id, f"{nota.evaluacion.nombre_evaluacion} ({nota.evaluacion.tipo_evaluacion})")
@@ -494,9 +494,9 @@ def editar_nota(nota_id):
             Inscripcion.curso_id == curso_id,
             Inscripcion.estado == 'ACTIVO',
             Estudiante.activo == True
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
         form.estudiante_id.choices = [
-            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.nombres} {ins.estudiante.apellidos}")
+            (ins.estudiante_id, f"{ins.estudiante.codigo_estudiante} - {ins.estudiante.apellidos} {ins.estudiante.nombres}")
             for ins in inscripciones
         ]
         
@@ -606,7 +606,7 @@ def formulario_masivo():
     inscripciones = Inscripcion.query.filter_by(
         curso_id=evaluacion.curso_id, 
         estado='ACTIVO'
-    ).join(Estudiante).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+    ).join(Estudiante).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     # Obtener notas existentes si las hay
     notas_existentes = {n.inscripcion_id: n for n in Nota.query.filter_by(evaluacion_id=evaluacion_id).all()}
@@ -634,7 +634,7 @@ def procesar_masiva():
         # Obtener todas las inscripciones del curso
         inscripciones = Inscripcion.query.join(Estudiante).filter(
             Inscripcion.curso_id == evaluacion.curso_id
-        ).order_by(Estudiante.nombres, Estudiante.apellidos).all()
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
         
         for inscripcion in inscripciones:
             nota_valor = request.form.get(f'nota_{inscripcion.id}')

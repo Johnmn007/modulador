@@ -340,7 +340,7 @@
                 {% for estudiante, seguimiento in estudiantes_riesgo %}
                 <tr>
                     <td style="font-weight: 700;">{{ estudiante.codigo_estudiante }}</td>
-                    <td>{{ estudiante.nombres }} {{ estudiante.apellidos }}</td>
+                    <td>{{ estudiante.apellidos }} {{ estudiante.nombres }}</td>
                     <td>
                         {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}
                             <span class="badge bg-red">ALERTA ROJA</span>
