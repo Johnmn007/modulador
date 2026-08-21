@@ -15,8 +15,10 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    # Fallback a SQLite si no se configuran variables de MySQL
-    if os.getenv('DB_NAME'):
+    # Priorizar DATABASE_URL (Railway/Heroku), luego DB_NAME,最后 SQLite fallback
+    if os.getenv('DATABASE_URL'):
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    elif os.getenv('DB_NAME'):
         SQLALCHEMY_DATABASE_URI = (
             f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
             f"@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
