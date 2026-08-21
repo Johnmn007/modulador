@@ -23,8 +23,8 @@ class InscripcionForm(FlaskForm):
         super(InscripcionForm, self).__init__(*args, **kwargs)
         # Cargar estudiantes activos
         self.estudiante_id.choices = [(0, '')] + [
-            (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
-            for est in Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+            (est.id, f"{est.codigo_estudiante} - {est.apellidos} {est.nombres}")
+            for est in Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
         ]
         from app.services.config_service import get_ciclo_activo
         
@@ -103,8 +103,8 @@ class MatriculaPorCicloForm(FlaskForm):
         
         # Cargar estudiantes activos
         self.estudiante_id.choices = [(0, '')] + [
-            (est.id, f"{est.codigo_estudiante} - {est.nombres} {est.apellidos}")
-            for est in Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+            (est.id, f"{est.codigo_estudiante} - {est.apellidos} {est.nombres}")
+            for est in Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
         ]
         
         with current_app.app_context():

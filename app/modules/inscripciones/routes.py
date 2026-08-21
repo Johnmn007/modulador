@@ -154,7 +154,7 @@ def index():
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Para los filtros: docentes y coordinadores solo ven sus cursos
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('nombres', 'apellidos').all()
+    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
     if current_user.rol in ('docente', 'coordinador'):
         cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
     else:
@@ -473,8 +473,8 @@ def buscar():
     for i in resultados:
         data.append({
             'id': i.id,
-            'estudiante_iniciales': f"{i.estudiante.nombres[0]}{i.estudiante.apellidos[0]}",
-            'estudiante_nombre': f"{i.estudiante.nombres} {i.estudiante.apellidos}",
+            'estudiante_iniciales': f"{i.estudiante.apellidos[0]}{i.estudiante.nombres[0]}",
+            'estudiante_nombre': f"{i.estudiante.apellidos} {i.estudiante.nombres}",
             'estudiante_codigo': i.estudiante.codigo_estudiante,
             'curso_nombre': i.curso.nombre_curso,
             'curso_semestre': i.curso.semestre,
