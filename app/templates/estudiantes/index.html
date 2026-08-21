@@ -14,6 +14,12 @@
                     <i class="fas fa-exclamation-triangle me-2"></i> Ver Alertas
                 </a>
                 {% if current_user.rol in ['administrador', 'coordinador'] %}
+                <form method="POST" action="{{ url_for('estudiantes.fix_nombres_masivo') }}" onsubmit="return confirm('¿Seguro que deseas intercambiar los nombres y apellidos de todos los estudiantes antiguos (importados)? Esta acción corregirá los datos invertidos en la BD.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-warning border-2 fw-bold shadow-sm">
+                        <i class="fas fa-sync-alt me-2"></i> Invertir Nombres
+                    </button>
+                </form>
                 <a href="{{ url_for('estudiantes.crear') }}" class="btn btn-primary fw-bold px-4 shadow-sm">
                     <i class="fas fa-plus-circle me-2"></i> Nuevo Estudiante
                 </a>
