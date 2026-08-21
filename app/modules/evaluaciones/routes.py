@@ -353,7 +353,7 @@ def notas_index():
     ).order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()
 
     estudiante_actual = next((e for e in estudiantes if e.id == estudiante_id), None) if estudiante_id else None
-    estudiante_nombre_actual = f"{estudiante_actual.codigo_estudiante} - {estudiante_actual.nombres} {estudiante_actual.apellidos}" if estudiante_actual else ''
+    estudiante_nombre_actual = f"{estudiante_actual.codigo_estudiante} - {estudiante_actual.apellidos} {estudiante_actual.nombres}" if estudiante_actual else ''
 
     return render_template('evaluaciones/notas_index.html',
                          notas=notas,
