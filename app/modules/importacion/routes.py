@@ -385,8 +385,8 @@ def descargar_plantilla(tipo):
         # Crear DataFrame de ejemplo para estudiantes
         df = pd.DataFrame({
             'codigo_estudiante': ['2024EST001', '2024EST002'],
-            'nombres': ['Juan Carlos', 'María Elena'],
             'apellidos': ['García López', 'Rodríguez Martínez'],
+            'nombres': ['Juan Carlos', 'María Elena'],
             'email': ['juan.garcia@ejemplo.com', 'maria.rodriguez@ejemplo.com'],
             'telefono': ['123456789', '987654321']
         })
