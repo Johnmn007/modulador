@@ -37,31 +37,6 @@ def index():
                          estudiantes=estudiantes,
                          search=search)
 
-@estudiantes_bp.route('/fix-nombres-masivo', methods=['POST'])
-@login_required
-@roles_required('administrador', 'coordinador')
-def fix_nombres_masivo():
-    """Ruta temporal para arreglar nombres invertidos en la BD (solo estudiantes antiguos)"""
-    try:
-        estudiantes = Estudiante.query.all()
-        count = 0
-        hoy = datetime.now(timezone.utc).date()
-        for est in estudiantes:
-            # Intercambiar solo si fueron registrados antes de hoy
-            if est.fecha_inscripcion and est.fecha_inscripcion < hoy:
-                temp = est.nombres
-                est.nombres = est.apellidos
-                est.apellidos = temp
-                count += 1
-                
-        db.session.commit()
-        flash(f'Se han corregido e invertido los nombres/apellidos de {count} estudiantes antiguos.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al corregir nombres: {str(e)}', 'danger')
-        
-    return redirect(url_for('estudiantes.index'))
-
 @estudiantes_bp.route('/<int:estudiante_id>')
 @login_required
 def detalle(estudiante_id):
