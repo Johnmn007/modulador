@@ -159,6 +159,16 @@ def crear_masiva():
                     flash('No tiene permisos para registrar asistencias en este curso', 'danger')
                     return redirect(url_for('asistencias.index'))
             
+            # Notificar si ya existe asistencia para este curso en esta fecha
+            asistencia_previa = Asistencia.query.join(Inscripcion).filter(
+                Inscripcion.curso_id == form.curso_id.data,
+                Asistencia.fecha == form.fecha.data
+            ).first()
+            
+            if asistencia_previa:
+                fecha_str = form.fecha.data.strftime('%d/%m/%Y') if hasattr(form.fecha.data, 'strftime') else form.fecha.data
+                flash(f'Aviso: Ya se ha registrado asistencia para este curso en la fecha {fecha_str}. Si continúa, actualizará los registros existentes.', 'info')
+            
             # Obtener todas las inscripciones activas del curso
             inscripciones = Inscripcion.query.join(Estudiante).filter(
                 Inscripcion.curso_id == form.curso_id.data,
