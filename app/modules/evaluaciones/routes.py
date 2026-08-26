@@ -65,10 +65,18 @@ def index():
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Para los filtros: docentes y coordinadores solo ven sus cursos
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    target_ciclo_id = filtro_ciclo_id if (current_user.rol == 'administrador' and filtro_ciclo_id and filtro_ciclo_id != -1) else (ciclo_activo.id if ciclo_activo else None)
+
+    if target_ciclo_id:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
     
     tipos_evaluacion = [
         'PARCIAL', 'QUIZ', 'TRABAJO', 'PROYECTO', 'LABORATORIO', 'EXAMEN_FINAL', 'OTRO'
@@ -377,14 +385,26 @@ def notas_index():
 
     # Para los filtros: docentes y coordinadores solo ven sus cursos
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    
+    target_ciclo_id = filtro_ciclo_id if (current_user.rol == 'administrador' and filtro_ciclo_id and filtro_ciclo_id != -1) else (ciclo_activo.id if ciclo_activo else None)
+
+    if target_ciclo_id:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
     
     evaluaciones = Evaluacion.query.join(Curso).filter(
         Curso.activo == True
-    ).order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()
+    )
+    if target_ciclo_id:
+        evaluaciones = evaluaciones.filter(Curso.ciclo_id == target_ciclo_id)
+    evaluaciones = evaluaciones.order_by(Curso.nombre_curso, Evaluacion.nombre_evaluacion).all()
 
     estudiante_actual = next((e for e in estudiantes if e.id == estudiante_id), None) if estudiante_id else None
     estudiante_nombre_actual = f"{estudiante_actual.codigo_estudiante} - {estudiante_actual.apellidos} {estudiante_actual.nombres}" if estudiante_actual else ''

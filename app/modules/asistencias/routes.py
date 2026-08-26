@@ -69,17 +69,18 @@ def index():
         Asistencia.fecha.desc(), Curso.nombre_curso
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Para los filtros: cursos del ciclo activo
-    from app.services.config_service import get_ciclo_activo
-    ciclo = get_ciclo_activo()
+    target_ciclo_id = filtro_ciclo_id if (current_user.rol == 'administrador' and filtro_ciclo_id and filtro_ciclo_id != -1) else (ciclo_activo.id if ciclo_activo else None)
 
-    if ciclo:
+    if target_ciclo_id:
         if current_user.rol in ('docente', 'coordinador'):
-            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
         else:
-            cursos = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = []
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
     ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
 

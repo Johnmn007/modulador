@@ -174,10 +174,19 @@ def index():
 
     # Para los filtros: docentes y coordinadores solo ven sus cursos
     estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
-    if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+    
+    target_ciclo_id = filtro_ciclo_id if (current_user.rol == 'administrador' and filtro_ciclo_id and filtro_ciclo_id != -1) else (ciclo_activo.id if ciclo_activo else None)
+
+    if target_ciclo_id:
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True, ciclo_id=target_ciclo_id).order_by('semestre', 'nombre_curso').all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
+        if current_user.rol in ('docente', 'coordinador'):
+            cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by('semestre', 'nombre_curso').all()
+        else:
+            cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
     ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
 
