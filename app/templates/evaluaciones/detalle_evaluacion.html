@@ -207,8 +207,8 @@
                     <a href="{{ url_for('evaluaciones.crear_evaluacion') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Crear Nueva Evaluación
                     </a>
-                    <a href="{{ url_for('evaluaciones.calificar_masiva', evaluacion_id=evaluacion.id) }}" class="btn btn-success">
-                        <i class="fas fa-check-double"></i> Calificar Estudiantes (Masivo)
+                    <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=evaluacion.curso.id) }}" class="btn btn-info text-white">
+                        <i class="fas fa-table"></i> Ver Consolidado del Curso
                     </a>
                 </div>
             </div>

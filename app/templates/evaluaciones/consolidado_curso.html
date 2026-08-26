@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Consolidado de Curso - SADES{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('evaluaciones.index') }}">Evaluaciones</a></li>
+        <li class="breadcrumb-item active">Consolidado</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">
+                    <i class="fas fa-chart-line text-primary me-2"></i>Consolidado de Notas
+                </h2>
+                <p class="text-muted mb-0">
+                    {{ curso.codigo_curso }} - {{ curso.nombre_curso }} ({{ curso.semestre }})
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('evaluaciones.index') }}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden mt-4">
+            <div class="card-header bg-white border-bottom p-3">
+                <h5 class="card-title mb-0">Matriz de Calificaciones</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if consolidado %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-bordered">
+                        <thead class="bg-light text-muted small text-uppercase fw-bold text-center">
+                            <tr>
+                                <th class="text-start ps-4" style="min-width: 250px;">Estudiante</th>
+                                <th style="min-width: 120px;">Código</th>
+                                {% for evaluacion in evaluaciones %}
+                                <th style="min-width: 150px;">
+                                    <div class="text-truncate" title="{{ evaluacion.nombre_evaluacion }}">
+                                        <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="text-decoration-none text-muted">
+                                            {{ evaluacion.nombre_evaluacion }}
+                                        </a>
+                                    </div>
+                                    <span class="badge bg-info mt-1">{{ "%.1f"|format(evaluacion.peso) }}%</span>
+                                </th>
+                                {% endfor %}
+                                <th class="bg-primary text-white" style="min-width: 120px;">Promedio Final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in consolidado %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-primary-color">{{ fila.estudiante }}</div>
+                                </td>
+                                <td class="text-center text-muted small">
+                                    {{ fila.codigo }}
+                                </td>
+                                {% for nota in fila.notas %}
+                                <td class="text-center">
+                                    {% if nota is not none %}
+                                        <span class="fw-bold {% if nota >= 12 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ "%.1f"|format(nota) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted opacity-50">-</span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td class="text-center bg-light">
+                                    <div class="h6 fw-bold mb-0 {% if fila.promedio >= 12 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "%.1f"|format(fila.promedio) }}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-clipboard-check fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5>No hay estudiantes inscritos en este curso</h5>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer bg-white py-3 border-top">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-success me-2">&gt;= 12.0</span> Aprobado
+                    <span class="badge bg-danger ms-4 me-2">&lt; 12.0</span> Desaprobado
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -762,4 +762,71 @@ def procesar_masiva():
     except Exception as e:
         db.session.rollback()
         flash('Ocurrió un error al procesar las calificaciones. Intente de nuevo.', 'danger')
-        return redirect(url_for('evaluaciones.index'))
+        return redirect(url_for('evaluaciones.index'))
+
+@evaluaciones_bp.route('/curso/<int:curso_id>/consolidado', methods=['GET'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def consolidado_curso(curso_id):
+    """Consolidado de notas cruzadas para un curso"""
+    from app.models import Curso, Evaluacion, Inscripcion, Nota, Estudiante
+    
+    curso = Curso.query.get_or_404(curso_id)
+    
+    # Verificar pertenencia del curso
+    if current_user.rol in ('docente', 'coordinador'):
+        from app.decorators import curso_pertenece_al_usuario
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para ver el consolidado de este curso', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+            
+    evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(Evaluacion.fecha_creacion).all()
+    
+    inscripciones = Inscripcion.query.join(Estudiante).filter(
+        Inscripcion.curso_id == curso_id,
+        Inscripcion.estado == 'ACTIVO'
+    ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    
+    notas_raw = Nota.query.join(Inscripcion).filter(
+        Inscripcion.curso_id == curso_id
+    ).all()
+    
+    # Mapeo: {inscripcion_id: {evaluacion_id: nota_obj}}
+    notas_dict = {}
+    for n in notas_raw:
+        if n.inscripcion_id not in notas_dict:
+            notas_dict[n.inscripcion_id] = {}
+        notas_dict[n.inscripcion_id][n.evaluacion_id] = n
+        
+    consolidado = []
+    
+    for ins in inscripciones:
+        notas_alumno = notas_dict.get(ins.id, {})
+        suma_ponderada = 0
+        suma_pesos_evaluados = 0
+        notas_list = []
+        
+        for eval_obj in evaluaciones:
+            nota_obj = notas_alumno.get(eval_obj.id)
+            if nota_obj is not None:
+                valor = nota_obj.nota
+                # Calcular promedio ponderado sobre el total de pesos o asumiendo suma=100
+                suma_ponderada += valor * (eval_obj.peso / 100)
+                notas_list.append(valor)
+            else:
+                notas_list.append(None)
+                
+        # Dependiendo si la suma de pesos es 100, la suma ponderada ya es el promedio
+        promedio = suma_ponderada
+        
+        consolidado.append({
+            'estudiante': f"{ins.estudiante.apellidos} {ins.estudiante.nombres}",
+            'codigo': ins.estudiante.codigo_estudiante,
+            'notas': notas_list,
+            'promedio': promedio
+        })
+        
+    return render_template('evaluaciones/consolidado_curso.html',
+                         curso=curso,
+                         evaluaciones=evaluaciones,
+                         consolidado=consolidado)

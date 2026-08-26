@@ -20,6 +20,9 @@
                 <a href="{{ url_for('cursos.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
                     <i class="fas fa-arrow-left me-1"></i> Catálogo
                 </a>
+                <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=curso.id) }}" class="btn btn-outline-info border-2 fw-bold">
+                    <i class="fas fa-table me-1"></i> Ver Consolidado
+                </a>
                 {% if current_user.rol in ['administrador', 'coordinador'] %}
                 <a href="{{ url_for('cursos.editar', curso_id=curso.id) }}" class="btn btn-outline-warning border-2 fw-bold">
                     <i class="fas fa-edit me-1"></i> Editar Curso
