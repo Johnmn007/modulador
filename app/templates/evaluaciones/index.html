@@ -141,6 +141,9 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group shadow-sm">
+                                        <a href="{{ url_for('evaluaciones.calificar_masiva', evaluacion_id=evaluacion.id) }}" class="btn btn-sm btn-white border-end" title="Calificar (Masivo)">
+                                            <i class="fas fa-check-double text-success"></i>
+                                        </a>
                                         <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="btn btn-sm btn-white border-end" title="Ver Resultados">
                                             <i class="fas fa-clipboard-list text-primary"></i>
                                         </a>
@@ -281,6 +284,9 @@
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group shadow-sm">
+                        <a href="${e.url_calificar}" class="btn btn-sm btn-white border-end" title="Calificar (Masivo)">
+                            <i class="fas fa-check-double text-success"></i>
+                        </a>
                         <a href="${e.url_detalle}" class="btn btn-sm btn-white border-end" title="Ver Resultados">
                             <i class="fas fa-clipboard-list text-primary"></i>
                         </a>

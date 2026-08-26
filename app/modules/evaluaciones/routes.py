@@ -298,7 +298,8 @@ def buscar():
             'notas_count': len(e.notas),
             'url_detalle': url_for('evaluaciones.detalle_evaluacion', evaluacion_id=e.id),
             'url_editar': url_for('evaluaciones.editar_evaluacion', evaluacion_id=e.id),
-            'url_eliminar': url_for('evaluaciones.eliminar_evaluacion', evaluacion_id=e.id)
+            'url_eliminar': url_for('evaluaciones.eliminar_evaluacion', evaluacion_id=e.id),
+            'url_calificar': url_for('evaluaciones.calificar_masiva', evaluacion_id=e.id)
         })
         
     return jsonify({'evaluaciones': data, 'total': len(data)})
@@ -659,6 +660,33 @@ def formulario_masivo():
         if not curso_pertenece_al_usuario(evaluacion.curso):
             flash('No tiene permisos para registrar notas en este curso', 'danger')
             return redirect(url_for('evaluaciones.registro_masivo'))
+    
+    # Estudiantes inscritos
+    inscripciones = Inscripcion.query.filter_by(
+        curso_id=evaluacion.curso_id, 
+        estado='ACTIVO'
+    ).join(Estudiante).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    
+    # Obtener notas existentes si las hay
+    notas_existentes = {n.inscripcion_id: n for n in Nota.query.filter_by(evaluacion_id=evaluacion_id).all()}
+    
+    return render_template('evaluaciones/formulario_masivo.html',
+                         evaluacion=evaluacion,
+                         inscripciones=inscripciones,
+                         notas_existentes=notas_existentes)
+
+@evaluaciones_bp.route('/evaluacion/<int:evaluacion_id>/calificar_masiva', methods=['GET'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def calificar_masiva(evaluacion_id):
+    """Acceso directo al formulario de calificación masiva de una evaluación"""
+    evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
+    
+    # Verificar pertenencia del curso (docentes y coordinadores)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(evaluacion.curso):
+            flash('No tiene permisos para registrar notas en este curso', 'danger')
+            return redirect(url_for('evaluaciones.index'))
     
     # Estudiantes inscritos
     inscripciones = Inscripcion.query.filter_by(
