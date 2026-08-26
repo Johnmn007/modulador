@@ -52,6 +52,10 @@
                             </thead>
                             <tbody>
                                 {% for inscripcion in inscripciones %}
+                                {% set asistencia = asistencias_dict.get(inscripcion.id) if asistencias_dict else none %}
+                                {% set is_presente = asistencia.presente if asistencia else true %}
+                                {% set is_justificado = asistencia.justificado if asistencia else false %}
+                                {% set obs = asistencia.observaciones if (asistencia and asistencia.observaciones) else '' %}
                                 <tr id="row_{{ inscripcion.id }}" class="attendance-row">
                                     <td class="ps-4 py-1">
                                         <div class="d-flex align-items-center">
@@ -65,7 +69,7 @@
                                     </td>
                                     <td class="text-center py-1">
                                         {% set perc = inscripcion.asistencia_porcentaje %}
-                                        <div title="Asistencia acumulada: {{ "%.1f"|format(perc) }}%">
+                                        <div title="Asistencia acumulada: {{ '%.1f'|format(perc) }}%">
                                             <div class="small fw-bold {{ 'text-danger' if perc < 80 else 'text-success' }}">
                                                 {{ perc|int }}%
                                             </div>
@@ -79,7 +83,7 @@
                                             <input type="checkbox" class="btn-check presente-check" 
                                                    id="presente_{{ inscripcion.id }}" 
                                                    name="presente_{{ inscripcion.id }}" 
-                                                   checked autocomplete="off"
+                                                   {{ 'checked' if is_presente else '' }} autocomplete="off"
                                                    onchange="updateRowStyle({{ inscripcion.id }})">
                                             <label class="btn btn-outline-success btn-sm py-1 px-2 fw-bold" style="font-size: 0.75rem;" for="presente_{{ inscripcion.id }}">
                                                 <i class="fas fa-check"></i> PRE.
@@ -88,7 +92,7 @@
                                             <input type="checkbox" class="btn-check justificado-check" 
                                                    id="justificado_{{ inscripcion.id }}" 
                                                    name="justificado_{{ inscripcion.id }}" 
-                                                   autocomplete="off"
+                                                   {{ 'checked' if is_justificado else '' }} autocomplete="off"
                                                    onchange="updateRowStyle({{ inscripcion.id }})">
                                             <label class="btn btn-outline-warning btn-sm py-1 px-2 fw-bold" style="font-size: 0.75rem;" for="justificado_{{ inscripcion.id }}">
                                                 <i class="fas fa-notes-medical"></i> JUS.
@@ -98,6 +102,7 @@
                                     <td class="pe-4 py-1">
                                         <input type="text" class="form-control form-control-sm border-1 bg-light" 
                                                name="observaciones_{{ inscripcion.id }}" 
+                                               value="{{ obs }}"
                                                placeholder="Observación...">
                                     </td>
                                 </tr>
@@ -182,9 +187,10 @@ function updateRowStyle(id) {
 
 // Inicializar estilos
 document.addEventListener('DOMContentLoaded', () => {
-    {% for inscripcion in inscripciones %}
-    updateRowStyle({{ inscripcion.id }});
-    {% endfor %}
+    document.querySelectorAll('.presente-check').forEach(check => {
+        const id = check.id.split('_')[1];
+        updateRowStyle(id);
+    });
 });
 </script>
 {% endblock %}

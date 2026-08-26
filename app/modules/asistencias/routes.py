@@ -12,44 +12,43 @@ from datetime import datetime
 @login_required
 @roles_required('administrador', 'coordinador', 'docente')
 def index():
-    """Lista de todas las asistencias"""
+    """Lista de sesiones de asistencias (agrupadas por curso y fecha)"""
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
-    # Query base con joins
-    asistencias_query = Asistencia.query.join(Inscripcion).join(Estudiante).join(Curso)
+    # Query base agrupada
+    asistencias_query = db.session.query(
+        Curso.id.label('curso_id'),
+        Curso.nombre_curso,
+        Curso.semestre,
+        Asistencia.fecha,
+        db.func.count(Asistencia.id).label('total_estudiantes')
+    ).join(Inscripcion, Asistencia.inscripcion_id == Inscripcion.id)\
+     .join(Curso, Inscripcion.curso_id == Curso.id)
 
     # Filtro por rol: docentes y coordinadores solo ven asistencias de sus cursos
     if current_user.rol in ('docente', 'coordinador'):
         asistencias_query = asistencias_query.filter(Curso.docente_id == current_user.id)
 
     # Filtros
-    estudiante_id = request.args.get('estudiante_id', type=int)
     curso_id = request.args.get('curso_id', type=int)
     fecha = request.args.get('fecha', '')
-    estado_asistencia = request.args.get('estado_asistencia', '')
     
-    if estudiante_id:
-        asistencias_query = asistencias_query.filter(Inscripcion.estudiante_id == estudiante_id)
     if curso_id:
         asistencias_query = asistencias_query.filter(Inscripcion.curso_id == curso_id)
     if fecha:
         asistencias_query = asistencias_query.filter(Asistencia.fecha == fecha)
-    if estado_asistencia:
-        if estado_asistencia == 'PRESENTE':
-            asistencias_query = asistencias_query.filter(Asistencia.presente == True)
-        elif estado_asistencia == 'AUSENTE':
-            asistencias_query = asistencias_query.filter(Asistencia.presente == False)
 
-    asistencias = asistencias_query.order_by(
-        Asistencia.fecha.desc(), Curso.nombre_curso, Estudiante.apellidos
+    sesiones = asistencias_query.group_by(
+        Curso.id, Curso.nombre_curso, Curso.semestre, Asistencia.fecha
+    ).order_by(
+        Asistencia.fecha.desc(), Curso.nombre_curso
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Para los filtros: cursos del ciclo activo
     from app.services.config_service import get_ciclo_activo
     ciclo = get_ciclo_activo()
 
-    estudiantes = Estudiante.query.filter_by(activo=True).order_by('apellidos', 'nombres').all()
     if ciclo:
         if current_user.rol in ('docente', 'coordinador'):
             cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
@@ -59,13 +58,10 @@ def index():
         cursos = []
 
     return render_template('asistencias/index.html',
-                         asistencias=asistencias,
-                         estudiantes=estudiantes,
+                         sesiones=sesiones,
                          cursos=cursos,
-                         estudiante_id=estudiante_id,
                          curso_id=curso_id,
-                         fecha=fecha,
-                         estado_asistencia=estado_asistencia)
+                         fecha=fecha)
 
 @asistencias_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -189,6 +185,38 @@ def crear_masiva():
             flash('Ocurrió un error al generar el formulario masivo. Intente de nuevo.', 'danger')
     
     return render_template('asistencias/crear_masiva.html', form=form)
+
+@asistencias_bp.route('/masiva/editar_sesion/<int:curso_id>/<fecha>', methods=['GET'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def editar_masiva_sesion(curso_id, fecha):
+    """Editar una sesión de asistencia completa (curso y fecha)"""
+    curso = Curso.query.get_or_404(curso_id)
+    fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+    
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para editar asistencias en este curso', 'danger')
+            return redirect(url_for('asistencias.index'))
+            
+    inscripciones = Inscripcion.query.join(Estudiante).filter(
+        Inscripcion.curso_id == curso_id,
+        Inscripcion.estado == 'ACTIVO',
+        Estudiante.activo == True
+    ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    
+    asistencias_existentes = Asistencia.query.join(Inscripcion).filter(
+        Inscripcion.curso_id == curso_id,
+        Asistencia.fecha == fecha_obj
+    ).all()
+    
+    asistencias_dict = {a.inscripcion_id: a for a in asistencias_existentes}
+    
+    return render_template('asistencias/formulario_masivo.html',
+                         curso_id=curso_id,
+                         fecha=fecha_obj,
+                         inscripciones=inscripciones,
+                         asistencias_dict=asistencias_dict)
 
 @asistencias_bp.route('/masiva/procesar', methods=['POST'])
 @login_required
