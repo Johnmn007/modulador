@@ -29,13 +29,18 @@ class EvaluacionForm(FlaskForm):
         super(EvaluacionForm, self).__init__(*args, **kwargs)
         from app.models import Curso
         from app.services.config_service import get_ciclo_activo
+        from flask_login import current_user
         
         ciclo = get_ciclo_activo()
         
         if ciclo:
+            query = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id)
+            if current_user.rol in ('docente', 'coordinador'):
+                query = query.filter_by(docente_id=current_user.id)
+                
             self.curso_id.choices = [
                 (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre})")
-                for curso in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+                for curso in query.order_by('semestre', 'nombre_curso').all()
             ]
         else:
             self.curso_id.choices = []
@@ -56,13 +61,18 @@ class NotaForm(FlaskForm):
         super(NotaForm, self).__init__(*args, **kwargs)
         from app.models import Curso, Estudiante, Evaluacion, Inscripcion
         from app.services.config_service import get_ciclo_activo
+        from flask_login import current_user
         
         ciclo = get_ciclo_activo()
         
         if ciclo:
+            query = Curso.query.filter_by(activo=True, ciclo_id=ciclo.id)
+            if current_user.rol in ('docente', 'coordinador'):
+                query = query.filter_by(docente_id=current_user.id)
+                
             self.curso_id.choices = [
                 (curso.id, f"{curso.codigo_curso} - {curso.nombre_curso} (Nivel {curso.semestre})")
-                for curso in Curso.query.filter_by(activo=True, ciclo_id=ciclo.id).order_by('semestre', 'nombre_curso').all()
+                for curso in query.order_by('semestre', 'nombre_curso').all()
             ]
         else:
             self.curso_id.choices = []
