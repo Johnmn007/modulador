@@ -39,6 +39,16 @@ def create_app(config_name=None):
         
         db.create_all()
         
+        # Parche de seguridad para Railway: inyectar columna avatar en tiempo de ejecución
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("ALTER TABLE usuarios ADD COLUMN avatar VARCHAR(255)"))
+            db.session.commit()
+            app_logger.info("Columna avatar añadida exitosamente en runtime.")
+        except Exception as e:
+            db.session.rollback()
+            # Falla silenciosamente si ya existe o no tiene permisos
+        
         @login_manager.user_loader
         def load_user(user_id):
             return Usuario.query.get(int(user_id))
