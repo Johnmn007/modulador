@@ -172,6 +172,7 @@ class Usuario(UserMixin, db.Model):
     password_hash = db.Column(db.String(512))
     rol = db.Column(db.String(20), default='docente')
     activo = db.Column(db.Boolean, default=True)
+    avatar = db.Column(db.String(255), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):

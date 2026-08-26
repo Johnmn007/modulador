@@ -37,11 +37,17 @@
                         </thead>
                         <tbody>
                             {% for usuario in usuarios %}
-                            <tr>
+                            <tr data-usuario-avatar="{{ usuario.avatar }}">
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-circle me-3 bg-navy bg-opacity-10 text-navy fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 10px;">
-                                            {{ usuario.username[0]|upper }}
+                                        <div class="me-3">
+                                            {% if usuario.avatar %}
+                                            <img src="{{ url_for('static', filename='uploads/avatars/' + usuario.avatar) }}" class="rounded-circle shadow-sm" width="40" height="40" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                {{ usuario.username[:1].upper() }}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                         <div>
                                             <div class="fw-bold text-primary-color">
@@ -136,9 +142,22 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formEditarUsuario" method="POST" action="">
+            <form id="formEditarUsuario" method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body p-4">
+                    <!-- Foto de Perfil -->
+                    <div class="mb-3 text-center">
+                        <div class="d-inline-block position-relative mb-2">
+                            <img id="edit_avatar_preview" src="https://ui-avatars.com/api/?name=User&background=3B82F6&color=fff&rounded=true" class="rounded-circle shadow-sm" width="80" height="80" style="object-fit: cover;">
+                        </div>
+                        <div>
+                            <label for="edit_avatar" class="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1">
+                                <i class="fas fa-camera me-1"></i> Cambiar Foto
+                            </label>
+                            <input type="file" id="edit_avatar" name="avatar" class="d-none" accept="image/png, image/jpeg, image/webp" onchange="previewImage(this, 'edit_avatar_preview')">
+                        </div>
+                        <div class="form-text mt-1">Formatos: JPG, PNG, WEBP (Max 2MB)</div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
                         <input type="text" class="form-control bg-light border-0" name="username" id="edit_username" 
@@ -187,9 +206,22 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formCrearUsuario" method="POST" action="{{ url_for('admin.crear_usuario') }}">
+            <form id="formCrearUsuario" method="POST" action="{{ url_for('admin.crear_usuario') }}" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body p-4">
+                    <!-- Foto de Perfil -->
+                    <div class="mb-3 text-center">
+                        <div class="d-inline-block position-relative mb-2">
+                            <img id="create_avatar_preview" src="https://ui-avatars.com/api/?name=New&background=3B82F6&color=fff&rounded=true" class="rounded-circle shadow-sm" width="80" height="80" style="object-fit: cover;">
+                        </div>
+                        <div>
+                            <label for="create_avatar" class="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1">
+                                <i class="fas fa-camera me-1"></i> Subir Foto
+                            </label>
+                            <input type="file" id="create_avatar" name="avatar" class="d-none" accept="image/png, image/jpeg, image/webp" onchange="previewImage(this, 'create_avatar_preview')">
+                        </div>
+                        <div class="form-text mt-1">Formatos: JPG, PNG, WEBP (Max 2MB)</div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Nombre de Usuario</label>
                         <input type="text" class="form-control bg-light border-0" name="username" 
@@ -348,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const id       = this.dataset.usuarioId;
             const username = this.dataset.usuarioUsername;
             const email    = this.dataset.usuarioEmail;
+            const row      = this.closest('tr');
 
             // Rellenar campos del modal
             document.getElementById('edit_username').value = username;
@@ -357,6 +390,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Apuntar el action del formulario al usuario correcto
             document.getElementById('formEditarUsuario').action = `/admin/usuarios/${id}/editar`;
+            
+            // Avatar preview
+            const avatarPreview = document.getElementById('edit_avatar_preview');
+            const avatarUrl = row.getAttribute('data-usuario-avatar');
+            if (avatarUrl && avatarUrl !== 'None' && avatarUrl !== '') {
+                avatarPreview.src = `/static/uploads/avatars/${avatarUrl}`;
+            } else {
+                avatarPreview.src = `https://ui-avatars.com/api/?name=${username}&background=3B82F6&color=fff&rounded=true`;
+            }
 
             // Abrir el modal
             new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();

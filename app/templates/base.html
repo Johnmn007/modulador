@@ -119,7 +119,11 @@
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown ms-lg-3">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userProfileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 0.25rem 0.5rem !important;">
+                            {% if current_user.avatar %}
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}" alt="User Avatar" width="36" height="36" class="rounded-circle shadow-sm border border-2 border-white border-opacity-25" style="object-fit: cover;">
+                            {% else %}
                             <img src="https://ui-avatars.com/api/?name={{ current_user.username }}&background=3B82F6&color=fff&rounded=true&bold=true" alt="User Avatar" width="36" height="36" class="rounded-circle shadow-sm border border-2 border-white border-opacity-25">
+                            {% endif %}
                             <span class="d-none d-md-inline fw-semibold text-white">{{ current_user.username }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" aria-labelledby="userProfileDropdown">

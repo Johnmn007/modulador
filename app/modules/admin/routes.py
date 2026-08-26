@@ -6,9 +6,10 @@ from app.services.config_service import (
     actualizar_semestre, CONFIG_DEFAULT
 )
 from app.services.logger import app_logger
-from flask import render_template, request, jsonify, flash, redirect, url_for
+from flask import render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
 from . import admin_bp
 from .forms import ConfiguracionForm, CrearUsuarioForm, EditarUsuarioForm, CicloForm
 from app.models import Usuario
@@ -17,6 +18,19 @@ import json
 import os
 import re
 from datetime import datetime
+
+def guardar_avatar(archivo, username):
+    """Guarda el archivo de avatar y devuelve el nombre del archivo"""
+    if archivo and archivo.filename != '':
+        ext = archivo.filename.rsplit('.', 1)[-1].lower()
+        if ext in {'png', 'jpg', 'jpeg', 'webp'}:
+            filename = secure_filename(f"avatar_{username}_{int(datetime.now().timestamp())}.{ext}")
+            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+            os.makedirs(upload_folder, exist_ok=True)
+            filepath = os.path.join(upload_folder, filename)
+            archivo.save(filepath)
+            return filename
+    return None
 
 
 @admin_bp.route('/')
@@ -155,12 +169,15 @@ def crear_usuario():
                 flash('El email ya está registrado', 'danger')
                 return redirect(url_for('admin.usuarios'))
             
+            avatar_filename = guardar_avatar(request.files.get('avatar'), form.username.data)
+
             nuevo_usuario = Usuario(
                 username=form.username.data,
                 email=form.email.data,
                 password_hash=generate_password_hash(form.password.data),
                 rol=form.rol.data,
-                activo=True
+                activo=True,
+                avatar=avatar_filename
             )
             
             db.session.add(nuevo_usuario)
@@ -284,28 +301,30 @@ def editar_usuario(usuario_id):
         nuevo_email = form.email.data.strip()
         nueva_password = form.password.data.strip() if form.password.data else ''
 
-        if Usuario.query.filter(
-            Usuario.username == nuevo_username,
-            Usuario.id != usuario_id
-        ).first():
-            flash('El nombre de usuario ya está en uso.', 'danger')
-            return redirect(url_for('admin.usuarios'))
+        if nuevo_username != usuario.username:
+            if Usuario.query.filter(Usuario.username == nuevo_username, Usuario.id != usuario_id).first():
+                flash('El nombre de usuario ya existe', 'danger')
+                return redirect(url_for('admin.usuarios'))
+            usuario.username = nuevo_username
 
-        if Usuario.query.filter(
-            Usuario.email == nuevo_email,
-            Usuario.id != usuario_id
-        ).first():
-            flash('El email ya está registrado.', 'danger')
-            return redirect(url_for('admin.usuarios'))
-
-        usuario.username = nuevo_username
-        usuario.email = nuevo_email
+        if nuevo_email != usuario.email:
+            if Usuario.query.filter(Usuario.email == nuevo_email, Usuario.id != usuario_id).first():
+                flash('El email ya está en uso', 'danger')
+                return redirect(url_for('admin.usuarios'))
+            usuario.email = nuevo_email
 
         if nueva_password:
             usuario.password_hash = generate_password_hash(nueva_password)
 
+        avatar_file = request.files.get('avatar')
+        if avatar_file and avatar_file.filename != '':
+            nuevo_avatar = guardar_avatar(avatar_file, usuario.username)
+            if nuevo_avatar:
+                # Opcional: Eliminar el avatar anterior del sistema de archivos si se desea
+                usuario.avatar = nuevo_avatar
+
         db.session.commit()
-        flash(f'Usuario "{nuevo_username}" actualizado correctamente.', 'success')
+        flash('Usuario actualizado exitosamente', 'success')
 
     except Exception as e:
         app_logger.error(f"Error editando usuario {usuario_id}: {str(e)}")
