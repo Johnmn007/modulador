@@ -41,6 +41,20 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ url_for('inscripciones.index') }}" class="row g-3 align-items-end" id="search-form">
+                    {% if current_user.rol == 'administrador' and ciclos %}
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Ciclo</label>
+                        <select class="form-select bg-light" name="filtro_ciclo_id" id="filtro_ciclo_id">
+                            <option value="-1">Todos (Historico)</option>
+                            {% for c in ciclos %}
+                            <option value="{{ c.id }}" {% if filtro_ciclo_id == c.id %}selected{% endif %}>
+                                {{ c.codigo_ciclo }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-muted">Búsqueda rápida</label>
                         <div class="input-group">
@@ -356,6 +370,9 @@
     }
 
     // Inicializar Tom Select para los filtros
+    var cicloSel = document.getElementById('filtro_ciclo_id');
+    if (cicloSel) new TomSelect(cicloSel, { create: false, placeholder: 'Seleccionar ciclo' });
+
     var cursoSel = document.getElementById('curso_id');
     if (cursoSel) new TomSelect(cursoSel, { create: false, placeholder: 'Todos los cursos', maxOptions: null });
 

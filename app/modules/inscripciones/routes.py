@@ -117,8 +117,27 @@ def index():
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+    
     # Query base con joins para estudiante y curso
     inscripciones_query = Inscripcion.query.join(Estudiante).join(Curso)
+    
+    ciclo_activo = get_ciclo_activo()
+    
+    # Para el admin, permitir filtrar por cualquier ciclo, o por defecto el activo
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    
+    if current_user.rol == 'administrador' and filtro_ciclo_id:
+        if filtro_ciclo_id != -1: # -1 podría ser 'Todos'
+            inscripciones_query = inscripciones_query.filter(Curso.ciclo_id == filtro_ciclo_id)
+    else:
+        # Si no es admin o no seleccionó filtro, mostrar solo el activo
+        if ciclo_activo:
+            inscripciones_query = inscripciones_query.filter(Curso.ciclo_id == ciclo_activo.id)
+        else:
+            # Si no hay ciclo activo, no mostrar nada
+            inscripciones_query = inscripciones_query.filter(db.false())
 
     # Filtro por rol: docentes y coordinadores solo ven inscripciones de sus cursos
     if current_user.rol in ('docente', 'coordinador'):
@@ -160,10 +179,14 @@ def index():
     else:
         cursos = Curso.query.filter_by(activo=True).order_by('semestre', 'nombre_curso').all()
 
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
+
     return render_template('inscripciones/index.html',
                          inscripciones=inscripciones,
                          estudiantes=estudiantes,
                          cursos=cursos,
+                         ciclos=ciclos,
+                         filtro_ciclo_id=filtro_ciclo_id or (ciclo_activo.id if ciclo_activo else -1),
                          search=search,
                          estudiante_id=estudiante_id,
                          curso_id=curso_id,

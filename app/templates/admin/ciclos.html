@@ -9,9 +9,17 @@
                 <h2 class="fw-bold text-primary-color m-0">Gestión de Ciclos Académicos</h2>
                 <p class="text-muted mb-0">Control de apertura y cierre de periodos institucionales</p>
             </div>
-            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
-                <i class="fas fa-arrow-left me-1"></i> Panel Admin
-            </a>
+            <div>
+                <form method="POST" action="{{ url_for('admin.concluir_semestre') }}" style="display: inline;" id="formConcluirSemestre">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="button" class="btn btn-outline-danger border-2 fw-bold me-2" id="btnConcluirSemestre">
+                        <i class="fas fa-lock me-1"></i> Concluir Semestre Activo
+                    </button>
+                </form>
+                <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
+                    <i class="fas fa-arrow-left me-1"></i> Panel Admin
+                </a>
+            </div>
         </div>
 
         <div class="row g-4">
@@ -169,6 +177,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonColor: '#06b6d4',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Sí, iniciar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+    const btnConcluirSemestre = document.getElementById('btnConcluirSemestre');
+    if (btnConcluirSemestre) {
+        btnConcluirSemestre.addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = document.getElementById('formConcluirSemestre');
+            Swal.fire({
+                title: '¿Concluir semestre activo?',
+                text: 'Esto ocultará toda la data operativa (asistencias, notas) de las vistas principales hasta que inicies uno nuevo o reactives este. La información seguirá guardada.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, concluir',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {

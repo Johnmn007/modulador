@@ -34,6 +34,30 @@ def index():
     curso_id = request.args.get('curso_id', type=int)
     fecha = request.args.get('fecha', '')
     
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+    
+    ciclo_activo = get_ciclo_activo()
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    
+    # Filtrado por ciclo
+    if current_user.rol == 'administrador' and filtro_ciclo_id:
+        if filtro_ciclo_id != -1:
+            asistencias_query = asistencias_query.filter(Curso.ciclo_id == filtro_ciclo_id)
+    else:
+        if ciclo_activo:
+            asistencias_query = asistencias_query.filter(Curso.ciclo_id == ciclo_activo.id)
+        else:
+            asistencias_query = asistencias_query.filter(db.false())
+    
+    # Comportamiento por defecto: Si no hay filtros activos (fecha o curso), 
+    # y si estamos viendo el ciclo activo, mostrar solo el día actual.
+    # Si estamos viendo histórico (filtro_ciclo_id y es != ciclo_activo.id), no forzar fecha de hoy.
+    is_historico = current_user.rol == 'administrador' and filtro_ciclo_id and (not ciclo_activo or filtro_ciclo_id != ciclo_activo.id)
+    if not fecha and not curso_id and not is_historico:
+        from datetime import date
+        fecha = date.today().strftime('%Y-%m-%d')
+    
     if curso_id:
         asistencias_query = asistencias_query.filter(Inscripcion.curso_id == curso_id)
     if fecha:
@@ -57,9 +81,13 @@ def index():
     else:
         cursos = []
 
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
+
     return render_template('asistencias/index.html',
                          sesiones=sesiones,
                          cursos=cursos,
+                         ciclos=ciclos,
+                         filtro_ciclo_id=filtro_ciclo_id or (ciclo_activo.id if ciclo_activo else -1),
                          curso_id=curso_id,
                          fecha=fecha)
 

@@ -21,6 +21,21 @@ def index():
     # Query base con join para curso
     evaluaciones_query = Evaluacion.query.join(Curso)
 
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+    
+    ciclo_activo = get_ciclo_activo()
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    
+    if current_user.rol == 'administrador' and filtro_ciclo_id:
+        if filtro_ciclo_id != -1:
+            evaluaciones_query = evaluaciones_query.filter(Curso.ciclo_id == filtro_ciclo_id)
+    else:
+        if ciclo_activo:
+            evaluaciones_query = evaluaciones_query.filter(Curso.ciclo_id == ciclo_activo.id)
+        else:
+            evaluaciones_query = evaluaciones_query.filter(db.false())
+
     # Filtro por rol: docentes y coordinadores solo ven evaluaciones de sus cursos
     if current_user.rol in ('docente', 'coordinador'):
         evaluaciones_query = evaluaciones_query.filter(Curso.docente_id == current_user.id)
@@ -58,10 +73,14 @@ def index():
     tipos_evaluacion = [
         'PARCIAL', 'QUIZ', 'TRABAJO', 'PROYECTO', 'LABORATORIO', 'EXAMEN_FINAL', 'OTRO'
     ]
+    
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
 
     return render_template('evaluaciones/index.html',
                          evaluaciones=evaluaciones,
                          cursos=cursos,
+                         ciclos=ciclos,
+                         filtro_ciclo_id=filtro_ciclo_id or (ciclo_activo.id if ciclo_activo else -1),
                          tipos_evaluacion=tipos_evaluacion,
                          search=search,
                          curso_id=curso_id,
@@ -321,6 +340,21 @@ def notas_index():
     # Query base con joins
     notas_query = Nota.query.join(Inscripcion).join(Estudiante).join(Evaluacion).join(Curso)
 
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+    
+    ciclo_activo = get_ciclo_activo()
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    
+    if current_user.rol == 'administrador' and filtro_ciclo_id:
+        if filtro_ciclo_id != -1:
+            notas_query = notas_query.filter(Curso.ciclo_id == filtro_ciclo_id)
+    else:
+        if ciclo_activo:
+            notas_query = notas_query.filter(Curso.ciclo_id == ciclo_activo.id)
+        else:
+            notas_query = notas_query.filter(db.false())
+
     # Filtro por rol: docentes y coordinadores solo ven notas de sus cursos
     if current_user.rol in ('docente', 'coordinador'):
         notas_query = notas_query.filter(Curso.docente_id == current_user.id)
@@ -355,11 +389,15 @@ def notas_index():
     estudiante_actual = next((e for e in estudiantes if e.id == estudiante_id), None) if estudiante_id else None
     estudiante_nombre_actual = f"{estudiante_actual.codigo_estudiante} - {estudiante_actual.apellidos} {estudiante_actual.nombres}" if estudiante_actual else ''
 
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
+
     return render_template('evaluaciones/notas_index.html',
                          notas=notas,
                          estudiantes=estudiantes,
                          cursos=cursos,
                          evaluaciones=evaluaciones,
+                         ciclos=ciclos,
+                         filtro_ciclo_id=filtro_ciclo_id or (ciclo_activo.id if ciclo_activo else -1),
                          estudiante_id=estudiante_id,
                          curso_id=curso_id,
                          evaluacion_id=evaluacion_id,

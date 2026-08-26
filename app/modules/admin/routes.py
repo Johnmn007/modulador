@@ -453,6 +453,31 @@ def copiar_cursos_ciclo(ciclo_id):
     flash(f'Se copiaron {cursos_copiados} cursos del ciclo {ciclo_fuente.codigo_ciclo} al ciclo {ciclo_destino.codigo_ciclo}.', 'success')
     return redirect(url_for('admin.ciclos'))
 
+@admin_bp.route('/ciclos/concluir', methods=['POST'])
+@login_required
+def concluir_semestre():
+    """Cierra el semestre activo (lo da por culminado)"""
+    if current_user.rol != 'administrador':
+        flash('No tiene permisos para acceder a esta sección', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
+    try:
+        from app.models import Ciclo
+        ciclos_activos = Ciclo.query.filter_by(activo=True).all()
+        if not ciclos_activos:
+            flash('No hay ningún semestre activo actualmente para concluir.', 'warning')
+        else:
+            for ciclo in ciclos_activos:
+                ciclo.activo = False
+            db.session.commit()
+            flash('El semestre ha sido concluido exitosamente. Ahora el sistema está en estado de pausa (sin ciclo activo).', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app_logger.error(f"Error concluyendo semestre: {str(e)}")
+        flash('Ocurrió un error al concluir el semestre.', 'danger')
+        
+    return redirect(url_for('admin.ciclos'))
+
 @admin_bp.route('/backup')
 @login_required
 def backup():
