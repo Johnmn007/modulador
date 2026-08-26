@@ -13,7 +13,7 @@ CONFIG_DEFAULT = {
     'peso_asistencia': 0.25,
     'peso_distribucion': 0.20,
     'peso_historial': 0.20,
-    'nota_minima_aprobatoria': 12.0,
+    'nota_minima_aprobatoria': 13.0,
     'porcentaje_asistencia_minimo': 70.0
 }
 

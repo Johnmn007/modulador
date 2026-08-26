@@ -347,7 +347,7 @@
                     </td>
                     <td>{{ "%.1f"|format(curso_data.asistencia) if curso_data.total_clases > 0 else 'N/R' }}%</td>
                     <td>
-                        {% if curso_data.promedio is not string and curso_data.promedio < 12 %}
+                        {% if curso_data.promedio is not string and curso_data.promedio < 13 %}
                             <span class="badge bg-red">BAJO RENDIMIENTO</span>
                         {% elif curso_data.asistencia < 70 %}
                             <span class="badge bg-yellow">BAJA ASISTENCIA</span>
@@ -371,7 +371,7 @@
                 {% for factor in seguimiento.factores_riesgo %}
                     {% if factor.valor > 0.5 %}
                         {% if factor.nombre == "Rendimiento Actual" %}
-                            <li><strong>Refuerzo Académico:</strong> Se recomienda programar sesiones de tutoría especializada en las asignaturas con promedios inferiores a 12.</li>
+                            <li><strong>Refuerzo Académico:</strong> Se recomienda programar sesiones de tutoría especializada en las asignaturas con promedios inferiores a 13.</li>
                         {% elif factor.nombre == "Asistencia Actual" %}
                             <li><strong>Compromiso de Asistencia:</strong> El estudiante presenta inasistencias críticas. Se requiere entrevista con Bienestar para identificar causas externas.</li>
                         {% elif factor.nombre == "Distribución de Riesgo" %}
