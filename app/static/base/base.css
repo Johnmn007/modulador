@@ -114,10 +114,10 @@ main.container {
     font-family: 'Outfit', sans-serif;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.7) !important;
-    padding: 0.5rem 1.25rem !important;
+    padding: 0.5rem 0.6rem !important;
     border-radius: var(--radius-md);
     transition: all 0.3s ease;
-    margin: 0 2px;
+    margin: 0 1px;
 }
 
 .nav-link:hover {
