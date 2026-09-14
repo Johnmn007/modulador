@@ -303,3 +303,48 @@ def descargar(reporte_id):
                              titulo=reporte.titulo,
                              reporte_id=reporte.id,
                              datetime=datetime)
+
+# --- RUTAS PARA REPORTES HISTÓRICOS ---
+
+@reportes_bp.route('/historicos')
+@login_required
+def historicos():
+    """Panel unificado para reportes históricos (solo admin)"""
+    if current_user.rol != 'administrador':
+        flash('No tiene permisos para acceder a reportes históricos', 'danger')
+        return redirect(url_for('reportes.index'))
+    
+    from app.models import Ciclo
+    # Obtener todos los ciclos, ordenados del más reciente al más antiguo
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all()
+    
+    config = cargar_configuracion()
+    return render_template('reportes/historicos.html', ciclos=ciclos, config=config)
+
+@reportes_bp.route('/api/ciclos/<int:ciclo_id>/cursos')
+@login_required
+def api_cursos_ciclo(ciclo_id):
+    """API para obtener cursos de un ciclo histórico"""
+    if current_user.rol != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+        
+    cursos = Curso.query.filter_by(ciclo_id=ciclo_id).order_by(Curso.nombre_curso).all()
+    return jsonify([{'id': c.id, 'nombre': c.nombre_curso, 'codigo': c.codigo_curso} for c in cursos])
+
+@reportes_bp.route('/api/ciclos/<int:ciclo_id>/estudiantes')
+@login_required
+def api_estudiantes_ciclo(ciclo_id):
+    """API para obtener estudiantes que participaron en un ciclo histórico"""
+    if current_user.rol != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+        
+    # Buscar estudiantes inscritos en cualquier curso de ese ciclo
+    estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+        Curso.ciclo_id == ciclo_id
+    ).distinct().subquery()
+    
+    estudiantes = Estudiante.query.filter(
+        Estudiante.id.in_(estudiantes_ids)
+    ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    
+    return jsonify([{'id': e.id, 'nombres': e.nombres, 'apellidos': e.apellidos, 'codigo': e.codigo_estudiante} for e in estudiantes])

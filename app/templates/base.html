@@ -103,6 +103,10 @@
                             <li><a class="dropdown-item" href="{{ url_for('reportes.asistencias_index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('reportes.historial') }}"><i class="fas fa-history me-2"></i>Historial</a></li>
+                            {% if current_user.rol == 'administrador' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reportes.historicos') }}"><i class="fas fa-archive me-2 text-primary"></i>Históricos</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     
