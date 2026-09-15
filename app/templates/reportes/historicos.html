@@ -29,6 +29,10 @@
     .btn-outline-primary:hover { background-color: rgba(6, 182, 212, 0.1); color: #0891b2; border-color: #06b6d4; transform: translateY(-2px); }
     .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
     .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
+    
+    /* Override forzar dropdowns visibles sobre card */
+    .card { overflow: visible !important; }
+    .card-header:first-child { border-radius: var(--radius-xl, 24px) var(--radius-xl, 24px) 0 0; }
 </style>
 {% endblock %}
 
