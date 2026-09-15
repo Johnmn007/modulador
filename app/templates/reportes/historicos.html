@@ -239,7 +239,9 @@
                 return;
             }
             
-            const codigo_ciclo = selectCiclo.options[ciclo_id].dataset.codigo;
+            // Obtener el option original del DOM para leer el data-codigo
+            const optionEl = document.querySelector(`#ciclo_selector option[value="${ciclo_id}"]`);
+            const codigo_ciclo = optionEl ? optionEl.dataset.codigo : '';
             
             // Actualizar campos ocultos de semestre
             document.querySelectorAll('.semestre_hidden_input').forEach(el => el.value = codigo_ciclo);
