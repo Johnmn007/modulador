@@ -117,7 +117,7 @@ class CalculatorRiesgoIntrasemestral:
                     cursos_con_datos += 1
 
             if total_evaluaciones == 0:
-                return FactorRiesgo("Rendimiento Actual", 0.3, self.peso_rendimiento,
+                return FactorRiesgo("Rendimiento Actual", 0.5, self.peso_rendimiento,
                                   f"Inscrito en {len(cursos)} cursos pero sin evaluaciones")
 
             promedio_general = total_notas / total_evaluaciones
@@ -136,13 +136,8 @@ class CalculatorRiesgoIntrasemestral:
             else:
                 valor_base = 0.9
                 
-            # Ajustar por completitud (si tiene pocas eval, riesgo reducido)
-            if factor_completitud < 0.3:  # Menos del 30% de eval esperadas
-                valor_ajustado = valor_base * 0.6
-            elif factor_completitud < 0.6:
-                valor_ajustado = valor_base * 0.8
-            else:
-                valor_ajustado = valor_base
+            # Eliminada la reducción de riesgo por completitud (ocultaba estudiantes reprobando tempranamente)
+            valor_ajustado = valor_base
 
             descripcion = (f"Promedio: {promedio_general:.1f} | "
                          f"{total_evaluaciones} evaluaciones | "
@@ -175,7 +170,7 @@ class CalculatorRiesgoIntrasemestral:
             }).fetchone()
             
             if not result or result.total_clases == 0:  # CORREGIDO: usar punto
-                return FactorRiesgo("Asistencia Actual", 0.2, self.peso_asistencia, 
+                return FactorRiesgo("Asistencia Actual", 0.5, self.peso_asistencia, 
                                   "Sin registros de asistencia")
 
             total_clases = result.total_clases  # CORREGIDO: usar punto
@@ -239,7 +234,7 @@ class CalculatorRiesgoIntrasemestral:
             for curso in cursos:
                 # Curso en riesgo si:
                 if curso.promedio_curso is None:  # CORREGIDO: usar punto
-                    cursos_en_riesgo += 0.3  # Riesgo potencial (sin eval)
+                    cursos_en_riesgo += 0.5  # Riesgo potencial (sin eval)
                 elif curso.promedio_curso < 13:
                     if curso.evaluaciones >= 2:  # Si tiene al menos 2 eval, confirmado
                         cursos_en_riesgo += 1
@@ -283,7 +278,7 @@ class CalculatorRiesgoIntrasemestral:
             
             if not result or result.promedio_historico is None:
                 # Estudiante nuevo (cachimbó) - Riesgo neutral
-                return FactorRiesgo("Historial Académico", 0.3, self.peso_historial, "Estudiante nuevo (Sin historial)")
+                return FactorRiesgo("Historial Académico", 0.5, self.peso_historial, "Estudiante nuevo (Sin historial)")
 
             promedio = float(result.promedio_historico)
             semestres = result.semestres_previos
