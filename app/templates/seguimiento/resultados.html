@@ -141,12 +141,7 @@
                                     <td>{{ seguimiento.semestre }}</td>
                                     <td><span class="badge bg-secondary">{{ seguimiento.ciclo_predominante|default('N/A') }}</span></td>
                                     <td>
-                                        <span class="badge 
-                                            {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger
-                                            {% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}bg-warning
-                                            {% else %}bg-success{% endif %}">
-                                            {{ seguimiento.categoria_riesgo.replace('_', ' ') }}
-                                        </span>
+                                        <span class="badge {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger{% elif seguimiento.categoria_riesgo == 'ALERTA_AMARILLA' %}bg-warning{% else %}bg-success{% endif %}">{{ seguimiento.categoria_riesgo.replace('_', ' ') }}</span>
                                     </td>
                                     <td>
                                         <span class="fw-bold">{{ "%.2f"|format(seguimiento.puntaje_riesgo) }}</span>
@@ -327,13 +322,14 @@
             // Lógica de Filtros Personalizados
             $('#filterCiclo').on('change', function() {
                 var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                // Buscar coincidencia exacta usando expresión regular (ej: ^VI$)
-                table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
+                // Buscamos que coincida exactamente con los bordes (por el regex o espacios)
+                table.column(2).search(val ? '\\b' + val + '\\b' : '', true, false).draw();
             });
 
             $('#filterCategoria').on('change', function() {
                 var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
+                // Evitamos el ^ y el $ porque la columna puede tener espacios HTML residuales
+                table.column(3).search(val ? val : '', true, false).draw();
             });
         }
     });
