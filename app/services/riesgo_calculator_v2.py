@@ -88,9 +88,10 @@ class CalculatorRiesgoIntrasemestral:
         query = text("""
         SELECT c.nombre_curso, AVG(n.nota) as promedio_curso, COUNT(n.id) as evaluaciones
         FROM cursos c
+        JOIN ciclos ci ON c.ciclo_id = ci.id
         JOIN inscripciones i ON c.id = i.curso_id
         LEFT JOIN notas n ON i.id = n.inscripcion_id
-        WHERE i.estudiante_id = :estudiante_id AND c.semestre = :semestre
+        WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre
         GROUP BY c.id, c.nombre_curso
         """)
         
@@ -159,7 +160,8 @@ class CalculatorRiesgoIntrasemestral:
         FROM asistencias a
         JOIN inscripciones i ON a.inscripcion_id = i.id
         JOIN cursos c ON i.curso_id = c.id
-        WHERE i.estudiante_id = :estudiante_id AND c.semestre = :semestre
+        JOIN ciclos ci ON c.ciclo_id = ci.id
+        WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre
         """)
         
         try:
@@ -211,9 +213,10 @@ class CalculatorRiesgoIntrasemestral:
         query = text("""
         SELECT c.nombre_curso, AVG(n.nota) as promedio_curso, COUNT(n.id) as evaluaciones
         FROM cursos c
+        JOIN ciclos ci ON c.ciclo_id = ci.id
         JOIN inscripciones i ON c.id = i.curso_id
         LEFT JOIN notas n ON i.id = n.inscripcion_id
-        WHERE i.estudiante_id = :estudiante_id AND c.semestre = :semestre
+        WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre
         GROUP BY c.id, c.nombre_curso
         """)
         
@@ -263,11 +266,12 @@ class CalculatorRiesgoIntrasemestral:
     def _evaluar_historial_academico(self, estudiante_id: int, semestre_actual: str, db) -> FactorRiesgo:
         """Evalúa el desempeño histórico del estudiante (semestres anteriores)"""
         query = text("""
-        SELECT AVG(n.nota) as promedio_historico, COUNT(DISTINCT c.semestre) as semestres_previos
+        SELECT AVG(n.nota) as promedio_historico, COUNT(DISTINCT ci.codigo_ciclo) as semestres_previos
         FROM notas n
         JOIN inscripciones i ON n.inscripcion_id = i.id
         JOIN cursos c ON i.curso_id = c.id
-        WHERE i.estudiante_id = :estudiante_id AND c.semestre < :semestre_actual
+        JOIN ciclos ci ON c.ciclo_id = ci.id
+        WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo < :semestre_actual
         """)
         
         try:
