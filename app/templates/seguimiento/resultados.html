@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Resultados - Sistema de Seguimiento{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+{% endblock %}
+
 {% block content %} 
     
     <!-- Breadcrumb -->
@@ -16,20 +21,72 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold text-primary-color m-0">Resultados del Cálculo de Riesgo</h2>
-                <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary">
-                    <i class="fas fa-calculator me-2"></i> Nuevo Cálculo
-                </a>
+                <div>
+                    <span class="badge bg-secondary me-3 fs-6">Semestre: {{ semestre_actual }}</span>
+                    <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary shadow-sm hover-lift">
+                        <i class="fas fa-calculator me-2"></i> Nuevo Cálculo
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estadísticas Resumen -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-danger border-4 h-100 hover-lift">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted text-uppercase small fw-bold mb-1">Alerta Roja</p>
+                                    <h3 class="fw-bold text-danger m-0">{{ estadisticas.get('ALERTA_ROJA', 0) }}</h3>
+                                </div>
+                                <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-warning border-4 h-100 hover-lift">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted text-uppercase small fw-bold mb-1">Alerta Amarilla</p>
+                                    <h3 class="fw-bold text-warning m-0">{{ estadisticas.get('ALERTA_AMARILLA', 0) }}</h3>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                                    <i class="fas fa-bell fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-success border-4 h-100 hover-lift">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted text-uppercase small fw-bold mb-1">Sin Riesgo</p>
+                                    <h3 class="fw-bold text-success m-0">{{ estadisticas.get('SIN_RIESGO', 0) }}</h3>
+                                </div>
+                                <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Tabla de Resultados -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="fw-bold m-0 text-primary-color">Últimos Seguimientos Generados</h5>
+                    <h5 class="fw-bold m-0 text-primary-color">Todos los Estudiantes Evaluados ({{ ultimos_seguimientos|length }})</h5>
                 </div>
                 <div class="card-body p-0">
                     {% if ultimos_seguimientos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                    <div class="table-responsive p-3">
+                        <table id="resultadosTable" class="table table-hover align-middle mb-0" style="width:100%">
                             <thead class="bg-light text-muted small text-uppercase fw-bold">
                                 <tr>
                                     <th>Estudiante</th>
@@ -182,4 +239,57 @@
             {% endif %}
         {% endfor %}
     {% endif %}
+
+    <style>
+        .hover-lift { transition: transform 0.2s; }
+        .hover-lift:hover { transform: translateY(-3px); }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #06b6d4 !important;
+            color: white !important;
+            border: 1px solid #06b6d4 !important;
+            border-radius: 8px;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 8px;
+            margin: 0 4px;
+        }
+        .dt-buttons .btn {
+            margin-right: 0.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        if ($('#resultadosTable').length > 0) {
+            $('#resultadosTable').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                    search: "Buscar estudiante:"
+                },
+                pageLength: 25,
+                order: [[3, 'desc']], // Ordenar por puntaje (columna 3) descendente
+                dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel me-1"></i> Exportar a Excel',
+                        className: 'btn btn-sm btn-success shadow-sm rounded-pill',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    }
+                ]
+            });
+        }
+    });
+</script>
 {% endblock %}

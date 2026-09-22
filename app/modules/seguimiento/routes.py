@@ -39,22 +39,29 @@ def calcular_riesgo():
 @login_required
 def resultados():
     """Mostrar resultados del cálculo de riesgo"""
-    # Estadísticas de riesgo
+    config = cargar_configuracion()
+    ciclo = get_ciclo_activo()
+    semestre_actual = ciclo.codigo_ciclo if ciclo else config.get('semestre_actual', '2025-1')
+
+    # Estadísticas de riesgo del semestre actual
     stats_query = db.session.query(
         SeguimientoRiesgo.categoria_riesgo,
         db.func.count(SeguimientoRiesgo.id)
-    ).group_by(SeguimientoRiesgo.categoria_riesgo).all()
+    ).filter(SeguimientoRiesgo.semestre == semestre_actual).group_by(SeguimientoRiesgo.categoria_riesgo).all()
     
     estadisticas = {categoria: cantidad for categoria, cantidad in stats_query}
     
-    # Últimos cálculos
-    ultimos_seguimientos = SeguimientoRiesgo.query.order_by(
-        SeguimientoRiesgo.fecha_evaluacion.desc()
-    ).limit(10).all()
+    # Todos los seguimientos del semestre actual ordenados por mayor riesgo
+    ultimos_seguimientos = SeguimientoRiesgo.query.filter_by(
+        semestre=semestre_actual
+    ).order_by(
+        SeguimientoRiesgo.puntaje_riesgo.desc()
+    ).all()
     
     return render_template('seguimiento/resultados.html',
                          estadisticas=estadisticas,
-                         ultimos_seguimientos=ultimos_seguimientos)
+                         ultimos_seguimientos=ultimos_seguimientos,
+                         semestre_actual=semestre_actual)
 
 @seguimiento_bp.route('/api/calcular-estudiante/<int:estudiante_id>')
 @login_required
