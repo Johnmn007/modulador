@@ -128,11 +128,11 @@ class CalculatorRiesgoIntrasemestral:
             factor_completitud = min(total_evaluaciones / evaluaciones_esperadas, 1.0)
             
             # Escala de riesgo con ajuste por completitud
-            if promedio_general >= 14:
+            if promedio_general >= 14.5:
                 valor_base = 0.1
-            elif promedio_general >= 13:
+            elif promedio_general >= 12.5:
                 valor_base = 0.3
-            elif promedio_general >= 10:
+            elif promedio_general >= 10.5:
                 valor_base = 0.6
             else:
                 valor_base = 0.9
@@ -238,7 +238,7 @@ class CalculatorRiesgoIntrasemestral:
                 # Curso en riesgo si:
                 if curso.promedio_curso is None:  # CORREGIDO: usar punto
                     cursos_en_riesgo += 0.5  # Riesgo potencial (sin eval)
-                elif curso.promedio_curso < 13:
+                elif curso.promedio_curso < 12.5:
                     if curso.evaluaciones >= 2:  # Si tiene al menos 2 eval, confirmado
                         cursos_en_riesgo += 1
                     else:  # Pocas eval, riesgo moderado
@@ -290,9 +290,9 @@ class CalculatorRiesgoIntrasemestral:
             # Escala de riesgo histórica
             if promedio >= 15:
                 valor = 0.1
-            elif promedio >= 13:
+            elif promedio >= 12.5:
                 valor = 0.3
-            elif promedio >= 11:
+            elif promedio >= 10.5:
                 valor = 0.6
             else:
                 valor = 0.9

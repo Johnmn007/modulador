@@ -347,7 +347,7 @@
                     </td>
                     <td>{{ "%.1f"|format(curso_data.asistencia) if curso_data.total_clases > 0 else 'N/R' }}%</td>
                     <td>
-                        {% if curso_data.promedio is not string and curso_data.promedio < 13 %}
+                        {% if curso_data.promedio is not string and curso_data.promedio < 12.5 %}
                             <span class="badge bg-red">BAJO RENDIMIENTO</span>
                         {% elif curso_data.asistencia < 70 %}
                             <span class="badge bg-yellow">BAJA ASISTENCIA</span>

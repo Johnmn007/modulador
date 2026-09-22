@@ -71,7 +71,7 @@
                                     <td class="pe-4">
                                         <div class="grade-status-msg small fw-bold mb-1" id="msg_{{ inscripcion.id }}">
                                             {% if nota_obj %}
-                                                {{ 'Aprobado' if nota_obj.nota >= 11 else 'Desaprobado' }}
+                                                {{ 'Aprobado' if nota_obj.nota >= 12.5 else 'Desaprobado' }}
                                             {% else %}
                                                 Sin calificar
                                             {% endif %}
@@ -142,12 +142,12 @@ function updateGradeStatus(input, id) {
         const perc = (val / 20) * 100;
         progress.style.width = perc + "%";
         
-        if (val >= 14) {
+        if (val >= 16) {
             row.classList.add('passing');
             msg.innerText = "Excelente";
             msg.className = "grade-status-msg small fw-bold mb-1 text-success";
             progress.classList.add('bg-success');
-        } else if (val >= 11) {
+        } else if (val >= 12.5) {
             row.classList.add('passing');
             msg.innerText = "Aprobado";
             msg.className = "grade-status-msg small fw-bold mb-1 text-info";
@@ -178,7 +178,7 @@ function calculateGlobalStats() {
         if (!isNaN(val)) {
             total += val;
             count++;
-            if (val >= 11) approved++;
+            if (val >= 12.5) approved++;
         }
     });
     

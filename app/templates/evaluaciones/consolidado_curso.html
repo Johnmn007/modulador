@@ -79,7 +79,7 @@
                                 {% for nota in fila.notas %}
                                 <td class="text-center">
                                     {% if nota is not none %}
-                                        <span class="fw-bold {% if nota >= 13 %}text-success{% else %}text-danger{% endif %} px-2 py-1 rounded-3 {% if nota >= 13 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                                        <span class="fw-bold {% if nota >= 12.5 %}text-success{% else %}text-danger{% endif %} px-2 py-1 rounded-3 {% if nota >= 12.5 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
                                             {{ "%.1f"|format(nota) }}
                                         </span>
                                     {% else %}
@@ -88,7 +88,7 @@
                                 </td>
                                 {% endfor %}
                                 <td class="text-center bg-light" style="border-left: 1px solid #F1F5F9;">
-                                    <div class="h5 fw-bold mb-0 {% if fila.promedio >= 13 %}text-success{% else %}text-danger{% endif %}">
+                                    <div class="h5 fw-bold mb-0 {% if fila.promedio >= 12.5 %}text-success{% else %}text-danger{% endif %}">
                                         {{ "%.1f"|format(fila.promedio) }}
                                     </div>
                                 </td>
@@ -117,10 +117,10 @@
                 <div class="d-flex align-items-center justify-content-center justify-content-sm-start gap-3 flex-wrap">
                     <span class="fw-semibold text-muted small text-uppercase tracking-wide">Leyenda:</span>
                     <div class="d-flex align-items-center bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill fw-bold text-sm">
-                        <i class="fas fa-check-circle me-2"></i> >= 13.0 Aprobado
+                        <i class="fas fa-check-circle me-2"></i> >= 12.5 Aprobado
                     </div>
                     <div class="d-flex align-items-center bg-danger bg-opacity-10 text-danger px-3 py-1 rounded-pill fw-bold text-sm">
-                        <i class="fas fa-times-circle me-2"></i> < 13.0 Desaprobado
+                        <i class="fas fa-times-circle me-2"></i> < 12.5 Desaprobado
                     </div>
                 </div>
             </div>

@@ -93,7 +93,7 @@
                                                 <td class="ps-4 fw-bold text-primary-color">{{ nota.evaluacion.nombre_evaluacion }}</td>
                                                 <td class="text-muted">{{ nota.fecha_registro.strftime('%d/%m/%Y') }}</td>
                                                 <td class="text-end pe-4">
-                                                    <span class="fs-5 fw-bold {{ 'text-danger' if nota.nota < 11 else 'text-success' }}">
+                                                    <span class="fs-5 fw-bold {{ 'text-danger' if nota.nota < 12.5 else 'text-success' }}">
                                                         {{ "%.1f"|format(nota.nota) }}
                                                     </span>
                                                 </td>
@@ -194,7 +194,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="fw-bold mb-3">Sugerencias de Seguimiento</h6>
-                        {% if promedio_notas < 11 or porcentaje_asistencia < 80 %}
+                        {% if promedio_notas < 12.5 or porcentaje_asistencia < 80 %}
                         <div class="alert alert-danger mb-0 small">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Atención:</strong> El estudiante presenta métricas por debajo del umbral recomendado. Se sugiere citación a tutoría.

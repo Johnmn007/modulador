@@ -152,7 +152,7 @@
                                 </td>
                                 <td>{{ nota.inscripcion.estudiante.codigo_estudiante }}</td>
                                 <td>
-                                    <strong class="{% if nota.nota >= 13 %}text-success{% else %}text-danger{% endif %}">
+                                    <strong class="{% if nota.nota >= 12.5 %}text-success{% else %}text-danger{% endif %}">
                                         {{ "%.1f"|format(nota.nota) }}/20
                                     </strong>
                                 </td>

@@ -208,7 +208,7 @@
                                     <div class="small text-muted">{{ nota.inscripcion.curso.semestre }}</div>
                                 </td>
                                 <td>
-                                    <div class="h5 fw-bold mb-0 {% if nota.nota >= 11 %}text-success{% else %}text-danger{% endif %}">
+                                    <div class="h5 fw-bold mb-0 {% if nota.nota >= 12.5 %}text-success{% else %}text-danger{% endif %}">
                                         {{ "%.1f"|format(nota.nota) }}
                                         <small class="text-muted" style="font-size: 0.6rem;">/ 20</small>
                                     </div>
