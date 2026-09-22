@@ -83,6 +83,38 @@
                 <div class="card-header bg-white border-bottom py-3">
                     <h5 class="fw-bold m-0 text-primary-color">Todos los Estudiantes Evaluados ({{ ultimos_seguimientos|length }})</h5>
                 </div>
+                
+                <!-- Filtros Custom para DataTables -->
+                <div class="bg-light p-3 border-bottom">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-layer-group me-1"></i> Filtrar por Ciclo</label>
+                            <select id="filterCiclo" class="form-select form-select-sm shadow-sm">
+                                <option value="">Todos los ciclos</option>
+                                <option value="I">I</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                                <option value="V">V</option>
+                                <option value="VI">VI</option>
+                                <option value="VII">VII</option>
+                                <option value="VIII">VIII</option>
+                                <option value="IX">IX</option>
+                                <option value="X">X</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-exclamation-circle me-1"></i> Filtrar por Categoría</label>
+                            <select id="filterCategoria" class="form-select form-select-sm shadow-sm">
+                                <option value="">Todas las categorías</option>
+                                <option value="ALERTA ROJA">Alerta Roja</option>
+                                <option value="ALERTA AMARILLA">Alerta Amarilla</option>
+                                <option value="SIN RIESGO">Sin Riesgo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card-body p-0">
                     {% if ultimos_seguimientos %}
                     <div class="table-responsive p-3">
@@ -91,6 +123,7 @@
                                 <tr>
                                     <th>Estudiante</th>
                                     <th>Semestre</th>
+                                    <th>Ciclo</th>
                                     <th>Categoría</th>
                                     <th>Puntaje</th>
                                     <th>Fecha Evaluación</th>
@@ -106,6 +139,7 @@
                                         <small class="text-muted">{{ seguimiento.estudiante.apellidos }} {{ seguimiento.estudiante.nombres }}</small>
                                     </td>
                                     <td>{{ seguimiento.semestre }}</td>
+                                    <td><span class="badge bg-secondary">{{ seguimiento.ciclo_predominante|default('N/A') }}</span></td>
                                     <td>
                                         <span class="badge 
                                             {% if seguimiento.categoria_riesgo == 'ALERTA_ROJA' %}bg-danger
@@ -270,13 +304,13 @@
 <script>
     $(document).ready(function() {
         if ($('#resultadosTable').length > 0) {
-            $('#resultadosTable').DataTable({
+            var table = $('#resultadosTable').DataTable({
                 language: {
                     url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
                     search: "Buscar estudiante:"
                 },
                 pageLength: 25,
-                order: [[3, 'desc']], // Ordenar por puntaje (columna 3) descendente
+                order: [[4, 'desc']], // Ordenar por puntaje (columna 4) descendente
                 dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
                 buttons: [
                     {
@@ -284,10 +318,22 @@
                         text: '<i class="fas fa-file-excel me-1"></i> Exportar a Excel',
                         className: 'btn btn-sm btn-success shadow-sm rounded-pill',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         }
                     }
                 ]
+            });
+
+            // Lógica de Filtros Personalizados
+            $('#filterCiclo').on('change', function() {
+                var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                // Buscar coincidencia exacta usando expresión regular (ej: ^VI$)
+                table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
+            });
+
+            $('#filterCategoria').on('change', function() {
+                var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
             });
         }
     });

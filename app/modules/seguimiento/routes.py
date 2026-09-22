@@ -58,6 +58,22 @@ def resultados():
         SeguimientoRiesgo.puntaje_riesgo.desc()
     ).all()
     
+    # Calcular el ciclo predominante para cada estudiante
+    for seguimiento in ultimos_seguimientos:
+        # Buscar el ciclo curricular más repetido entre los cursos en los que el estudiante está inscrito
+        ciclo_query = db.session.execute(db.text("""
+            SELECT c.semestre, COUNT(c.id) as cantidad
+            FROM inscripciones i
+            JOIN cursos c ON i.curso_id = c.id
+            JOIN ciclos ci ON c.ciclo_id = ci.id
+            WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre_actual
+            GROUP BY c.semestre
+            ORDER BY cantidad DESC
+            LIMIT 1
+        """), {'estudiante_id': seguimiento.estudiante_id, 'semestre_actual': semestre_actual}).fetchone()
+        
+        seguimiento.ciclo_predominante = ciclo_query[0] if ciclo_query else "N/A"
+    
     return render_template('seguimiento/resultados.html',
                          estadisticas=estadisticas,
                          ultimos_seguimientos=ultimos_seguimientos,
