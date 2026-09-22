@@ -52,13 +52,18 @@ def resultados():
     estadisticas = {categoria: cantidad for categoria, cantidad in stats_query}
     
     # Todos los seguimientos del semestre actual ordenados por mayor riesgo
-    ultimos_seguimientos = SeguimientoRiesgo.query.filter_by(
-        semestre=semestre_actual
-    ).order_by(
-        SeguimientoRiesgo.puntaje_riesgo.desc()
-    ).all()
+    query = SeguimientoRiesgo.query.filter_by(semestre=semestre_actual)
+    
+    categoria_filter = request.args.get('categoria')
+    ciclo_filter = request.args.get('ciclo')
+    
+    if categoria_filter:
+        query = query.filter_by(categoria_riesgo=categoria_filter.replace(' ', '_'))
+        
+    ultimos_seguimientos = query.order_by(SeguimientoRiesgo.puntaje_riesgo.desc()).all()
     
     # Calcular el ciclo predominante para cada estudiante
+    seguimientos_filtrados = []
     for seguimiento in ultimos_seguimientos:
         # Buscar el ciclo curricular más repetido entre los cursos en los que el estudiante está inscrito
         ciclo_query = db.session.execute(db.text("""
@@ -73,11 +78,22 @@ def resultados():
         """), {'estudiante_id': seguimiento.estudiante_id, 'semestre_actual': semestre_actual}).fetchone()
         
         seguimiento.ciclo_predominante = ciclo_query[0] if ciclo_query else "N/A"
+        
+        # Si hay filtro de ciclo, solo conservamos los que coincidan
+        if ciclo_filter and ciclo_filter != "":
+            if seguimiento.ciclo_predominante == ciclo_filter:
+                seguimientos_filtrados.append(seguimiento)
+        else:
+            seguimientos_filtrados.append(seguimiento)
+            
+    ultimos_seguimientos = seguimientos_filtrados
     
     return render_template('seguimiento/resultados.html',
                          estadisticas=estadisticas,
                          ultimos_seguimientos=ultimos_seguimientos,
-                         semestre_actual=semestre_actual)
+                         semestre_actual=semestre_actual,
+                         categoria_filter=categoria_filter,
+                         ciclo_filter=ciclo_filter)
 
 @seguimiento_bp.route('/api/calcular-estudiante/<int:estudiante_id>')
 @login_required

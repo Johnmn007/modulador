@@ -89,27 +89,27 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-layer-group me-1"></i> Filtrar por Ciclo</label>
-                            <select id="filterCiclo" class="form-select form-select-sm shadow-sm">
+                            <select id="filterCiclo" class="form-select form-select-sm shadow-sm" onchange="applyFilters()">
                                 <option value="">Todos los ciclos</option>
-                                <option value="I">I</option>
-                                <option value="II">II</option>
-                                <option value="III">III</option>
-                                <option value="IV">IV</option>
-                                <option value="V">V</option>
-                                <option value="VI">VI</option>
-                                <option value="VII">VII</option>
-                                <option value="VIII">VIII</option>
-                                <option value="IX">IX</option>
-                                <option value="X">X</option>
+                                <option value="I" {% if ciclo_filter == 'I' %}selected{% endif %}>I</option>
+                                <option value="II" {% if ciclo_filter == 'II' %}selected{% endif %}>II</option>
+                                <option value="III" {% if ciclo_filter == 'III' %}selected{% endif %}>III</option>
+                                <option value="IV" {% if ciclo_filter == 'IV' %}selected{% endif %}>IV</option>
+                                <option value="V" {% if ciclo_filter == 'V' %}selected{% endif %}>V</option>
+                                <option value="VI" {% if ciclo_filter == 'VI' %}selected{% endif %}>VI</option>
+                                <option value="VII" {% if ciclo_filter == 'VII' %}selected{% endif %}>VII</option>
+                                <option value="VIII" {% if ciclo_filter == 'VIII' %}selected{% endif %}>VIII</option>
+                                <option value="IX" {% if ciclo_filter == 'IX' %}selected{% endif %}>IX</option>
+                                <option value="X" {% if ciclo_filter == 'X' %}selected{% endif %}>X</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-exclamation-circle me-1"></i> Filtrar por Categoría</label>
-                            <select id="filterCategoria" class="form-select form-select-sm shadow-sm">
+                            <select id="filterCategoria" class="form-select form-select-sm shadow-sm" onchange="applyFilters()">
                                 <option value="">Todas las categorías</option>
-                                <option value="ALERTA ROJA">Alerta Roja</option>
-                                <option value="ALERTA AMARILLA">Alerta Amarilla</option>
-                                <option value="SIN RIESGO">Sin Riesgo</option>
+                                <option value="ALERTA ROJA" {% if categoria_filter == 'ALERTA ROJA' %}selected{% endif %}>Alerta Roja</option>
+                                <option value="ALERTA AMARILLA" {% if categoria_filter == 'ALERTA AMARILLA' %}selected{% endif %}>Alerta Amarilla</option>
+                                <option value="SIN RIESGO" {% if categoria_filter == 'SIN RIESGO' %}selected{% endif %}>Sin Riesgo</option>
                             </select>
                         </div>
                     </div>
@@ -320,18 +320,28 @@
                     }
                 ]
             });
-
-            // Lógica de Filtros Personalizados
-            $('#filterCiclo').on('change', function() {
-                var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
-            });
-
-            $('#filterCategoria').on('change', function() {
-                var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
-            });
         }
     });
+
+    // Filtro basado en backend (recarga de página) garantizado
+    function applyFilters() {
+        var ciclo = document.getElementById('filterCiclo').value;
+        var categoria = document.getElementById('filterCategoria').value;
+        
+        var url = new URL(window.location.href);
+        if (ciclo) {
+            url.searchParams.set('ciclo', ciclo);
+        } else {
+            url.searchParams.delete('ciclo');
+        }
+        
+        if (categoria) {
+            url.searchParams.set('categoria', categoria);
+        } else {
+            url.searchParams.delete('categoria');
+        }
+        
+        window.location.href = url.toString();
+    }
 </script>
 {% endblock %}
