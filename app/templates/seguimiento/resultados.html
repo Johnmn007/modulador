@@ -319,17 +319,32 @@
                 ]
             });
 
-            // Lógica de Filtros Personalizados
-            $('#filterCiclo').on('change', function() {
-                var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                // Buscamos que coincida exactamente con los bordes (por el regex o espacios)
-                table.column(2).search(val ? '\\b' + val + '\\b' : '', true, false).draw();
-            });
+            // Limpiar filtros previos si existen para evitar duplicados
+            $.fn.dataTable.ext.search = [];
+            
+            // Lógica de Filtros Personalizados (Foolproof)
+            $.fn.dataTable.ext.search.push(
+                function( settings, data, dataIndex ) {
+                    var filtroCiclo = $('#filterCiclo').val();
+                    var filtroCategoria = $('#filterCategoria').val();
+                    
+                    var cicloTabla = (data[2] || "").trim(); // Columna 2: Ciclo
+                    var categoriaTabla = (data[3] || "").trim(); // Columna 3: Categoría
+                    
+                    if (filtroCiclo && cicloTabla !== filtroCiclo) {
+                        return false;
+                    }
+                    
+                    if (filtroCategoria && categoriaTabla !== filtroCategoria) {
+                        return false;
+                    }
+                    
+                    return true;
+                }
+            );
 
-            $('#filterCategoria').on('change', function() {
-                var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                // Evitamos el ^ y el $ porque la columna puede tener espacios HTML residuales
-                table.column(3).search(val ? val : '', true, false).draw();
+            $('#filterCiclo, #filterCategoria').on('change', function() {
+                table.draw();
             });
         }
     });
