@@ -2,9 +2,9 @@ from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import seguimiento_bp
 from app.extensions import db
-from app.models import SeguimientoRiesgo, Estudiante
+from app.models import SeguimientoRiesgo, Estudiante, Ciclo
 from app.services.seguimiento_service import SeguimientoService
-from app.services.config_service import cargar_configuracion
+from app.services.config_service import cargar_configuracion, get_ciclo_activo
 from app.services.riesgo_calculator_v2 import CalculatorRiesgoIntrasemestral
 from app.decorators import roles_required
 
@@ -12,7 +12,9 @@ from app.decorators import roles_required
 @login_required
 def index():
     """Panel de control del módulo de seguimiento"""
-    return render_template('seguimiento/index.html')
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all()
+    ciclo_activo = get_ciclo_activo()
+    return render_template('seguimiento/index.html', ciclos=ciclos, ciclo_activo=ciclo_activo)
 
 @seguimiento_bp.route('/calcular-riesgo', methods=['POST'])
 @login_required

@@ -47,9 +47,17 @@
                             <div class="col-md-5">
                                 <label for="semestre" class="form-label small fw-bold text-muted">SEMESTRE A EVALUAR</label>
                                 <select class="form-select form-select-lg border-2" id="semestre" name="semestre" required>
-                                    <option value="2025-1" selected>2025-1 (Actual)</option>
-                                    <option value="2025-2">2025-2</option>
-                                    <option value="2026-1">2026-1</option>
+                                    {% if ciclos %}
+                                        {% for ciclo in ciclos %}
+                                            <option value="{{ ciclo.codigo_ciclo }}" 
+                                                {% if ciclo_activo and ciclo.id == ciclo_activo.id %}selected{% endif %}>
+                                                {{ ciclo.nombre }} {% if ciclo_activo and ciclo.id == ciclo_activo.id %}(Actual){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="2025-1" selected>2025-1 (Actual)</option>
+                                        <option value="2025-2">2025-2</option>
+                                    {% endif %}
                                 </select>
                             </div>
                             <div class="col-md-7">
