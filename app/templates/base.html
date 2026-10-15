@@ -24,6 +24,9 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
+    <!-- Barra de progreso de navegación superior -->
+    <div id="top-nav-loader"></div>
+
     <!-- Skip to content (Accesibilidad) -->
     <a href="#main-content" class="visually-hidden-focusable">Saltar al contenido principal</a>
 
@@ -55,8 +58,8 @@
                              <i class="fas fa-user-graduate me-1"></i> Estudiantes
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" aria-labelledby="estudiantesDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('estudiantes.index') }}"><i class="fas fa-list me-2"></i>Todos</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('estudiantes.en_riesgo') }}"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>En Riesgo</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'estudiantes.index' else '' }}" href="{{ url_for('estudiantes.index') }}"><i class="fas fa-list me-2"></i>Todos</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'estudiantes.en_riesgo' else '' }}" href="{{ url_for('estudiantes.en_riesgo') }}"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>En Riesgo</a></li>
                         </ul>
                     </li>
                     
@@ -67,8 +70,8 @@
                              <i class="fas fa-chart-line me-1"></i> Seguimiento
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" aria-labelledby="seguimientoDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('seguimiento.index') }}"><i class="fas fa-calculator me-2"></i>Cálculo</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('seguimiento.resultados') }}"><i class="fas fa-poll me-2"></i>Resultados</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'seguimiento.index' else '' }}" href="{{ url_for('seguimiento.index') }}"><i class="fas fa-calculator me-2"></i>Cálculo</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'seguimiento.resultados' else '' }}" href="{{ url_for('seguimiento.resultados') }}"><i class="fas fa-poll me-2"></i>Resultados</a></li>
                         </ul>
                     </li>
 
@@ -81,13 +84,13 @@
                              <i class="fas fa-book me-1"></i> Gestión
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" aria-labelledby="gestionDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('cursos.index') }}"><i class="fas fa-book-open me-2"></i>Cursos</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('inscripciones.index') }}"><i class="fas fa-user-plus me-2"></i>Inscripciones</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint and 'cursos' in request.endpoint else '' }}" href="{{ url_for('cursos.index') }}"><i class="fas fa-book-open me-2"></i>Cursos</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint and 'inscripciones' in request.endpoint else '' }}" href="{{ url_for('inscripciones.index') }}"><i class="fas fa-user-plus me-2"></i>Inscripciones</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('evaluaciones.index') }}"><i class="fas fa-clipboard-list me-2"></i>Evaluaciones</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('evaluaciones.notas_index') }}"><i class="fas fa-pen-nib me-2"></i>Notas</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'evaluaciones.index' else '' }}" href="{{ url_for('evaluaciones.index') }}"><i class="fas fa-clipboard-list me-2"></i>Evaluaciones</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'evaluaciones.notas_index' else '' }}" href="{{ url_for('evaluaciones.notas_index') }}"><i class="fas fa-pen-nib me-2"></i>Notas</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('asistencias.index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint and 'asistencias' in request.endpoint else '' }}" href="{{ url_for('asistencias.index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
                         </ul>
                     </li>
                     
@@ -98,15 +101,15 @@
                              <i class="fas fa-file-alt me-1"></i> Reportes
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" aria-labelledby="reportesDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.individual') }}"><i class="fas fa-user me-2"></i>Individual</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.general') }}"><i class="fas fa-users me-2"></i>General de Riesgo</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.asistencias_index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.notas_index') }}"><i class="fas fa-award me-2 text-info"></i>Calificaciones y Actas</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.individual' else '' }}" href="{{ url_for('reportes.individual') }}"><i class="fas fa-user me-2"></i>Individual</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.general' else '' }}" href="{{ url_for('reportes.general') }}"><i class="fas fa-users me-2"></i>General de Riesgo</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.asistencias_index' else '' }}" href="{{ url_for('reportes.asistencias_index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.notas_index' else '' }}" href="{{ url_for('reportes.notas_index') }}"><i class="fas fa-award me-2 text-info"></i>Calificaciones y Actas</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.historial') }}"><i class="fas fa-history me-2"></i>Historial</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.historial' else '' }}" href="{{ url_for('reportes.historial') }}"><i class="fas fa-history me-2"></i>Historial</a></li>
                             {% if current_user.rol == 'administrador' %}
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reportes.historicos') }}"><i class="fas fa-archive me-2 text-primary"></i>Históricos</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'reportes.historicos' else '' }}" href="{{ url_for('reportes.historicos') }}"><i class="fas fa-archive me-2 text-primary"></i>Históricos</a></li>
                             {% endif %}
                         </ul>
                     </li>
@@ -192,12 +195,6 @@
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar dropdowns de Bootstrap explícitamente
-        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
-        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl)
-        });
-
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             let alerts = document.querySelectorAll('.alert');
@@ -208,6 +205,35 @@
                 } catch(e) {}
             });
         }, 5000);
+    });
+
+    // Feedback visual instantáneo al hacer clic en enlaces de navegación
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        var target = link.getAttribute('target');
+        var isDropdown = link.classList.contains('dropdown-toggle') || link.getAttribute('data-bs-toggle') === 'dropdown';
+
+        // Si es toggle de menú, ancla interna (#), javascript o nueva pestaña, ignorar
+        if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('#') || target === '_blank' || isDropdown) {
+            return;
+        }
+
+        // Si es enlace de navegación real, activar barra de carga superior al instante
+        var loader = document.getElementById('top-nav-loader');
+        if (loader) {
+            loader.classList.remove('finishing');
+            loader.classList.add('loading');
+        }
+    });
+
+    window.addEventListener('pageshow', function() {
+        var loader = document.getElementById('top-nav-loader');
+        if (loader) {
+            loader.classList.remove('loading');
+            loader.classList.remove('finishing');
+        }
     });
 
     // Global form submission handler to prevent double submit and show loading state

@@ -51,8 +51,9 @@ def resultados():
     
     estadisticas = {categoria: cantidad for categoria, cantidad in stats_query}
     
-    # Todos los seguimientos del semestre actual ordenados por mayor riesgo
-    query = SeguimientoRiesgo.query.filter_by(semestre=semestre_actual)
+    # Todos los seguimientos del semestre actual ordenados por mayor riesgo con carga anticipada de estudiante
+    from sqlalchemy.orm import joinedload
+    query = SeguimientoRiesgo.query.options(joinedload(SeguimientoRiesgo.estudiante)).filter_by(semestre=semestre_actual)
     
     categoria_filter = request.args.get('categoria')
     ciclo_filter = request.args.get('ciclo')
@@ -62,24 +63,27 @@ def resultados():
         
     ultimos_seguimientos = query.order_by(SeguimientoRiesgo.puntaje_riesgo.desc()).all()
     
-    # Calcular el ciclo predominante para cada estudiante
-    seguimientos_filtrados = []
-    for seguimiento in ultimos_seguimientos:
-        # Buscar el ciclo curricular más repetido entre los cursos en los que el estudiante está inscrito
-        ciclo_query = db.session.execute(db.text("""
-            SELECT c.semestre, COUNT(c.id) as cantidad
+    # Calcular el ciclo predominante para todos los estudiantes en una sola consulta optimizada
+    batch_sql = db.text("""
+        WITH counts AS (
+            SELECT i.estudiante_id, c.semestre, COUNT(c.id) as cantidad,
+                   ROW_NUMBER() OVER (PARTITION BY i.estudiante_id ORDER BY COUNT(c.id) DESC) as rn
             FROM inscripciones i
             JOIN cursos c ON i.curso_id = c.id
             JOIN ciclos ci ON c.ciclo_id = ci.id
-            WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre_actual
-            GROUP BY c.semestre
-            ORDER BY cantidad DESC
-            LIMIT 1
-        """), {'estudiante_id': seguimiento.estudiante_id, 'semestre_actual': semestre_actual}).fetchone()
-        
-        seguimiento.ciclo_predominante = ciclo_query[0] if ciclo_query else "N/A"
-        
-        # Si hay filtro de ciclo, solo conservamos los que coincidan
+            WHERE ci.codigo_ciclo = :semestre_actual
+            GROUP BY i.estudiante_id, c.semestre
+        )
+        SELECT estudiante_id, semestre
+        FROM counts
+        WHERE rn = 1
+    """)
+    predominantes_raw = db.session.execute(batch_sql, {'semestre_actual': semestre_actual}).fetchall()
+    ciclo_map = {row[0]: row[1] for row in predominantes_raw}
+    
+    seguimientos_filtrados = []
+    for seguimiento in ultimos_seguimientos:
+        seguimiento.ciclo_predominante = ciclo_map.get(seguimiento.estudiante_id, "N/A")
         if ciclo_filter and ciclo_filter != "":
             if seguimiento.ciclo_predominante == ciclo_filter:
                 seguimientos_filtrados.append(seguimiento)

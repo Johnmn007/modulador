@@ -346,8 +346,13 @@ def notas_index():
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
-    # Query base con joins
-    notas_query = Nota.query.join(Inscripcion).join(Estudiante).join(Evaluacion).join(Curso)
+    # Query base con joins y carga anticipada (eager loading)
+    from sqlalchemy.orm import joinedload
+    notas_query = Nota.query.options(
+        joinedload(Nota.evaluacion),
+        joinedload(Nota.inscripcion).joinedload(Inscripcion.estudiante),
+        joinedload(Nota.inscripcion).joinedload(Inscripcion.curso)
+    ).join(Inscripcion).join(Estudiante).join(Evaluacion).join(Curso)
 
     from app.services.config_service import get_ciclo_activo
     from app.models import Ciclo
