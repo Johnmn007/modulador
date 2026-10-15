@@ -116,7 +116,7 @@
                             <div class="form-group mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Semestre / Ciclo Académico</label>
                                 <input type="text" class="form-control form-control-lg bg-light border-0" name="semestre" 
-                                       placeholder="Ej: 2025-1" value="{{ config.semestre_actual if config }}">
+                                       placeholder="Ej: 2026-2" value="{{ (ciclo_activo.codigo_ciclo if ciclo_activo else config.semestre_actual) if (ciclo_activo or config) else '' }}">
                                 <div class="form-text small">Dejar vacío para usar el periodo actual.</div>
                             </div>
                         </div>

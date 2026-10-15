@@ -56,20 +56,35 @@ def index():
 @login_required
 def individual():
     """Reporte individual de estudiantes"""
-    # Docentes y coordinadores solo ven estudiantes de sus cursos
+    from app.services.config_service import get_ciclo_activo
+    ciclo_activo = get_ciclo_activo()
+    
+    # Docentes y coordinadores solo ven estudiantes de sus cursos en el ciclo activo
     if current_user.rol in ('docente', 'coordinador'):
-        estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+        query = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
             Curso.docente_id == current_user.id
-        ).distinct().subquery()
+        )
+        if ciclo_activo:
+            query = query.filter(Curso.ciclo_id == ciclo_activo.id)
+        estudiantes_ids = query.distinct().subquery()
         estudiantes = Estudiante.query.filter(
             Estudiante.activo == True,
             Estudiante.id.in_(estudiantes_ids)
         ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     else:
-        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        if ciclo_activo:
+            estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+                Curso.ciclo_id == ciclo_activo.id
+            ).distinct().subquery()
+            estudiantes = Estudiante.query.filter(
+                Estudiante.activo == True,
+                Estudiante.id.in_(estudiantes_ids)
+            ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        else:
+            estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     config = cargar_configuracion()
-    return render_template('reportes/individual.html', estudiantes=estudiantes, config=config)
+    return render_template('reportes/individual.html', estudiantes=estudiantes, config=config, ciclo_activo=ciclo_activo)
 
 @reportes_bp.route('/general')
 @login_required
@@ -191,22 +206,71 @@ def generar_individual():
 @login_required
 def asistencias_index():
     """Pantalla inicial de reportes de asistencia"""
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+
+    ciclo_activo = get_ciclo_activo()
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
+
+    # Determinar ciclo objetivo:
+    # 1. Si admin especificó ciclo explícito (!= -1), usarlo.
+    # 2. Si admin especificó -1 (todos los ciclos), no filtrar por ciclo (mostrar histórico completo).
+    # 3. Por defecto (tanto admin como docentes/coordinadores), usar ciclo activo.
+    if current_user.rol == 'administrador' and filtro_ciclo_id is not None:
+        if filtro_ciclo_id != -1:
+            target_ciclo_id = filtro_ciclo_id
+        else:
+            target_ciclo_id = None
+    else:
+        target_ciclo_id = ciclo_activo.id if ciclo_activo else None
+
     # Docentes y coordinadores solo ven sus cursos
     if current_user.rol in ('docente', 'coordinador'):
-        cursos = Curso.query.filter_by(activo=True, docente_id=current_user.id).order_by(Curso.semestre, Curso.nombre_curso).all()
-        estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+        cursos_query = Curso.query.filter_by(activo=True, docente_id=current_user.id)
+        if target_ciclo_id:
+            cursos_query = cursos_query.filter_by(ciclo_id=target_ciclo_id)
+        cursos = cursos_query.order_by(Curso.semestre, Curso.nombre_curso).all()
+
+        estudiantes_ids_query = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
             Curso.docente_id == current_user.id
-        ).distinct().subquery()
+        )
+        if target_ciclo_id:
+            estudiantes_ids_query = estudiantes_ids_query.filter(Curso.ciclo_id == target_ciclo_id)
+        estudiantes_ids = estudiantes_ids_query.distinct().subquery()
+
         estudiantes = Estudiante.query.filter(
             Estudiante.activo == True,
             Estudiante.id.in_(estudiantes_ids)
         ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     else:
-        cursos = Curso.query.filter_by(activo=True).order_by(Curso.semestre, Curso.nombre_curso).all()
-        estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        cursos_query = Curso.query.filter_by(activo=True)
+        if target_ciclo_id:
+            cursos_query = cursos_query.filter_by(ciclo_id=target_ciclo_id)
+        cursos = cursos_query.order_by(Curso.semestre, Curso.nombre_curso).all()
+
+        if target_ciclo_id:
+            estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+                Curso.ciclo_id == target_ciclo_id
+            ).distinct().subquery()
+            estudiantes = Estudiante.query.filter(
+                Estudiante.activo == True,
+                Estudiante.id.in_(estudiantes_ids)
+            ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        else:
+            estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
     
     config = cargar_configuracion()
-    return render_template('reportes/asistencias_filter.html', cursos=cursos, estudiantes=estudiantes, config=config)
+    return render_template(
+        'reportes/asistencias_filter.html',
+        cursos=cursos,
+        estudiantes=estudiantes,
+        config=config,
+        ciclos=ciclos,
+        ciclo_activo=ciclo_activo,
+        filtro_ciclo_id=filtro_ciclo_id,
+        target_ciclo_id=target_ciclo_id
+    )
 
 @reportes_bp.route('/asistencias/grupal', methods=['POST'])
 @login_required
