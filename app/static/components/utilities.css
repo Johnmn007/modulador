@@ -28,38 +28,67 @@
     color: var(--success-color) !important;
 }
 
-/* Fondos de Cards (migrados de dash.css) */
-.bg-cards {
-    background-color: var(--card-accent);
-}
-.bg-cards2 {
-    background-color: var(--card-success);
-}
-.bg-cards3 {
-    background-color: #a8fbd3;
-}
-.bg-cards0 {
-    background-color: var(--card-navy);
+/* Variables de Tarjeta y Compatibilidad */
+:root {
+    --card-accent: #2563EB;
+    --card-success: #059669;
+    --card-navy: #0F172A;
 }
 
-/* Colores de Semáforo (migrados de dash.css/seguimiento.css) */
-.bg-verde {
-    background-color: var(--success-color);
+/* Fondos de Cards con Contraste Garantizado */
+.bg-cards {
+    background-color: #2563EB !important;
+    color: #ffffff !important;
 }
-.bg-amarillo {
-    background-color: var(--warning-color);
+.bg-cards2 {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+}
+.bg-cards3 {
+    background-color: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+.bg-cards0 {
+    background-color: #0F172A !important;
+    color: #ffffff !important;
+}
+.bg-primary2 {
+    background-color: #2563EB !important;
+    color: #ffffff !important;
+}
+
+/* Botón Blanco Estándar con Contraste */
+.btn-white {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: var(--text-primary) !important;
+}
+.btn-white:hover {
+    background: #f8fafc !important;
+    color: var(--accent-hover) !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Colores de Semáforo */
+.bg-verde {
+    background-color: var(--success-color) !important;
+    color: #ffffff !important;
+}
+.bg-amarillo, .bg-ama {
+    background-color: var(--warning-color) !important;
+    color: #0F172A !important;
 }
 .bg-rojo {
-    background-color: var(--danger-color);
+    background-color: var(--danger-color) !important;
+    color: #ffffff !important;
 }
 .bg-azul {
-    background-color: var(--primary-color);
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
 }
 .bg-celeste {
-    background-color: var(--accent-color);
-}
-.bg-ama {
-    background-color: var(--warning-color);
+    background-color: var(--accent-color) !important;
+    color: #ffffff !important;
 }
 
 /* Hover Effects */

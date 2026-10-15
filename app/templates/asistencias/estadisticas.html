@@ -17,72 +17,69 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-chart-bar text-dark"></i>
-                Estadísticas de Asistencias
-            </h2>
-            <a href="{{ url_for('asistencias.index') }}" class="btn btn-outline-primary text-light bg-cards">
-                <i class="fas fa-arrow-left"></i> Volver a Asistencias
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    Análisis Estadístico de Asistencias
+                </h2>
+                <p class="text-muted mb-0">Monitoreo de puntualidad y asistencia efectiva por curso y ciclo</p>
+            </div>
+            <a href="{{ url_for('asistencias.index') }}" class="btn btn-white border shadow-sm fw-semibold">
+                <i class="fas fa-arrow-left me-2 text-muted"></i> Volver a Asistencias
             </a>
         </div>
 
         <!-- Filtros -->
-        <div class="card mb-4">
-            <div class="card-header text-light bg-cards">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-filter"></i>
-                    Filtros
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-navy text-white py-3 border-0">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Filtros de Búsqueda
                 </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form method="GET" action="{{ url_for('asistencias.estadisticas') }}">
-                    <div class="row">
+                    <div class="row g-3">
                         <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="curso_id" class="form-label">Curso</label>
-                                <select class="form-select" id="curso_id" name="curso_id">
-                                    <option value="">Todos los cursos</option>
-                                    {% for curso in cursos %}
-                                    <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
-                                        {{ curso.codigo_curso }} - {{ curso.nombre_curso }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            <label for="curso_id" class="form-label fw-semibold">Curso</label>
+                            <select class="form-select" id="curso_id" name="curso_id">
+                                <option value="">Todos los cursos</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso.id }}" {% if curso_id == curso.id %}selected{% endif %}>
+                                    {{ curso.codigo_curso }} - {{ curso.nombre_curso }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="estudiante_id" class="form-label">Estudiante</label>
-                                <select class="form-select" id="estudiante_id" name="estudiante_id">
-                                    <option value="">Todos los estudiantes</option>
-                                    {% for estudiante in estudiantes %}
-                                    <option value="{{ estudiante.id }}" {% if estudiante_id == estudiante.id %}selected{% endif %}>
-                                        {{ estudiante.codigo_estudiante }} - {{ estudiante.apellidos }} {{ estudiante.nombres }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            <label for="estudiante_id" class="form-label fw-semibold">Estudiante</label>
+                            <select class="form-select" id="estudiante_id" name="estudiante_id">
+                                <option value="">Todos los estudiantes</option>
+                                {% for estudiante in estudiantes %}
+                                <option value="{{ estudiante.id }}" {% if estudiante_id == estudiante.id %}selected{% endif %}>
+                                    {{ estudiante.codigo_estudiante }} - {{ estudiante.apellidos }} {{ estudiante.nombres }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="semestre" class="form-label">Semestre</label>
-                                <select class="form-select" id="semestre" name="semestre">
-                                    <option value="">Todos los semestres</option>
-                                    {% for sem in semestres %}
-                                    <option value="{{ sem[0] }}" {% if semestre == sem[0] %}selected{% endif %}>
-                                        {{ sem[0] }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            <label for="semestre" class="form-label fw-semibold">Semestre</label>
+                            <select class="form-select" id="semestre" name="semestre">
+                                <option value="">Todos los semestres</option>
+                                {% for sem in semestres %}
+                                <option value="{{ sem[0] }}" {% if semestre == sem[0] %}selected{% endif %}>
+                                    {{ sem[0] }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-primary text-light bg-cards">
-                            <i class="fas fa-filter"></i> Aplicar Filtros
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                            <i class="fas fa-filter me-2"></i> Aplicar Filtros
                         </button>
-                        <a href="{{ url_for('asistencias.estadisticas') }}" class="btn btn-outline-secondary text-light bg-cards2">
-                            <i class="fas fa-times"></i> Limpiar Filtros
+                        <a href="{{ url_for('asistencias.estadisticas') }}" class="btn btn-outline-secondary px-4 fw-semibold">
+                            <i class="fas fa-times me-2"></i> Limpiar Filtros
                         </a>
                     </div>
                 </form>
@@ -90,13 +87,13 @@
         </div>
 
         <!-- Estadísticas -->
-        <div class="card">
-            <div class="card-header text-light bg-cards">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-table"></i>
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-navy text-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="fas fa-table me-2 text-info"></i>
                     Resumen de Asistencias
-                    <span class="badge bg-cards2">{{ estadisticas|length }}</span>
                 </h5>
+                <span class="badge bg-primary px-3 py-2 fs-6 fw-bold">{{ estadisticas|length }} registros</span>
             </div>
             <div class="card-body p-0">
                 {% if estadisticas %}
@@ -177,36 +174,56 @@
 
         <!-- Resumen General -->
         {% if estadisticas %}
-        <div class="row mt-4">
+        <div class="row g-3 mt-3">
             <div class="col-md-3">
-                <div class="card bg-primary2 text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ estadisticas|length }}</h3>
-                        <p class="mb-0">Estudiantes</p>
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="d-flex align-items-center justify-content-center gap-3">
+                        <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle">
+                            <i class="fas fa-user-graduate fa-2x"></i>
+                        </div>
+                        <div class="text-start">
+                            <h3 class="fw-bold mb-0 text-primary-color">{{ estadisticas|length }}</h3>
+                            <small class="text-muted fw-semibold">Estudiantes</small>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-verde text-dark">
-                    <div class="card-body text-center">
-                        <h3>{{ "%.1f"|format(estadisticas|map(attribute='porcentaje_asistencia')|sum / estadisticas|length) }}%</h3>
-                        <p class="mb-0">Promedio Asistencia</p>
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="d-flex align-items-center justify-content-center gap-3">
+                        <div class="p-3 bg-success bg-opacity-10 text-success rounded-circle">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                        <div class="text-start">
+                            <h3 class="fw-bold mb-0 text-success">{{ "%.1f"|format(estadisticas|map(attribute='porcentaje_asistencia')|sum / estadisticas|length) }}%</h3>
+                            <small class="text-muted fw-semibold">Promedio Asistencia</small>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-ama text-dark">
-                    <div class="card-body text-center">
-                        <h3>{{ "%.1f"|format(estadisticas|map(attribute='porcentaje_efectiva')|sum / estadisticas|length) }}%</h3>
-                        <p class="mb-0">Promedio Efectiva</p>
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="d-flex align-items-center justify-content-center gap-3">
+                        <div class="p-3 bg-info bg-opacity-10 text-info rounded-circle">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                        <div class="text-start">
+                            <h3 class="fw-bold mb-0 text-info">{{ "%.1f"|format(estadisticas|map(attribute='porcentaje_efectiva')|sum / estadisticas|length) }}%</h3>
+                            <small class="text-muted fw-semibold">Asistencia Efectiva</small>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-rojo text-dark">
-                    <div class="card-body text-center">
-                        <h3>{{ estadisticas|selectattr('porcentaje_efectiva', 'lt', 70)|list|length }}</h3>
-                        <p class="mb-0">En Riesgo</p>
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="d-flex align-items-center justify-content-center gap-3">
+                        <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                        <div class="text-start">
+                            <h3 class="fw-bold mb-0 text-danger">{{ estadisticas|selectattr('porcentaje_efectiva', 'lt', 70)|list|length }}</h3>
+                            <small class="text-muted fw-semibold">En Riesgo (&lt;70%)</small>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -20,8 +20,8 @@
                         <i class="fas fa-clipboard-check text-dark"></i>
                         Resultados de Importación
                     </h2>
-                    <a href="{{ url_for('importacion.index') }}" class="btn btn-primary text-light bg-cards2">
-                        <i class="fas fa-arrow-left"></i> Volver a Importación
+                    <a href="{{ url_for('importacion.index') }}" class="btn btn-white border shadow-sm fw-semibold">
+                        <i class="fas fa-arrow-left me-2 text-muted"></i> Volver a Importación
                     </a>
                 </div>
 
@@ -38,63 +38,85 @@
                 {% endwith %}
 
                 <!-- Estadísticas Rápidas -->
-                <div class="row mb-4">
+                <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <div class="card bg-cards0 text-white">
-                            <div class="card-body text-center">
-                                {% set total_estudiantes = estadisticas.estudiantes if estadisticas else 0 %}
-                                <h3>{{ total_estudiantes }}</h3>
-                                <p class="mb-0">Estudiantes</p>
+                        <div class="card border-0 shadow-sm p-3 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle">
+                                    <i class="fas fa-user-graduate fa-2x"></i>
+                                </div>
+                                <div class="text-start">
+                                    {% set total_estudiantes = estadisticas.estudiantes if estadisticas else 0 %}
+                                    <h3 class="fw-bold mb-0 text-primary-color">{{ total_estudiantes }}</h3>
+                                    <small class="text-muted fw-semibold">Estudiantes</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-cards text-white">
-                            <div class="card-body text-center">
-                                {% set total_cursos = estadisticas.cursos if estadisticas else 0 %}
-                                <h3>{{ total_cursos }}</h3>
-                                <p class="mb-0">Cursos</p>
+                        <div class="card border-0 shadow-sm p-3 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div class="p-3 bg-success bg-opacity-10 text-success rounded-circle">
+                                    <i class="fas fa-book fa-2x"></i>
+                                </div>
+                                <div class="text-start">
+                                    {% set total_cursos = estadisticas.cursos if estadisticas else 0 %}
+                                    <h3 class="fw-bold mb-0 text-success">{{ total_cursos }}</h3>
+                                    <small class="text-muted fw-semibold">Cursos</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-cards2 text-white">
-                            <div class="card-body text-center">
-                                {% set total_notas = estadisticas.notas if estadisticas else 0 %}
-                                <h3>{{ total_notas }}</h3>
-                                <p class="mb-0">Notas</p>
+                        <div class="card border-0 shadow-sm p-3 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div class="p-3 bg-info bg-opacity-10 text-info rounded-circle">
+                                    <i class="fas fa-clipboard-check fa-2x"></i>
+                                </div>
+                                <div class="text-start">
+                                    {% set total_notas = estadisticas.notas if estadisticas else 0 %}
+                                    <h3 class="fw-bold mb-0 text-info">{{ total_notas }}</h3>
+                                    <small class="text-muted fw-semibold">Notas</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-cards3 text-dark">
-                            <div class="card-body text-center">
-                                {% set total_riesgo = estadisticas.riesgo if estadisticas else 0 %}
-                                <h3>{{ total_riesgo }}</h3>
-                                <p class="mb-0">En Riesgo</p>
+                        <div class="card border-0 shadow-sm p-3 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                                <div class="text-start">
+                                    {% set total_riesgo = estadisticas.riesgo if estadisticas else 0 %}
+                                    <h3 class="fw-bold mb-0 text-danger">{{ total_riesgo }}</h3>
+                                    <small class="text-muted fw-semibold">En Riesgo</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Información -->
-                <div class="card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                        <h4>Proceso de Importación Completado</h4>
-                        <p class="text-muted">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="p-3 bg-success bg-opacity-10 text-success rounded-circle d-inline-flex mb-3">
+                            <i class="fas fa-check-circle fa-3x"></i>
+                        </div>
+                        <h4 class="fw-bold text-primary-color">Proceso de Importación Completado</h4>
+                        <p class="text-muted mx-auto" style="max-width: 500px;">
                             Los datos han sido importados exitosamente al sistema.
                             Ahora puede proceder a ejecutar el cálculo de riesgo académico.
                         </p>
                         <div class="d-flex justify-content-center gap-3 mt-4">
-                            <a href="{{ url_for('estudiantes.index') }}" class="btn btn-primary bg-cards2">
-                                <i class="fas fa-users"></i> Ver Estudiantes
+                            <a href="{{ url_for('estudiantes.index') }}" class="btn btn-white border shadow-sm fw-semibold px-4">
+                                <i class="fas fa-users me-2 text-primary"></i> Ver Estudiantes
                             </a>
-                            <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary bg-cards">
-                                <i class="fas fa-calculator"></i> Calcular Riesgo
+                            <a href="{{ url_for('seguimiento.index') }}" class="btn btn-primary shadow-sm fw-semibold px-4">
+                                <i class="fas fa-calculator me-2"></i> Calcular Riesgo
                             </a>
-                            <a href="{{ url_for('importacion.index') }}" class="btn btn-primary bg-cards0">
-                                <i class="fas fa-file-import"></i> Nueva Importación
+                            <a href="{{ url_for('importacion.index') }}" class="btn btn-outline-secondary fw-semibold px-4">
+                                <i class="fas fa-file-import me-2"></i> Nueva Importación
                             </a>
                         </div>
                     </div>
