@@ -150,56 +150,78 @@ class CalculatorRiesgoIntrasemestral:
             return FactorRiesgo("Rendimiento Actual", 0.5, self.peso_rendimiento, "Error en cálculo")
 
     def _evaluar_asistencia_actual(self, estudiante_id: int, semestre: str, db) -> FactorRiesgo:
-        """Evalúa asistencia del semestre actual"""
-        # CONSULTA CORREGIDA
+        """Evalúa asistencia del semestre actual basada en la regla institucional del 30% de inasistencias sobre el total programado (16 semanas)"""
+        import math
         query = text("""
         SELECT 
-            COUNT(*) as total_clases,
+            c.id as curso_id,
+            c.nombre_curso,
+            COALESCE(c.total_sesiones, COALESCE(c.sesiones_por_semana, 2) * 16) as total_programadas,
+            COALESCE(c.limite_inasistencia_porcentaje, 30.0) as limite_pct,
+            COUNT(a.id) as total_clases_tomadas,
             SUM(CASE WHEN a.presente = TRUE THEN 1 ELSE 0 END) as asistencias,
-            SUM(CASE WHEN a.justificado = TRUE THEN 1 ELSE 0 END) as justificadas
-        FROM asistencias a
-        JOIN inscripciones i ON a.inscripcion_id = i.id
+            SUM(CASE WHEN a.justificado = TRUE THEN 1 ELSE 0 END) as justificadas,
+            SUM(CASE WHEN a.presente = FALSE AND a.justificado = FALSE THEN 1 ELSE 0 END) as inasistencias
+        FROM inscripciones i
         JOIN cursos c ON i.curso_id = c.id
         JOIN ciclos ci ON c.ciclo_id = ci.id
+        LEFT JOIN asistencias a ON a.inscripcion_id = i.id
         WHERE i.estudiante_id = :estudiante_id AND ci.codigo_ciclo = :semestre
+        GROUP BY c.id, c.nombre_curso, c.total_sesiones, c.sesiones_por_semana, c.limite_inasistencia_porcentaje
         """)
         
         try:
-            # EJECUCIÓN CORREGIDA
-            result = db.session.execute(query, {
+            cursos_asistencia = db.session.execute(query, {
                 'estudiante_id': estudiante_id, 
                 'semestre': semestre
-            }).fetchone()
+            }).fetchall()
             
-            if not result or result.total_clases == 0:  # CORREGIDO: usar punto
-                return FactorRiesgo("Asistencia Actual", 0.5, self.peso_asistencia, 
-                                  "Sin registros de asistencia")
+            if not cursos_asistencia:
+                return FactorRiesgo("Asistencia Actual", 0.1, self.peso_asistencia, 
+                                  "Sin cursos inscritos en el ciclo")
 
-            total_clases = result.total_clases  # CORREGIDO: usar punto
-            asistencias = result.asistencias
-            justificadas = result.justificadas
+            cursos_dpi = []
+            cursos_alerta_critica = []
+            cursos_preventivo = []
+            total_inasistencias_general = 0
+            total_programadas_general = 0
+            total_tomadas_general = 0
+            total_presentes_general = 0
             
-            porcentaje_asistencia = (asistencias / total_clases) * 100 if total_clases > 0 else 0
+            for row in cursos_asistencia:
+                total_prog = int(row.total_programadas) if row.total_programadas else 32
+                limite_pct = float(row.limite_pct) if row.limite_pct else 30.0
+                max_faltas = math.floor(total_prog * (limite_pct / 100.0))
+                inasistencias = int(row.inasistencias or 0)
+                tomadas = int(row.total_clases_tomadas or 0)
+                presentes = int(row.asistencias or 0)
+                
+                faltas_disp = max_faltas - inasistencias
+                total_inasistencias_general += inasistencias
+                total_programadas_general += total_prog
+                total_tomadas_general += tomadas
+                total_presentes_general += presentes
+                
+                if faltas_disp < 0:
+                    cursos_dpi.append(f"{row.nombre_curso} ({inasistencias}/{max_faltas} máx.)")
+                elif faltas_disp <= 1:
+                    cursos_alerta_critica.append(f"{row.nombre_curso} (resta {faltas_disp} falta)")
+                elif faltas_disp <= 3 and inasistencias > 0:
+                    cursos_preventivo.append(f"{row.nombre_curso} (restan {faltas_disp})")
             
-            # Calcular asistencia neta (sin justificadas)
-            asistencia_neta = (asistencias - justificadas) / total_clases * 100 if total_clases > 0 else 0
-            
-            # Usar el peor escenario
-            porcentaje_efectivo = min(porcentaje_asistencia, asistencia_neta)
-
-            # Escala de riesgo adaptativa
-            if porcentaje_efectivo >= 85:
-                valor = 0.1
-            elif porcentaje_efectivo >= 75:
-                valor = 0.3
-            elif porcentaje_efectivo >= 65:
-                valor = 0.6
+            # Determinación de riesgo según proximidad al límite reglamentario de 30%
+            if cursos_dpi:
+                valor = 0.95
+                descripcion = f"🚨 LÍMITE SUPERADO (DPI >30%) en: {', '.join(cursos_dpi)}"
+            elif cursos_alerta_critica:
+                valor = 0.75
+                descripcion = f"⚠️ ALERTA CRÍTICA: Próximo al 30% de faltas en: {', '.join(cursos_alerta_critica)}"
+            elif cursos_preventivo:
+                valor = 0.45
+                descripcion = f"Inasistencias en seguimiento: {', '.join(cursos_preventivo)}"
             else:
-                valor = 0.9
-
-            descripcion = f"Asistencia: {porcentaje_efectivo:.1f}% ({asistencias}/{total_clases} clases)"
-            if justificadas > 0:
-                descripcion += f" | {justificadas} justificadas"
+                valor = 0.1
+                descripcion = f"Asistencia regular ({total_inasistencias_general} faltas acumuladas en el ciclo)"
 
             return FactorRiesgo("Asistencia Actual", valor, self.peso_asistencia, descripcion)
             
@@ -329,8 +351,12 @@ class CalculatorRiesgoIntrasemestral:
                     recomendaciones.append("⏰ Revisar técnicas de estudio y planificación")
                     
                 elif factor.nombre == "Asistencia Actual":
-                    recomendaciones.append("📅 Plan de mejora de asistencia con seguimiento semanal")
-                    recomendaciones.append("🏫 Coordinar con bienestar estudiantil")
+                    if factor.valor >= 0.9:
+                        recomendaciones.append("🚨 Regularización por DPI: Estudiante superó el 30% de inasistencias en una o más asignaturas")
+                        recomendaciones.append("⚖️ Notificar formalmente a Coordinación Académica para resolución de inhabilitación")
+                    else:
+                        recomendaciones.append("📅 Plan de compromiso de asistencia y seguimiento de faltas restantes")
+                        recomendaciones.append("🏫 Entrevista preventiva con Bienestar Estudiantil para evaluar causas e inasistencias justificables")
                     
                 elif factor.nombre == "Distribución de Riesgo":
                     recomendaciones.append("🎯 Priorizar atención en cursos críticos")

@@ -7,10 +7,24 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-primary-color m-0">Toma de Asistencia</h2>
-                <p class="text-muted mb-0">
-                    <i class="fas fa-calendar-day me-1"></i> {{ fecha.strftime('%d/%m/%Y') }} 
+                <p class="text-muted mb-1">
+                    <i class="fas fa-calendar-day me-1"></i> {{ fecha.strftime('%d/%m/%Y') if fecha is not string else fecha }} 
                     | <i class="fas fa-book me-1"></i> {{ inscripciones[0].curso.nombre_curso if inscripciones else 'Sin curso' }}
                 </p>
+                {% if inscripciones and inscripciones[0].curso %}
+                {% set curso_obj = inscripciones[0].curso %}
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border px-2 py-1 small">
+                        <i class="fas fa-clock me-1"></i> {{ curso_obj.sesiones_por_semana }} ses./sem.
+                    </span>
+                    <span class="badge bg-info bg-opacity-10 text-dark border px-2 py-1 small">
+                        <i class="fas fa-calendar-alt me-1"></i> Programadas (16 sem): {{ curso_obj.total_sesiones_programadas }} clases
+                    </span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1 small">
+                        <i class="fas fa-ban me-1"></i> Límite DPI (30%): máx. {{ curso_obj.max_faltas_permitidas }} inasistencias
+                    </span>
+                </div>
+                {% endif %}
             </div>
             <a href="{{ url_for('asistencias.crear_masiva') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-times me-1"></i> Cancelar
@@ -45,7 +59,7 @@
                             <thead class="bg-light text-muted small text-uppercase fw-bold">
                                 <tr>
                                     <th class="ps-4 py-2">Estudiante</th>
-                                    <th class="text-center py-2" style="width: 150px;">Asistencia</th>
+                                    <th class="text-center py-2" style="width: 170px;">Faltas / Límite DPI</th>
                                     <th class="text-center py-2" style="width: 240px;">Estado</th>
                                     <th class="pe-4 py-2" style="width: 250px;">Observaciones</th>
                                 </tr>
@@ -68,13 +82,31 @@
                                         </div>
                                     </td>
                                     <td class="text-center py-1">
-                                        {% set perc = inscripcion.asistencia_porcentaje %}
-                                        <div title="Asistencia acumulada: {{ '%.1f'|format(perc) }}%">
-                                            <div class="small fw-bold {{ 'text-danger' if perc < 80 else 'text-success' }}">
-                                                {{ perc|int }}%
+                                        {% set faltas = inscripcion.total_inasistencias %}
+                                        {% set max_f = inscripcion.max_faltas_permitidas %}
+                                        {% set estado = inscripcion.estado_asistencia %}
+                                        <div title="Inasistencias: {{ faltas }} de {{ max_f }} toleradas en el semestre">
+                                            <div class="small fw-bold {% if estado == 'DPI' %}text-danger{% elif estado == 'ALERTA_CRITICA' %}text-warning{% else %}text-dark{% endif %}">
+                                                {{ faltas }} / {{ max_f }} faltas
                                             </div>
-                                            <div class="progress mx-auto mt-1" style="width: 50px; height: 4px;">
-                                                <div class="progress-bar {{ 'bg-danger' if perc < 80 else 'bg-success' }}" style="width: {{ perc }}%"></div>
+                                            <div class="mt-1">
+                                                {% if estado == 'DPI' %}
+                                                    <span class="badge bg-danger py-1 px-2" style="font-size: 0.68rem;">
+                                                        <i class="fas fa-ban me-1"></i> DPI (>30%)
+                                                    </span>
+                                                {% elif estado == 'ALERTA_CRITICA' %}
+                                                    <span class="badge bg-warning text-dark py-1 px-2" style="font-size: 0.68rem;">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i> Queda {{ inscripcion.faltas_disponibles }} falta
+                                                    </span>
+                                                {% elif estado == 'PREVENTIVO' %}
+                                                    <span class="badge bg-warning bg-opacity-25 text-dark py-1 px-2" style="font-size: 0.68rem;">
+                                                        Quedan {{ inscripcion.faltas_disponibles }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success py-1 px-2" style="font-size: 0.68rem;">
+                                                        {{ inscripcion.faltas_disponibles }} disp.
+                                                    </span>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </td>

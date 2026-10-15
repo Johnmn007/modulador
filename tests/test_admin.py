@@ -85,7 +85,7 @@ class TestAdmin(BaseTestCase):
         """Verifica que el administrador puede crear nuevos usuarios"""
         self.login("admin_test@test.com", "password123")
         response = self.client.post('/admin/usuarios/crear', data={
-            'username': 'nuevo_docente',
+            'username': 'Nuevo Docente',
             'email': 'nuevo@test.com',
             'password': 'newpassword123',
             'confirm_password': 'newpassword123',
@@ -95,6 +95,6 @@ class TestAdmin(BaseTestCase):
         self.assertIn(b"Usuario creado exitosamente", response.data)
         
         # Verificar en base de datos
-        usuario = Usuario.query.filter_by(username='nuevo_docente').first()
+        usuario = Usuario.query.filter_by(username='Nuevo Docente').first()
         self.assertIsNotNone(usuario)
         self.assertEqual(usuario.rol, 'docente')

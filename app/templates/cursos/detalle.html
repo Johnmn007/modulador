@@ -13,7 +13,13 @@
                 </div>
                 <div>
                     <h2 class="fw-bold text-primary-color m-0">{{ curso.nombre_curso }}</h2>
-                    <p class="text-muted mb-0"><i class="fas fa-barcode me-2"></i>Código: <strong>{{ curso.codigo_curso }}</strong> | Semestre: <strong>{{ curso.semestre }}</strong></p>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-barcode me-1"></i>Código: <strong>{{ curso.codigo_curso }}</strong> 
+                        | Semestre: <strong>{{ curso.semestre }}</strong>
+                        | <i class="fas fa-clock ms-2 me-1 text-primary"></i><strong>{{ curso.sesiones_por_semana }}</strong> ses./sem.
+                        | <i class="fas fa-calendar-alt ms-2 me-1 text-info"></i><strong>{{ curso.total_sesiones_programadas }}</strong> clases (16 sem)
+                        | <i class="fas fa-ban ms-2 me-1 text-danger"></i>Límite DPI (30%): <strong class="text-danger">{{ curso.max_faltas_permitidas }}</strong> faltas
+                    </p>
                 </div>
             </div>
             <div class="d-flex gap-2">

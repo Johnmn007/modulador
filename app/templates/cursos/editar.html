@@ -94,6 +94,30 @@
                             </div>
                         </div>
 
+                        <!-- Parámetros Académicos de Asistencia (16 Semanas / Límite DPI 30%) -->
+                        <div class="col-12">
+                            <div class="p-4 rounded-3 bg-light border">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-calendar-check me-2 text-primary"></i>Planificación de Asistencia y Límite de Inasistencias (16 Semanas)</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Sesiones por Semana</label>
+                                        {{ form.sesiones_por_semana(class="form-control form-control-lg bg-white border", id="input_sesiones_semana", type="number", min="1", max="7") }}
+                                        <div class="form-text small">1, 2, 3 o 4 sesiones semanales.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Total Sesiones Programadas</label>
+                                        {{ form.total_sesiones(class="form-control form-control-lg bg-white border", id="input_total_sesiones", type="number", min="1", max="250") }}
+                                        <div class="form-text small">Cálculo: 16 semanas × <span id="span_ses">{{ curso.sesiones_por_semana or 2 }}</span> = <strong id="span_total">{{ curso.total_sesiones_programadas }}</strong> clases.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Límite Inasistencia (%)</label>
+                                        {{ form.limite_inasistencia_porcentaje(class="form-control form-control-lg bg-white border", id="input_limite_pct", type="number", step="0.5") }}
+                                        <div class="form-text small">Retiro (DPI) al superar <strong id="span_max_faltas">{{ curso.max_faltas_permitidas }}</strong> faltas.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="col-12">
                             <div class="form-check form-switch p-0 ps-5 mb-4">
                                 {{ form.activo(class="form-check-input ms-n5", style="width: 2.5em; height: 1.25em;") }}
@@ -126,6 +150,34 @@
     document.addEventListener('DOMContentLoaded', function() {
         var docenteSel = document.getElementById('docente_id');
         if (docenteSel) new TomSelect(docenteSel, { create: false, sortField: { field: 'text', direction: 'asc' }, placeholder: '-- Buscar docente --', maxOptions: null });
+
+        var sesInput = document.getElementById('input_sesiones_semana');
+        var totInput = document.getElementById('input_total_sesiones');
+        var limInput = document.getElementById('input_limite_pct');
+        var spanSes = document.getElementById('span_ses');
+        var spanTotal = document.getElementById('span_total');
+        var spanMax = document.getElementById('span_max_faltas');
+
+        function actualizarCalculos() {
+            var ses = parseInt(sesInput.value) || 2;
+            var lim = parseFloat(limInput.value) || 30.0;
+            var tot = parseInt(totInput.value) || (ses * 16);
+
+            if (spanSes) spanSes.textContent = ses;
+            if (spanTotal) spanTotal.textContent = tot;
+            if (spanMax) spanMax.textContent = Math.floor(tot * (lim / 100));
+        }
+
+        if (sesInput && totInput) {
+            sesInput.addEventListener('input', function() {
+                var ses = parseInt(sesInput.value) || 2;
+                totInput.value = ses * 16;
+                actualizarCalculos();
+            });
+            totInput.addEventListener('input', actualizarCalculos);
+            if (limInput) limInput.addEventListener('input', actualizarCalculos);
+            actualizarCalculos();
+        }
     });
 </script>
 {% endblock %}

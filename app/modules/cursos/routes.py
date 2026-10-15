@@ -80,6 +80,11 @@ def crear():
                 flash('Ya existe un curso con este código en el periodo actual', 'danger')
                 return render_template('cursos/crear.html', form=form)
 
+            # Parámetros de asistencia académica
+            sesiones = form.sesiones_por_semana.data or 2
+            total_ses = form.total_sesiones.data if form.total_sesiones.data and form.total_sesiones.data > 0 else (sesiones * 16)
+            limite_pct = form.limite_inasistencia_porcentaje.data if form.limite_inasistencia_porcentaje.data else 30.0
+
             # Crear nuevo curso
             nuevo_curso = Curso(
                 codigo_curso=form.codigo_curso.data,
@@ -87,6 +92,9 @@ def crear():
                 creditos=form.creditos.data,
                 semestre=semestre_val,
                 ciclo_id=ciclo.id,
+                sesiones_por_semana=sesiones,
+                total_sesiones=total_ses,
+                limite_inasistencia_porcentaje=limite_pct,
                 docente_id=form.docente_id.data if form.docente_id.data != 0 else None,
                 activo=form.activo.data
             )
@@ -181,10 +189,17 @@ def editar(curso_id):
                 return render_template('cursos/editar.html', form=form, curso=curso)
 
             # Actualizar curso (sin cambiar ciclo_id)
+            sesiones = form.sesiones_por_semana.data or 2
+            total_ses = form.total_sesiones.data if form.total_sesiones.data and form.total_sesiones.data > 0 else (sesiones * 16)
+            limite_pct = form.limite_inasistencia_porcentaje.data if form.limite_inasistencia_porcentaje.data else 30.0
+
             curso.codigo_curso = form.codigo_curso.data
             curso.nombre_curso = form.nombre_curso.data
             curso.creditos = form.creditos.data
             curso.semestre = semestre_val
+            curso.sesiones_por_semana = sesiones
+            curso.total_sesiones = total_ses
+            curso.limite_inasistencia_porcentaje = limite_pct
             curso.docente_id = form.docente_id.data if form.docente_id.data != 0 else None
             curso.activo = form.activo.data
             

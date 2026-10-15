@@ -68,6 +68,9 @@
                                 </td>
                                 <td>
                                     <div class="fw-bold text-primary-color">{{ curso.nombre_curso }}</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">
+                                        <i class="fas fa-clock text-primary me-1"></i>{{ curso.sesiones_por_semana }} ses/sem · <strong>{{ curso.total_sesiones_programadas }}</strong> clases (máx. {{ curso.max_faltas_permitidas }} faltas)
+                                    </div>
                                 </td>
                                 <td>
                                     {% if curso.docente %}

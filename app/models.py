@@ -53,6 +53,11 @@ class Curso(db.Model):
     docente_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     activo = db.Column(db.Boolean, default=True)
     
+    # Parámetros de asistencia académica (16 semanas / umbral reglamentario)
+    sesiones_por_semana = db.Column(db.Integer, default=2, nullable=False)
+    total_sesiones = db.Column(db.Integer, nullable=True)  # Si es None o 0, se calcula: sesiones_por_semana * 16
+    limite_inasistencia_porcentaje = db.Column(db.Numeric(4, 1), default=30.0, nullable=False)
+    
     # Relaciones
     inscripciones = db.relationship('Inscripcion', backref='curso', lazy=True)
     evaluaciones = db.relationship('Evaluacion', backref='curso', lazy=True)
@@ -61,6 +66,21 @@ class Curso(db.Model):
     __table_args__ = (
         db.UniqueConstraint('codigo_curso', 'ciclo_id', name='uq_curso_ciclo'),
     )
+    
+    @property
+    def total_sesiones_programadas(self):
+        """Total de sesiones planificadas para el curso en el período académico (16 semanas por defecto)"""
+        if self.total_sesiones and self.total_sesiones > 0:
+            return int(self.total_sesiones)
+        sesiones = self.sesiones_por_semana if self.sesiones_por_semana and self.sesiones_por_semana > 0 else 2
+        return int(sesiones * 16)
+    
+    @property
+    def max_faltas_permitidas(self):
+        """Número entero máximo de inasistencias permitidas antes de ser retirado/DPI (<= 30%)"""
+        import math
+        limite = float(self.limite_inasistencia_porcentaje) if self.limite_inasistencia_porcentaje else 30.0
+        return math.floor(self.total_sesiones_programadas * (limite / 100.0))
     
     def __repr__(self):
         return f'<Curso {self.codigo_curso}: {self.nombre_curso}>'
@@ -79,7 +99,64 @@ class Inscripcion(db.Model):
     notas = db.relationship('Nota', backref='inscripcion', lazy=True)
     
     @property
+    def total_sesiones_programadas(self):
+        return self.curso.total_sesiones_programadas if self.curso else 32
+
+    @property
+    def max_faltas_permitidas(self):
+        return self.curso.max_faltas_permitidas if self.curso else 9
+
+    @property
+    def total_clases_registradas(self):
+        return len(self.asistencias)
+
+    @property
+    def total_asistencias_presente(self):
+        return sum(1 for a in self.asistencias if a.presente)
+
+    @property
+    def total_asistencias_justificado(self):
+        return sum(1 for a in self.asistencias if a.justificado)
+
+    @property
+    def total_inasistencias(self):
+        """Inasistencias injustificadas (faltas efectivas)"""
+        return sum(1 for a in self.asistencias if not a.presente and not a.justificado)
+
+    @property
+    def porcentaje_inasistencia_semestre(self):
+        """Porcentaje de inasistencias sobre el TOTAL PROGRAMADO del período (regla del 30%)"""
+        total_prog = self.total_sesiones_programadas
+        if total_prog == 0:
+            return 0.0
+        return round((self.total_inasistencias / total_prog) * 100.0, 1)
+
+    @property
+    def faltas_disponibles(self):
+        """Cuántas faltas le quedan antes de alcanzar o superar el límite del 30%"""
+        return self.max_faltas_permitidas - self.total_inasistencias
+
+    @property
+    def estado_asistencia(self):
+        """
+        Condición académica de asistencia:
+        - 'NORMAL': margen seguro
+        - 'PREVENTIVO': 2 a 3 faltas de margen
+        - 'ALERTA_CRITICA': 0 o 1 falta de margen
+        - 'DPI': superó el 30% (Retirado / Desaprobado por Inasistencia)
+        """
+        disponibles = self.faltas_disponibles
+        if disponibles < 0:
+            return 'DPI'
+        elif disponibles <= 1:
+            return 'ALERTA_CRITICA'
+        elif disponibles <= 3:
+            return 'PREVENTIVO'
+        return 'NORMAL'
+
+    @property
     def asistencia_porcentaje(self):
+        """Porcentaje de asistencia relativa a las clases dictadas hasta la fecha"""
         total = len(self.asistencias)
         if total == 0:
             return 100.0

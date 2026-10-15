@@ -197,17 +197,21 @@
     </div>
 
     <div class="info-panel">
-        <div class="info-col">
+        <div class="info-col" style="width: 28%;">
             <span class="info-label">Asignatura</span>
             <span class="info-value">{{ curso.nombre_curso }} ({{ curso.codigo_curso }})</span>
         </div>
-        <div class="info-col">
+        <div class="info-col" style="width: 24%;">
             <span class="info-label">Docente Responsable</span>
             <span class="info-value">{{ current_user.apellidos }} {{ current_user.nombres }}</span>
         </div>
-        <div class="info-col" style="text-align: right;">
-            <span class="info-label">Métricas del Mes</span>
-            <span class="info-value">{{ mes.fechas|length }} Sesiones Registradas</span>
+        <div class="info-col" style="width: 28%;">
+            <span class="info-label">Régimen Académico (16 Semanas)</span>
+            <span class="info-value">{{ curso.sesiones_por_semana }} ses/sem · {{ curso.total_sesiones_programadas }} clases · Máx. {{ curso.max_faltas_permitidas }} faltas (30%)</span>
+        </div>
+        <div class="info-col" style="text-align: right; width: 20%;">
+            <span class="info-label">Métricas del Bloque</span>
+            <span class="info-value">{{ mes.fechas|length }} Sesiones</span>
         </div>
     </div>
 

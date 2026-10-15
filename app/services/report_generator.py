@@ -43,24 +43,49 @@ class ReportGenerator:
                 Inscripcion.curso_id == curso.id
             ).scalar()
             
-            # Asistencia del curso
+            # Asistencia del curso con métricas académicas (16 semanas y límite 30% DPI)
             asistencia_query = db.session.query(
                 db.func.count(Asistencia.id),
-                db.func.sum(db.cast(Asistencia.presente, db.Integer))
+                db.func.sum(db.case((Asistencia.presente == True, 1), else_=0)),
+                db.func.sum(db.case((Asistencia.justificado == True, 1), else_=0)),
+                db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False), 1), else_=0))
             ).join(Inscripcion).filter(
                 Inscripcion.estudiante_id == estudiante_id,
                 Inscripcion.curso_id == curso.id
             ).first()
             
             total_clases = asistencia_query[0] or 0
-            asistencias = asistencia_query[1] or 0
-            porcentaje_asistencia = (asistencias / total_clases * 100) if total_clases > 0 else 0
+            presentes = asistencia_query[1] or 0
+            justificadas = asistencia_query[2] or 0
+            inasistencias = asistencia_query[3] or 0
+            
+            total_programadas = curso.total_sesiones_programadas
+            max_faltas = curso.max_faltas_permitidas
+            faltas_restantes = max_faltas - inasistencias
+            
+            porcentaje_asistencia = ((presentes + justificadas) / total_clases * 100) if total_clases > 0 else 100.0
+            porcentaje_inasistencia_sem = (inasistencias / total_programadas * 100) if total_programadas > 0 else 0.0
+            
+            if faltas_restantes < 0:
+                estado_asist = 'DPI'
+            elif faltas_restantes <= 1:
+                estado_asist = 'ALERTA_CRITICA'
+            elif faltas_restantes <= 3 and inasistencias > 0:
+                estado_asist = 'PREVENTIVO'
+            else:
+                estado_asist = 'NORMAL'
             
             datos_cursos.append({
                 'curso': curso,
                 'promedio': round(promedio_query, 2) if promedio_query else 'Sin notas',
                 'asistencia': round(porcentaje_asistencia, 1),
-                'total_clases': total_clases
+                'total_clases': total_clases,
+                'inasistencias': inasistencias,
+                'total_programadas': total_programadas,
+                'max_faltas': max_faltas,
+                'faltas_restantes': faltas_restantes,
+                'porcentaje_inasistencia_sem': round(porcentaje_inasistencia_sem, 1),
+                'estado_asistencia': estado_asist
             })
         
         # Renderizar template HTML

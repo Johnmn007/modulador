@@ -327,17 +327,32 @@
             <thead>
                 <tr>
                     <th>Asignatura</th>
-                    <th>Créditos</th>
+                    <th style="text-align: center;">Prog. (16 sem)</th>
+                    <th style="text-align: center;">Dictadas</th>
+                    <th style="text-align: center;">Faltas / Máx (30%)</th>
                     <th>Promedio</th>
-                    <th>Asistencia</th>
-                    <th>Estado</th>
+                    <th>Asist. (%)</th>
+                    <th>Condición</th>
                 </tr>
             </thead>
             <tbody>
                 {% for curso_data in cursos %}
                 <tr>
                     <td style="font-weight: 700;">{{ curso_data.curso.nombre_curso }}</td>
-                    <td>{{ curso_data.curso.creditos }}</td>
+                    <td style="text-align: center;">{{ curso_data.total_programadas }} clases</td>
+                    <td style="text-align: center;">{{ curso_data.total_clases }}</td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 700; color: {% if curso_data.estado_asistencia == 'DPI' %}#dc2626{% elif curso_data.estado_asistencia == 'ALERTA_CRITICA' %}#d97706{% else %}#111827{% endif %};">
+                            {{ curso_data.inasistencias }} / {{ curso_data.max_faltas }} máx.
+                        </span>
+                        <div style="font-size: 0.72rem; color: #6b7280;">
+                            {% if curso_data.faltas_restantes < 0 %}
+                                <strong style="color: #dc2626;">Excedió {{ -curso_data.faltas_restantes }} falta(s)</strong>
+                            {% else %}
+                                Quedan {{ curso_data.faltas_restantes }} disponible(s)
+                            {% endif %}
+                        </div>
+                    </td>
                     <td>
                         {% if curso_data.promedio is string %}
                             {{ curso_data.promedio }}
@@ -347,10 +362,14 @@
                     </td>
                     <td>{{ "%.1f"|format(curso_data.asistencia) if curso_data.total_clases > 0 else 'N/R' }}%</td>
                     <td>
-                        {% if curso_data.promedio is not string and curso_data.promedio < 12.5 %}
+                        {% if curso_data.estado_asistencia == 'DPI' %}
+                            <span class="badge bg-red" style="font-weight: 800; background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171;">DPI (RETIRADO)</span>
+                        {% elif curso_data.estado_asistencia == 'ALERTA_CRITICA' %}
+                            <span class="badge bg-yellow" style="font-weight: 700; background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">ALERTA DPI</span>
+                        {% elif curso_data.promedio is not string and curso_data.promedio < 12.5 %}
                             <span class="badge bg-red">BAJO RENDIMIENTO</span>
-                        {% elif curso_data.asistencia < 70 %}
-                            <span class="badge bg-yellow">BAJA ASISTENCIA</span>
+                        {% elif curso_data.estado_asistencia == 'PREVENTIVO' %}
+                            <span class="badge bg-yellow">RIESGO ASISTENCIA</span>
                         {% else %}
                             <span class="badge bg-green">SATISFACTORIO</span>
                         {% endif %}
