@@ -89,8 +89,8 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item {{ 'active' if request.endpoint == 'evaluaciones.index' else '' }}" href="{{ url_for('evaluaciones.index') }}"><i class="fas fa-clipboard-list me-2"></i>Evaluaciones</a></li>
                             <li><a class="dropdown-item {{ 'active' if request.endpoint == 'evaluaciones.notas_index' else '' }}" href="{{ url_for('evaluaciones.notas_index') }}"><i class="fas fa-pen-nib me-2"></i>Notas</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item {{ 'active' if request.endpoint and 'asistencias' in request.endpoint else '' }}" href="{{ url_for('asistencias.index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'asistencias.index' else '' }}" href="{{ url_for('asistencias.index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
+                            <li><a class="dropdown-item {{ 'active' if request.endpoint == 'asistencias.dias_no_lectivos' else '' }}" href="{{ url_for('asistencias.dias_no_lectivos') }}"><i class="fas fa-calendar-times me-2"></i>Días No Lectivos y Feriados</a></li>
                         </ul>
                     </li>
                     

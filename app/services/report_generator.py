@@ -46,9 +46,10 @@ class ReportGenerator:
             # Asistencia del curso con métricas académicas (16 semanas y límite 30% DPI)
             asistencia_query = db.session.query(
                 db.func.count(Asistencia.id),
-                db.func.sum(db.case((Asistencia.presente == True, 1), else_=0)),
-                db.func.sum(db.case((Asistencia.justificado == True, 1), else_=0)),
-                db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False), 1), else_=0))
+                db.func.sum(db.case(((Asistencia.presente == True) & (Asistencia.es_institucional != True), 1), else_=0)),
+                db.func.sum(db.case(((Asistencia.justificado == True) & (Asistencia.es_institucional != True), 1), else_=0)),
+                db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False) & (Asistencia.es_institucional != True), 1), else_=0)),
+                db.func.sum(db.case((Asistencia.es_institucional == True, 1), else_=0))
             ).join(Inscripcion).filter(
                 Inscripcion.estudiante_id == estudiante_id,
                 Inscripcion.curso_id == curso.id
@@ -58,12 +59,14 @@ class ReportGenerator:
             presentes = asistencia_query[1] or 0
             justificadas = asistencia_query[2] or 0
             inasistencias = asistencia_query[3] or 0
+            institucionales = asistencia_query[4] or 0
             
-            total_programadas = curso.total_sesiones_programadas
+            total_clases_efectivas = max(total_clases - institucionales, 0)
+            total_programadas = curso.total_sesiones_efectivas_programadas
             max_faltas = curso.max_faltas_permitidas
             faltas_restantes = max_faltas - inasistencias
             
-            porcentaje_asistencia = ((presentes + justificadas) / total_clases * 100) if total_clases > 0 else 100.0
+            porcentaje_asistencia = ((presentes + justificadas) / total_clases_efectivas * 100) if total_clases_efectivas > 0 else 100.0
             porcentaje_inasistencia_sem = (inasistencias / total_programadas * 100) if total_programadas > 0 else 0.0
             
             if faltas_restantes < 0:
@@ -80,6 +83,8 @@ class ReportGenerator:
                 'promedio': round(promedio_query, 2) if promedio_query else 'Sin notas',
                 'asistencia': round(porcentaje_asistencia, 1),
                 'total_clases': total_clases,
+                'total_clases_efectivas': total_clases_efectivas,
+                'institucionales': institucionales,
                 'inasistencias': inasistencias,
                 'total_programadas': total_programadas,
                 'max_faltas': max_faltas,
@@ -199,8 +204,9 @@ class ReportGenerator:
                 Asistencia.fecha.in_(todas_fechas)
             ).all()
             
-            total_pres = sum(1 for a in asist_est if a.presente or a.justificado)
-            porcentaje = (total_pres / len(todas_fechas) * 100) if todas_fechas else 0
+            clases_efectivas = [a for a in asist_est if not getattr(a, 'es_institucional', False)]
+            total_pres = sum(1 for a in clases_efectivas if a.presente or a.justificado)
+            porcentaje = (total_pres / len(clases_efectivas) * 100) if clases_efectivas else 100.0
             
             # También guardamos el diccionario de asistencias para no volver a consultarlo por mes
             dict_asist = {a.fecha: a for a in asist_est}
@@ -232,7 +238,9 @@ class ReportGenerator:
                 for fecha in fechas_chunk:
                     estado = dict_asistencias.get(fecha)
                     if estado:
-                        if estado.presente: 
+                        if getattr(estado, 'es_institucional', False):
+                            simbolo = 'S'
+                        elif estado.presente: 
                             simbolo = 'P'
                         elif estado.justificado: 
                             simbolo = 'J'
@@ -295,7 +303,7 @@ class ReportGenerator:
         # Conteo de inasistencias por inscripción para verificar condición DPI (>30% inasistencias)
         asistencias_raw = db.session.query(
             Inscripcion.id,
-            db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False), 1), else_=0))
+            db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False) & (Asistencia.es_institucional != True), 1), else_=0))
         ).join(Asistencia, Asistencia.inscripcion_id == Inscripcion.id).filter(
             Inscripcion.curso_id == curso_id
         ).group_by(Inscripcion.id).all()

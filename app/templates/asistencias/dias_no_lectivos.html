@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Días No Lectivos y Feriados - SADES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <div>
+                <h2 class="fw-bold text-primary-color m-0">
+                    <i class="fas fa-calendar-times text-indigo me-2" style="color: #6366f1;"></i>
+                    Días No Lectivos y Feriados Institucionales
+                </h2>
+                <p class="text-muted mb-0">Gestión de feriados, asuetos, actividades y emergencias climáticas sin penalización al estudiante</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('asistencias.index') }}" class="btn btn-outline-secondary border-2 fw-bold shadow-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Asistencias
+                </a>
+                {% if current_user.rol in ['administrador', 'coordinador'] %}
+                <button type="button" class="btn text-white fw-bold px-4 shadow-sm" style="background-color: #6366f1;" data-bs-toggle="modal" data-bs-target="#modalNuevoDiaNoLectivo">
+                    <i class="fas fa-plus-circle me-2"></i> Programar Día No Lectivo
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Banner Explicativo de la Política Académica -->
+        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%); border-left: 5px solid #6366f1 !important;">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="background-color: #e0e7ff; color: #4f46e5; width: 44px; height: 44px;">
+                        <i class="fas fa-shield-alt fa-lg"></i>
+                    </div>
+                    <div class="small">
+                        <strong class="text-dark d-block">Principio Institucional de Equidad en Asistencia:</strong>
+                        <span class="text-muted">
+                            Los días declarados no lectivos o suspendidos por la institución quedan <strong>100% exonerados</strong> de faltas injustificadas.
+                            No computan en contra del estudiante ni reducen su margen de inasistencias para la regla del 30% (DPI).
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtro por Ciclo si es Administrador -->
+        {% if current_user.rol == 'administrador' and ciclos %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <form method="GET" action="{{ url_for('asistencias.dias_no_lectivos') }}" class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <label class="fw-bold small text-muted text-uppercase mb-0">Ciclo Académico:</label>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select form-select-sm" name="ciclo_id" onchange="this.form.submit()">
+                            {% for c in ciclos %}
+                            <option value="{{ c.id }}" {% if ciclo_id == c.id %}selected{% endif %}>
+                                {{ c.codigo_ciclo }} - {{ c.nombre }} {% if ciclo_activo and c.id == ciclo_activo.id %}(Ciclo Activo){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabla de Días No Lectivos -->
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-body p-0">
+                {% if dias %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase fw-bold">
+                            <tr>
+                                <th class="ps-4">Fecha</th>
+                                <th>Tipo de Causal</th>
+                                <th>Motivo / Justificación</th>
+                                <th>Alcance</th>
+                                <th>Ciclo</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dia in dias %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ dia.fecha.strftime('%d/%m/%Y') }}</div>
+                                    <div class="small text-muted">{{ dia.fecha.strftime('%A')|capitalize }}</div>
+                                </td>
+                                <td>
+                                    {% if dia.tipo == 'FERIADO' %}
+                                        <span class="badge px-3 py-2 border rounded-pill" style="background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd !important;">
+                                            <i class="fas fa-flag me-1"></i> Feriado
+                                        </span>
+                                    {% elif dia.tipo == 'ASUETO' %}
+                                        <span class="badge px-3 py-2 border rounded-pill" style="background-color: #ede9fe; color: #6d28d9; border-color: #ddd6fe !important;">
+                                            <i class="fas fa-building me-1"></i> Asueto
+                                        </span>
+                                    {% elif dia.tipo == 'EMERGENCIA_CLIMATICA' %}
+                                        <span class="badge px-3 py-2 border rounded-pill" style="background-color: #fee2e2; color: #b91c1c; border-color: #fecaca !important;">
+                                            <i class="fas fa-cloud-showers-heavy me-1"></i> Emergencia
+                                        </span>
+                                    {% elif dia.tipo == 'ACTIVIDAD_INSTITUCIONAL' %}
+                                        <span class="badge px-3 py-2 border rounded-pill" style="background-color: #fef3c7; color: #b45309; border-color: #fde68a !important;">
+                                            <i class="fas fa-award me-1"></i> Actividad Institucional
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border px-3 py-2 rounded-pill">
+                                            {{ dia.tipo }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-primary-color">{{ dia.motivo }}</div>
+                                    {% if dia.observaciones %}
+                                    <div class="small text-muted">{{ dia.observaciones }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if dia.curso %}
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="fas fa-book me-1"></i> {{ dia.curso.nombre_curso }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle">
+                                            <i class="fas fa-globe me-1"></i> Toda la Institución (Todos los Cursos)
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-muted">{{ dia.ciclo.codigo_ciclo }}</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if current_user.rol in ['administrador', 'coordinador'] %}
+                                    <form method="POST" action="{{ url_for('asistencias.eliminar_dia_no_lectivo', id=dia.id) }}" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este día no lectivo? Se restaurará la obligatoriedad lectiva de la fecha.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm" title="Eliminar registro">
+                                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="small text-muted">Solo lectura</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-calendar-check fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">No hay días no lectivos programados</h5>
+                    <p class="text-muted small mb-3">Todas las fechas del ciclo están actualmente configuradas como lectivas regulares.</p>
+                    {% if current_user.rol in ['administrador', 'coordinador'] %}
+                    <button type="button" class="btn btn-sm text-white fw-bold px-4 shadow-sm" style="background-color: #6366f1;" data-bs-toggle="modal" data-bs-target="#modalNuevoDiaNoLectivo">
+                        <i class="fas fa-plus-circle me-1"></i> Programar el primer día no lectivo
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Programar Nuevo Día No Lectivo -->
+{% if current_user.rol in ['administrador', 'coordinador'] %}
+<div class="modal fade" id="modalNuevoDiaNoLectivo" tabindex="-1" aria-labelledby="modalNuevoDiaNoLectivoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background-color: #4f46e5;">
+                <h5 class="modal-title fw-bold" id="modalNuevoDiaNoLectivoLabel">
+                    <i class="fas fa-calendar-plus me-2"></i> Programar Día No Lectivo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('asistencias.dias_no_lectivos') }}">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="ciclo_id" value="{{ ciclo_id }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Fecha No Lectiva</label>
+                        <input type="date" class="form-control" name="fecha" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Tipo de Causal</label>
+                        <select class="form-select" name="tipo" required>
+                            <option value="FERIADO">Feriado de Calendario (Nacional / Regional)</option>
+                            <option value="ASUETO">Asueto Institucional o Administrativo</option>
+                            <option value="EMERGENCIA_CLIMATICA">Emergencia / Fenómeno Climático / Desastre</option>
+                            <option value="ACTIVIDAD_INSTITUCIONAL">Celebración / Actividad / Ceremonia</option>
+                            <option value="OTRO">Otra Causal Justificada</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Motivo Principal</label>
+                        <input type="text" class="form-control" name="motivo" placeholder="Ej: Feriado Nacional - Día del Trabajo / Fuertes lluvias" required>
+                    </div>
+
+                    <!-- Alcance: Todos o Curso Específico -->
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aplicar_todos" name="aplicar_todos" checked onchange="toggleCursoSelect(this.checked)">
+                            <label class="form-check-label fw-bold text-dark small" for="aplicar_todos">
+                                Aplicar a todos los cursos del ciclo
+                            </label>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            Se registrará automáticamente la justificación institucional en las asistencias de todas las asignaturas activas en esta fecha.
+                        </div>
+
+                        <div id="cursoSelectContainer" class="d-none mt-2">
+                            <label class="form-label fw-bold small text-muted">Seleccionar Curso Afectado:</label>
+                            <select class="form-select form-select-sm" name="curso_id" id="curso_id_select">
+                                <option value="">Seleccione un curso...</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso.id }}">{{ curso.codigo_curso }} - {{ curso.nombre_curso }} (Nivel {{ curso.semestre }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Observaciones adicionales (Opcional)</label>
+                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Resolución directorial, número de decreto o notas complementarias..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn text-white fw-bold px-4" style="background-color: #4f46e5;">
+                        <i class="fas fa-save me-1"></i> Guardar y Aplicar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCursoSelect(isAll) {
+    const container = document.getElementById('cursoSelectContainer');
+    if (isAll) {
+        container.classList.add('d-none');
+    } else {
+        container.classList.remove('d-none');
+    }
+}
+</script>
+{% endif %}
+{% endblock %}

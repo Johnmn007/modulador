@@ -103,7 +103,8 @@
                             <tr>
                                 <th>Estudiante</th>
                                 <th>Curso</th>
-                                <th class="text-center">Total Clases</th>
+                                <th class="text-center">Clases Dictadas</th>
+                                <th class="text-center">Susp. Institucional</th>
                                 <th class="text-center">Asistencias</th>
                                 <th class="text-center">Justificadas</th>
                                 <th class="text-center">% Asistencia</th>
@@ -118,7 +119,19 @@
                                     <strong>{{ stat.estudiante }}</strong>
                                 </td>
                                 <td>{{ stat.curso }}</td>
-                                <td class="text-center">{{ stat.total_clases }}</td>
+                                <td class="text-center">
+                                    <span class="fw-bold text-dark">{{ stat.clases_efectivas }}</span>
+                                    <span class="small text-muted">/ {{ stat.total_clases }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if stat.institucionales > 0 %}
+                                    <span class="badge border px-2 py-1" style="background-color: #ede9fe; color: #5b21b6; border-color: #ddd6fe !important;">
+                                        {{ stat.institucionales }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted small">0</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">{{ stat.asistencias }}</td>
                                 <td class="text-center">{{ stat.justificadas }}</td>
                                 <td class="text-center">

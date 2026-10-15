@@ -37,6 +37,9 @@
                 <a href="{{ url_for('asistencias.estadisticas') }}" class="btn btn-outline-primary border-2 fw-bold shadow-sm">
                     <i class="fas fa-chart-pie me-2"></i> Análisis Estadístico
                 </a>
+                <a href="{{ url_for('asistencias.dias_no_lectivos') }}" class="btn btn-outline-secondary border-2 fw-bold shadow-sm">
+                    <i class="fas fa-calendar-times me-2"></i> Días No Lectivos
+                </a>
                 <a href="{{ url_for('asistencias.crear_masiva') }}" class="btn btn-primary fw-bold px-4 shadow-sm">
                     <i class="fas fa-tasks me-2"></i> Pasar Asistencia
                 </a>
@@ -112,7 +115,14 @@
                                     <div class="small text-muted">Nivel {{ sesion.semestre }}</div>
                                 </td>
                                 <td>
-                                    <div class="small text-muted">{{ sesion.fecha.strftime('%d/%m/%Y') }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="small fw-semibold text-dark">{{ sesion.fecha.strftime('%d/%m/%Y') }}</span>
+                                        {% if sesion.es_institucional %}
+                                        <span class="badge rounded-pill px-2 py-1 small border" style="background-color: #ede9fe; color: #5b21b6; border-color: #ddd6fe !important;" title="{{ sesion.motivo_institucional or 'Suspensión Institucional' }}">
+                                            <i class="fas fa-calendar-times me-1"></i> Suspensión: {{ sesion.motivo_institucional or 'Institucional' }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="badge rounded-pill bg-info bg-opacity-10 text-info px-3 border border-info border-opacity-10">

@@ -127,6 +127,7 @@
         .symbol-p { color: var(--success); font-weight: 800; } 
         .symbol-f { color: var(--danger); font-weight: 800; } 
         .symbol-j { color: var(--warning); font-weight: 800; } 
+        .symbol-s { color: #4f46e5; font-weight: 800; background-color: #e0e7ff; padding: 0 2px; border-radius: 2px; } 
         
         .student-name { 
             font-weight: bold; 
@@ -233,7 +234,7 @@
                 </td>
                 {% for sim in fila.asistencias %}
                 <td>
-                    <span class="{% if sim == 'P' %}symbol-p{% elif sim == 'F' %}symbol-f{% elif sim == 'J' %}symbol-j{% endif %}">
+                    <span class="{% if sim == 'P' %}symbol-p{% elif sim == 'F' %}symbol-f{% elif sim == 'J' %}symbol-j{% elif sim == 'S' %}symbol-s{% endif %}">
                         {{ sim if sim != '-' else '' }}
                     </span>
                 </td>
@@ -252,6 +253,7 @@
             <span class="symbol-p">P</span> Presente &nbsp;|&nbsp; 
             <span class="symbol-f">F</span> Falta &nbsp;|&nbsp; 
             <span class="symbol-j">J</span> Justificado &nbsp;|&nbsp; 
+            <span class="symbol-s" style="padding: 1px 4px; border-radius: 3px;">S</span> Suspensión Institucional &nbsp;|&nbsp; 
             <span style="color: #cbd5e1;">(Vacío)</span> Sin Registro
         </div>
         <div style="font-size: 7px; color: var(--text-muted);">

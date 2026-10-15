@@ -74,13 +74,30 @@ class Curso(db.Model):
             return int(self.total_sesiones)
         sesiones = self.sesiones_por_semana if self.sesiones_por_semana and self.sesiones_por_semana > 0 else 2
         return int(sesiones * 16)
-    
+
+    @property
+    def total_sesiones_suspendidas(self):
+        """Número de fechas en que la sesión fue suspendida institucionalmente"""
+        # Contar fechas distintas de asistencias institucionales registradas en el curso
+        fechas = set()
+        for inscripcion in self.inscripciones:
+            for a in inscripcion.asistencias:
+                if getattr(a, 'es_institucional', False):
+                    fechas.add(a.fecha)
+        return len(fechas)
+
+    @property
+    def total_sesiones_efectivas_programadas(self):
+        """Sesiones programadas descontando las suspensiones institucionales"""
+        base = self.total_sesiones_programadas
+        return max(base - self.total_sesiones_suspendidas, 1)
+
     @property
     def max_faltas_permitidas(self):
         """Número entero máximo de inasistencias permitidas antes de ser retirado/DPI (<= 30%)"""
         import math
         limite = float(self.limite_inasistencia_porcentaje) if self.limite_inasistencia_porcentaje else 30.0
-        return math.floor(self.total_sesiones_programadas * (limite / 100.0))
+        return math.floor(self.total_sesiones_efectivas_programadas * (limite / 100.0))
     
     def __repr__(self):
         return f'<Curso {self.codigo_curso}: {self.nombre_curso}>'
@@ -103,6 +120,10 @@ class Inscripcion(db.Model):
         return self.curso.total_sesiones_programadas if self.curso else 32
 
     @property
+    def total_sesiones_efectivas_programadas(self):
+        return self.curso.total_sesiones_efectivas_programadas if self.curso else self.total_sesiones_programadas
+
+    @property
     def max_faltas_permitidas(self):
         return self.curso.max_faltas_permitidas if self.curso else 9
 
@@ -112,21 +133,31 @@ class Inscripcion(db.Model):
 
     @property
     def total_asistencias_presente(self):
-        return sum(1 for a in self.asistencias if a.presente)
+        return sum(1 for a in self.asistencias if a.presente and not getattr(a, 'es_institucional', False))
 
     @property
     def total_asistencias_justificado(self):
-        return sum(1 for a in self.asistencias if a.justificado)
+        return sum(1 for a in self.asistencias if a.justificado and not getattr(a, 'es_institucional', False))
+
+    @property
+    def total_asistencias_institucional(self):
+        """Sesiones suspendidas por la institución (feriados, asuetos, desastres, etc.)"""
+        return sum(1 for a in self.asistencias if getattr(a, 'es_institucional', False))
+
+    @property
+    def total_clases_efectivas(self):
+        """Clases lectivas dictadas efectivas (excluye suspensiones institucionales)"""
+        return sum(1 for a in self.asistencias if not getattr(a, 'es_institucional', False))
 
     @property
     def total_inasistencias(self):
-        """Inasistencias injustificadas (faltas efectivas)"""
-        return sum(1 for a in self.asistencias if not a.presente and not a.justificado)
+        """Inasistencias injustificadas (faltas efectivas atribuibles al estudiante)"""
+        return sum(1 for a in self.asistencias if not a.presente and not a.justificado and not getattr(a, 'es_institucional', False))
 
     @property
     def porcentaje_inasistencia_semestre(self):
-        """Porcentaje de inasistencias sobre el TOTAL PROGRAMADO del período (regla del 30%)"""
-        total_prog = self.total_sesiones_programadas
+        """Porcentaje de inasistencias sobre el TOTAL EFECTIVO PROGRAMADO del período (regla del 30%)"""
+        total_prog = self.total_sesiones_efectivas_programadas
         if total_prog == 0:
             return 0.0
         return round((self.total_inasistencias / total_prog) * 100.0, 1)
@@ -156,12 +187,12 @@ class Inscripcion(db.Model):
 
     @property
     def asistencia_porcentaje(self):
-        """Porcentaje de asistencia relativa a las clases dictadas hasta la fecha"""
-        total = len(self.asistencias)
-        if total == 0:
+        """Porcentaje de asistencia relativa a las clases lectivas efectivas dictadas hasta la fecha"""
+        efectivas = self.total_clases_efectivas
+        if efectivas == 0:
             return 100.0
-        presentes = sum(1 for a in self.asistencias if a.presente or a.justificado)
-        return (presentes / total) * 100
+        presentes = sum(1 for a in self.asistencias if (a.presente or a.justificado) and not getattr(a, 'es_institucional', False))
+        return (presentes / efectivas) * 100
     
     def __repr__(self):
         return f'<Inscripcion Estudiante:{self.estudiante_id} Curso:{self.curso_id}>'
@@ -174,10 +205,32 @@ class Asistencia(db.Model):
     fecha = db.Column(db.Date, nullable=False)
     presente = db.Column(db.Boolean, default=False)
     justificado = db.Column(db.Boolean, default=False)
+    es_institucional = db.Column(db.Boolean, default=False)
+    motivo_institucional = db.Column(db.String(150), nullable=True)
     observaciones = db.Column(db.Text)
     
     def __repr__(self):
-        return f'<Asistencia {self.fecha} - Presente: {self.presente}>'
+        return f'<Asistencia {self.fecha} - Presente: {self.presente} - Inst: {self.es_institucional}>'
+
+class DiaNoLectivo(db.Model):
+    __tablename__ = 'dias_no_lectivos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ciclo_id = db.Column(db.Integer, db.ForeignKey('ciclos.id'), nullable=False)
+    curso_id = db.Column(db.Integer, db.ForeignKey('cursos.id'), nullable=True)  # Null = aplica a toda la institución
+    fecha = db.Column(db.Date, nullable=False)
+    tipo = db.Column(db.String(50), nullable=False, default='FERIADO')  # FERIADO, ASUETO, EMERGENCIA, ACTIVIDAD_INSTITUCIONAL, OTRO
+    motivo = db.Column(db.String(200), nullable=False)
+    es_recuperable = db.Column(db.Boolean, default=False)
+    observaciones = db.Column(db.Text)
+    fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relaciones
+    ciclo = db.relationship('Ciclo', backref=db.backref('dias_no_lectivos', lazy=True))
+    curso = db.relationship('Curso', backref=db.backref('dias_no_lectivos', lazy=True))
+    
+    def __repr__(self):
+        return f'<DiaNoLectivo {self.fecha} - {self.tipo}: {self.motivo}>'
 
 class Evaluacion(db.Model):
     __tablename__ = 'evaluaciones'

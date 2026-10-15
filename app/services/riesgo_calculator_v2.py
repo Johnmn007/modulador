@@ -159,9 +159,10 @@ class CalculatorRiesgoIntrasemestral:
             COALESCE(c.total_sesiones, COALESCE(c.sesiones_por_semana, 2) * 16) as total_programadas,
             COALESCE(c.limite_inasistencia_porcentaje, 30.0) as limite_pct,
             COUNT(a.id) as total_clases_tomadas,
-            SUM(CASE WHEN a.presente = TRUE THEN 1 ELSE 0 END) as asistencias,
-            SUM(CASE WHEN a.justificado = TRUE THEN 1 ELSE 0 END) as justificadas,
-            SUM(CASE WHEN a.presente = FALSE AND a.justificado = FALSE THEN 1 ELSE 0 END) as inasistencias
+            SUM(CASE WHEN a.presente = TRUE AND (a.es_institucional IS NULL OR a.es_institucional = FALSE) THEN 1 ELSE 0 END) as asistencias,
+            SUM(CASE WHEN a.justificado = TRUE AND (a.es_institucional IS NULL OR a.es_institucional = FALSE) THEN 1 ELSE 0 END) as justificadas,
+            SUM(CASE WHEN a.presente = FALSE AND a.justificado = FALSE AND (a.es_institucional IS NULL OR a.es_institucional = FALSE) THEN 1 ELSE 0 END) as inasistencias,
+            COUNT(DISTINCT CASE WHEN a.es_institucional = TRUE THEN a.fecha END) as sesiones_suspendidas
         FROM inscripciones i
         JOIN cursos c ON i.curso_id = c.id
         JOIN ciclos ci ON c.ciclo_id = ci.id
@@ -189,7 +190,9 @@ class CalculatorRiesgoIntrasemestral:
             total_presentes_general = 0
             
             for row in cursos_asistencia:
-                total_prog = int(row.total_programadas) if row.total_programadas else 32
+                base_prog = int(row.total_programadas) if row.total_programadas else 32
+                sesiones_susp = int(row.sesiones_suspendidas or 0)
+                total_prog = max(base_prog - sesiones_susp, 1)
                 limite_pct = float(row.limite_pct) if row.limite_pct else 30.0
                 max_faltas = math.floor(total_prog * (limite_pct / 100.0))
                 inasistencias = int(row.inasistencias or 0)
