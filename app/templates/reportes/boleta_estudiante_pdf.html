@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Boleta de Calificaciones - {{ estudiante.apellidos }} {{ estudiante.nombres }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.2cm;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --accent: #0284c7;
+            --success: #15803d;
+            --danger: #b91c1c;
+            --warning: #b45309;
+            --border: #cbd5e1;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1e293b;
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            line-height: 1.3;
+        }
+
+        .report-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: table;
+            width: 100%;
+        }
+
+        .header-cell {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 16pt;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            margin: 3px 0 0 0;
+            color: var(--accent);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10pt;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 9pt;
+            color: #64748b;
+        }
+
+        .student-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--bg-light);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: table;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .student-row {
+            display: table-row;
+        }
+
+        .student-col {
+            display: table-cell;
+            padding: 4px 8px;
+            font-size: 9.5pt;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 8pt;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 9pt;
+        }
+
+        .grades-table th, .grades-table td {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+
+        .grades-table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .grades-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .nota-aprobada {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .nota-desaprobada {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .badge-condicion {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .badge-aprobado {
+            background-color: #dcfce7;
+            color: var(--success);
+        }
+
+        .badge-desaprobado {
+            background-color: #fee2e2;
+            color: var(--danger);
+        }
+
+        .badge-dpi {
+            background-color: #7f1d1d;
+            color: #ffffff;
+        }
+
+        .summary-box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: #f1f5f9;
+            padding: 12px 16px;
+            margin-bottom: 35px;
+            page-break-inside: avoid;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .summary-table td {
+            padding: 4px 8px;
+            font-size: 9.5pt;
+        }
+
+        .highlight-val {
+            font-size: 13pt;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .signature-section {
+            display: table;
+            width: 100%;
+            margin-top: 50px;
+            page-break-inside: avoid;
+        }
+
+        .signature-col {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+            vertical-align: bottom;
+        }
+
+        .signature-line {
+            width: 75%;
+            margin: 0 auto 4px auto;
+            border-top: 1px solid #334155;
+            padding-top: 6px;
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 8pt;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
+            display: table;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabecera Oficial -->
+    <div class="report-header">
+        <div class="header-cell header-title">
+            <h1>Boleta de Calificaciones</h1>
+            <p>SADES — Sistema de Gestión y Seguimiento Estudiantil</p>
+        </div>
+        <div class="header-cell header-meta">
+            <strong>Fecha de Emisión:</strong> {{ fecha_generacion }}<br>
+            <strong>Periodo Académico:</strong> {{ semestre if semestre else (ciclo.codigo_ciclo if ciclo else 'Actual') }}
+        </div>
+    </div>
+
+    <!-- Ficha del Estudiante -->
+    <div class="student-card">
+        <div class="student-row">
+            <div class="student-col">
+                <span class="field-label">Estudiante:</span> <strong>{{ estudiante.apellidos }}, {{ estudiante.nombres }}</strong>
+            </div>
+            <div class="student-col">
+                <span class="field-label">Código Estudiante:</span> <strong style="font-family: monospace;">{{ estudiante.codigo_estudiante }}</strong>
+            </div>
+        </div>
+        <div class="student-row">
+            <div class="student-col">
+                <span class="field-label">Documento / ID:</span> {{ estudiante.dni or 'No registrado' }}
+            </div>
+            <div class="student-col">
+                <span class="field-label">Correo Institucional:</span> {{ estudiante.correo or 'No registrado' }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Asignaturas y Calificaciones -->
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th style="width: 30px;">#</th>
+                <th style="text-align: left; padding-left: 12px;">Asignatura</th>
+                <th style="width: 60px;">Créditos</th>
+                <th style="text-align: left;">Evaluaciones Parciales</th>
+                <th style="width: 75px;">Promedio Final</th>
+                <th style="width: 95px;">Condición</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in boleta_cursos %}
+            <tr>
+                <td style="text-align: center; font-weight: bold; color: #64748b;">{{ loop.index }}</td>
+                <td style="font-weight: 600;">
+                    {{ item.curso.nombre_curso }}<br>
+                    <span style="font-size: 8pt; color: #64748b; font-weight: normal;">Código: {{ item.curso.codigo_curso }} | Nivel {{ item.curso.semestre }}</span>
+                </td>
+                <td style="text-align: center; font-weight: bold;">{{ item.creditos }}</td>
+                <td style="font-size: 8pt;">
+                    {% for ev in item.evaluaciones %}
+                        <span style="color: #475569;">{{ ev.evaluacion[:8] }}:</span> 
+                        <strong class="{% if ev.nota is not none and ev.nota >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% elif ev.nota is not none %}nota-desaprobada{% else %}{% endif %}">
+                            {{ "%.1f"|format(ev.nota) if ev.nota is not none else '-' }}
+                        </strong>{% if not loop.last %} &bull; {% endif %}
+                    {% else %}
+                        <span style="color: #94a3b8;">Sin notas parciales registradas</span>
+                    {% endfor %}
+                </td>
+                <td style="text-align: center; background-color: #f8fafc; font-size: 11pt; font-weight: bold;">
+                    <span class="{% if item.promedio >= estadisticas.nota_minima_aprobatoria and item.condicion != 'DPI' %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                        {{ "%.1f"|format(item.promedio) }}
+                    </span>
+                </td>
+                <td style="text-align: center;">
+                    {% if item.condicion == 'APROBADO' %}
+                        <span class="badge-condicion badge-aprobado">Aprobado</span>
+                    {% elif item.condicion == 'DPI' %}
+                        <span class="badge-condicion badge-dpi" title="Desaprobado por Inasistencia">DPI (>30%)</span>
+                    {% else %}
+                        <span class="badge-condicion badge-desaprobado">Desaprobado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 25px; color: #64748b;">
+                    No se encontraron asignaturas matriculadas para este estudiante en el periodo seleccionado.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Resumen Semestral -->
+    <div class="summary-box">
+        <table class="summary-table">
+            <tr>
+                <td><span class="field-label">Total Cursos:</span> <strong>{{ estadisticas.total_cursos }}</strong></td>
+                <td><span class="field-label">Cursos Aprobados:</span> <strong class="nota-aprobada">{{ estadisticas.cursos_aprobados }}</strong></td>
+                <td><span class="field-label">Cursos Desaprobados:</span> <strong class="nota-desaprobada">{{ estadisticas.cursos_desaprobados }}</strong></td>
+            </tr>
+            <tr>
+                <td><span class="field-label">Total Créditos:</span> <strong>{{ estadisticas.creditos_totales }}</strong></td>
+                <td colspan="2">
+                    <span class="field-label">Promedio Ponderado Semestral (PPS):</span> 
+                    <span class="highlight-val {% if estadisticas.promedio_ponderado >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                        {{ "%.2f"|format(estadisticas.promedio_ponderado) }}
+                    </span>
+                    <span style="font-size: 8.5pt; color: #64748b; margin-left: 6px;">(Escala Vigesimal 0-20)</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Firmas Oficiales -->
+    <div class="signature-section">
+        <div class="signature-col">
+            <div class="signature-line">
+                Coordinación Académica<br>
+                Firma y Sello
+            </div>
+        </div>
+        <div class="signature-col">
+            <div class="signature-line">
+                Dirección de Servicios Académicos<br>
+                Registro y Matrícula
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <div style="display: table-cell; text-align: left;">
+            Documento de consulta académica generado por SADES. Validez según reglamentación interna institucional.
+        </div>
+        <div style="display: table-cell; text-align: right;">
+            Página 1 de 1
+        </div>
+    </div>
+
+</body>
+</html>

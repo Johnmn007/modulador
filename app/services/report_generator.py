@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 from flask import render_template
-from app.models import Estudiante, SeguimientoRiesgo, Curso, Inscripcion, Nota, Asistencia
+from app.models import Estudiante, SeguimientoRiesgo, Curso, Inscripcion, Nota, Asistencia, Evaluacion
 from app.extensions import db
 from app.services.config_service import cargar_configuracion
 
@@ -262,4 +262,247 @@ class ReportGenerator:
             'html': html_content,
             'curso': curso,
             'meses': meses_data
+        }
+
+    def generar_reporte_notas_curso(self, curso_id):
+        """Genera acta oficial consolidada de calificaciones para un curso"""
+        curso = Curso.query.get_or_404(curso_id)
+        config = cargar_configuracion()
+        nota_minima = float(config.get('nota_minima_aprobatoria', 12.5))
+        
+        # Evaluaciones del curso ordenadas por fecha/creación
+        evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(
+            Evaluacion.fecha_creacion.asc(),
+            Evaluacion.id.asc()
+        ).all()
+        
+        # Estudiantes inscritos activos
+        inscripciones = Inscripcion.query.filter_by(curso_id=curso_id, estado='ACTIVO').join(
+            Estudiante
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        
+        # Mapeo de notas {inscripcion_id: {evaluacion_id: nota_float}}
+        notas_raw = Nota.query.join(Inscripcion).filter(
+            Inscripcion.curso_id == curso_id
+        ).all()
+        
+        notas_dict = {}
+        for n in notas_raw:
+            if n.inscripcion_id not in notas_dict:
+                notas_dict[n.inscripcion_id] = {}
+            notas_dict[n.inscripcion_id][n.evaluacion_id] = float(n.nota) if n.nota is not None else None
+            
+        # Conteo de inasistencias por inscripción para verificar condición DPI (>30% inasistencias)
+        asistencias_raw = db.session.query(
+            Inscripcion.id,
+            db.func.sum(db.case(((Asistencia.presente == False) & (Asistencia.justificado == False), 1), else_=0))
+        ).join(Asistencia, Asistencia.inscripcion_id == Inscripcion.id).filter(
+            Inscripcion.curso_id == curso_id
+        ).group_by(Inscripcion.id).all()
+        
+        inasistencias_dict = {a[0]: (a[1] or 0) for a in asistencias_raw}
+        max_faltas = curso.max_faltas_permitidas
+        
+        consolidado = []
+        promedios_validos = []
+        aprobados_count = 0
+        desaprobados_count = 0
+        dpi_count = 0
+        
+        for idx, ins in enumerate(inscripciones, 1):
+            notas_alumno = notas_dict.get(ins.id, {})
+            notas_list = []
+            suma_ponderada = 0.0
+            
+            for ev in evaluaciones:
+                val = notas_alumno.get(ev.id)
+                notas_list.append(val)
+                if val is not None:
+                    peso_frac = float(ev.peso) / 100.0 if ev.peso else 0.0
+                    suma_ponderada += val * peso_frac
+            
+            # Promedio ponderado final
+            promedio_final = round(suma_ponderada, 1) if evaluaciones else 0.0
+            
+            faltas = inasistencias_dict.get(ins.id, 0)
+            es_dpi = (faltas > max_faltas) if (max_faltas is not None and curso.total_sesiones_programadas > 0) else False
+            
+            if es_dpi:
+                condicion = 'DPI'
+                dpi_count += 1
+                desaprobados_count += 1
+            elif promedio_final >= nota_minima:
+                condicion = 'APROBADO'
+                aprobados_count += 1
+            else:
+                condicion = 'DESAPROBADO'
+                desaprobados_count += 1
+                
+            promedios_validos.append(promedio_final)
+            
+            consolidado.append({
+                'num': idx,
+                'estudiante': ins.estudiante,
+                'codigo': ins.estudiante.codigo_estudiante,
+                'nombre_completo': f"{ins.estudiante.apellidos}, {ins.estudiante.nombres}",
+                'notas': notas_list,
+                'promedio': promedio_final,
+                'faltas': faltas,
+                'max_faltas': max_faltas,
+                'condicion': condicion
+            })
+            
+        total_estudiantes = len(inscripciones)
+        promedio_aula = round(sum(promedios_validos) / total_estudiantes, 2) if total_estudiantes > 0 else 0.0
+        nota_maxima = max(promedios_validos) if promedios_validos else 0.0
+        nota_minima_aula = min(promedios_validos) if promedios_validos else 0.0
+        porcentaje_aprobados = round((aprobados_count / total_estudiantes * 100), 1) if total_estudiantes > 0 else 0.0
+        porcentaje_desaprobados = round((desaprobados_count / total_estudiantes * 100), 1) if total_estudiantes > 0 else 0.0
+        
+        estadisticas = {
+            'total_estudiantes': total_estudiantes,
+            'aprobados': aprobados_count,
+            'desaprobados': desaprobados_count,
+            'dpi': dpi_count,
+            'porcentaje_aprobados': porcentaje_aprobados,
+            'porcentaje_desaprobados': porcentaje_desaprobados,
+            'promedio_aula': promedio_aula,
+            'nota_maxima': nota_maxima,
+            'nota_minima': nota_minima_aula,
+            'nota_minima_aprobatoria': nota_minima
+        }
+        
+        html_content = render_template(
+            'reportes/notas_curso_pdf.html',
+            curso=curso,
+            evaluaciones=evaluaciones,
+            consolidado=consolidado,
+            estadisticas=estadisticas,
+            config=config,
+            fecha_generacion=datetime.now().strftime('%d/%m/%Y %H:%M')
+        )
+        
+        return {
+            'html': html_content,
+            'curso': curso,
+            'evaluaciones': evaluaciones,
+            'consolidado': consolidado,
+            'estadisticas': estadisticas
+        }
+
+    def generar_reporte_boleta_estudiante(self, estudiante_id, semestre=None):
+        """Genera boleta oficial de calificaciones de un estudiante para un semestre"""
+        estudiante = Estudiante.query.get_or_404(estudiante_id)
+        config = cargar_configuracion()
+        nota_minima = float(config.get('nota_minima_aprobatoria', 12.5))
+        
+        from app.services.config_service import get_ciclo_activo
+        from app.models import Ciclo
+        
+        if not semestre:
+            ciclo = get_ciclo_activo()
+            semestre = ciclo.codigo_ciclo if ciclo else None
+        else:
+            ciclo = Ciclo.query.filter_by(codigo_ciclo=semestre).first()
+            if not ciclo:
+                ciclo = get_ciclo_activo()
+                
+        # Inscripciones del estudiante en este ciclo / semestre
+        inscripciones_query = Inscripcion.query.join(Curso).filter(
+            Inscripcion.estudiante_id == estudiante_id,
+            Inscripcion.estado == 'ACTIVO'
+        )
+        if ciclo:
+            inscripciones_query = inscripciones_query.filter(Curso.ciclo_id == ciclo.id)
+        elif semestre:
+            inscripciones_query = inscripciones_query.filter(Curso.semestre == semestre)
+            
+        inscripciones = inscripciones_query.order_by(Curso.nombre_curso).all()
+        
+        boleta_cursos = []
+        suma_creditos = 0
+        suma_puntos_ponderados = 0.0
+        cursos_aprobados = 0
+        cursos_desaprobados = 0
+        
+        for ins in inscripciones:
+            curso = ins.curso
+            creditos = curso.creditos or 3
+            
+            evaluaciones = Evaluacion.query.filter_by(curso_id=curso.id).order_by(
+                Evaluacion.fecha_creacion.asc(),
+                Evaluacion.id.asc()
+            ).all()
+            
+            notas_alumno = {n.evaluacion_id: float(n.nota) for n in ins.notas if n.nota is not None}
+            
+            desglose_notas = []
+            suma_ponderada = 0.0
+            
+            for ev in evaluaciones:
+                nota_val = notas_alumno.get(ev.id)
+                desglose_notas.append({
+                    'evaluacion': ev.nombre_evaluacion,
+                    'peso': ev.peso,
+                    'nota': nota_val
+                })
+                if nota_val is not None:
+                    suma_ponderada += nota_val * (float(ev.peso) / 100.0 if ev.peso else 0.0)
+                    
+            promedio_curso = round(suma_ponderada, 1) if evaluaciones else 0.0
+            
+            inasistencias = sum(1 for a in ins.asistencias if not a.presente and not a.justificado)
+            max_faltas = curso.max_faltas_permitidas
+            es_dpi = (inasistencias > max_faltas) if (max_faltas is not None and curso.total_sesiones_programadas > 0) else False
+            
+            if es_dpi:
+                condicion = 'DPI'
+                cursos_desaprobados += 1
+            elif promedio_curso >= nota_minima:
+                condicion = 'APROBADO'
+                cursos_aprobados += 1
+            else:
+                condicion = 'DESAPROBADO'
+                cursos_desaprobados += 1
+                
+            suma_creditos += creditos
+            suma_puntos_ponderados += promedio_curso * creditos
+            
+            boleta_cursos.append({
+                'curso': curso,
+                'creditos': creditos,
+                'evaluaciones': desglose_notas,
+                'promedio': promedio_curso,
+                'inasistencias': inasistencias,
+                'condicion': condicion
+            })
+            
+        promedio_ponderado_semestral = round(suma_puntos_ponderados / suma_creditos, 2) if suma_creditos > 0 else 0.0
+        
+        estadisticas = {
+            'total_cursos': len(inscripciones),
+            'cursos_aprobados': cursos_aprobados,
+            'cursos_desaprobados': cursos_desaprobados,
+            'creditos_totales': suma_creditos,
+            'promedio_ponderado': promedio_ponderado_semestral,
+            'nota_minima_aprobatoria': nota_minima
+        }
+        
+        html_content = render_template(
+            'reportes/boleta_estudiante_pdf.html',
+            estudiante=estudiante,
+            semestre=semestre,
+            ciclo=ciclo,
+            boleta_cursos=boleta_cursos,
+            estadisticas=estadisticas,
+            config=config,
+            fecha_generacion=datetime.now().strftime('%d/%m/%Y %H:%M')
+        )
+        
+        return {
+            'html': html_content,
+            'estudiante': estudiante,
+            'semestre': semestre,
+            'boleta_cursos': boleta_cursos,
+            'estadisticas': estadisticas
         }

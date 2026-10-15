@@ -15,34 +15,60 @@
         </div>
 
         <div class="row g-4">
-            <!-- Reporte Individual -->
-            <div class="{% if current_user.rol == 'administrador' %}col-xl-3 col-md-6{% else %}col-md-4{% endif %}">
+            <!-- Calificaciones y Actas -->
+            <div class="col-xl-3 col-md-6">
                 <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
                     <div class="card-header bg-navy text-white py-3 border-0">
-                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-user-graduate me-2 text-cyan"></i>Análisis Individual</h5>
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-award me-2 text-cyan"></i>Actas y Calificaciones</h5>
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <p class="text-muted small mb-4">Expediente completo de riesgo para un estudiante específico. Ideal para tutorías personalizadas.</p>
+                        <p class="text-muted small mb-4">Actas oficiales de evaluación por curso con ponderaciones, promedios, condición DPI y boletas de notas.</p>
                         <div class="feature-list mb-4">
                             <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Perfil de Riesgo Detallado
+                                <i class="fas fa-check-circle text-success me-2"></i> Acta Oficial Consolidada
                             </div>
                             <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Resumen de Asistencias
+                                <i class="fas fa-check-circle text-success me-2"></i> Boleta Semestral de Notas
                             </div>
                             <div class="d-flex align-items-center small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Recomendaciones IA
+                                <i class="fas fa-check-circle text-success me-2"></i> PDF Legal con Firmas
                             </div>
                         </div>
-                        <a href="{{ url_for('reportes.individual') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mt-auto">
-                            Configurar Reporte <i class="fas fa-arrow-right ms-2 small"></i>
+                        <a href="{{ url_for('reportes.notas_index') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mt-auto">
+                            Reporte de Notas <i class="fas fa-file-invoice ms-2 small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte de Asistencia -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
+                    <div class="card-header bg-navy text-white py-3 border-0">
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-calendar-check me-2 text-info"></i>Matriz de Asistencia</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <p class="text-muted small mb-4">Genera hojas de asistencia mensuales o por ciclo en formato horizontal para impresión legal.</p>
+                        <div class="feature-list mb-4">
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Matriz Grupal Horizontal
+                            </div>
+                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Límite 30% DPI Académico
+                            </div>
+                            <div class="d-flex align-items-center small fw-medium text-navy">
+                                <i class="fas fa-check-circle text-success me-2"></i> Porcentajes de Faltas
+                            </div>
+                        </div>
+                        <a href="{{ url_for('reportes.asistencias_index') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mt-auto">
+                            Reporte Asistencia <i class="fas fa-table ms-2 small"></i>
                         </a>
                     </div>
                 </div>
             </div>
 
             <!-- Reporte General de Riesgo -->
-            <div class="{% if current_user.rol == 'administrador' %}col-xl-3 col-md-6{% else %}col-md-4{% endif %}">
+            <div class="col-xl-3 col-md-6">
                 <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
                     <div class="card-header bg-navy text-white py-3 border-0">
                         <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-users-viewfinder me-2 text-warning"></i>Consolidado de Riesgo</h5>
@@ -67,60 +93,56 @@
                 </div>
             </div>
 
-            <!-- Reporte de Asistencia -->
-            <div class="{% if current_user.rol == 'administrador' %}col-xl-3 col-md-6{% else %}col-md-4{% endif %}">
-                <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
-                    <div class="card-header bg-navy text-white py-3 border-0">
-                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-calendar-check me-2 text-info"></i>Matriz de Asistencia</h5>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <p class="text-muted small mb-4">Genera hojas de asistencia mensuales o por ciclo en formato horizontal para impresión.</p>
-                        <div class="feature-list mb-4">
-                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Matriz Grupal Horizontal
-                            </div>
-                            <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Filtro por Ciclo y Curso
-                            </div>
-                            <div class="d-flex align-items-center small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Porcentajes de Faltas
-                            </div>
-                        </div>
-                        <a href="{{ url_for('reportes.asistencias_index') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mt-auto">
-                            Reporte Asistencia <i class="fas fa-table ms-2 small"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            {% if current_user.rol == 'administrador' %}
-            <!-- Reportes Históricos (Solo Administrador) -->
+            <!-- Reporte Individual de Riesgo -->
             <div class="col-xl-3 col-md-6">
                 <div class="card border-0 shadow-sm h-100 hover-lift overflow-hidden">
                     <div class="card-header bg-navy text-white py-3 border-0">
-                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-archive me-2 text-primary"></i>Reportes Históricos</h5>
+                        <h5 class="card-title mb-0 small text-uppercase fw-bold"><i class="fas fa-user-graduate me-2 text-success"></i>Expediente de Riesgo</h5>
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <p class="text-muted small mb-4">Auditoría y consulta de notas, asistencias y riesgo de semestres anteriores concluidos.</p>
+                        <p class="text-muted small mb-4">Expediente completo de riesgo para un estudiante específico. Ideal para tutorías personalizadas.</p>
                         <div class="feature-list mb-4">
                             <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Selección por Ciclo Pasado
+                                <i class="fas fa-check-circle text-success me-2"></i> Perfil de Riesgo Detallado
                             </div>
                             <div class="d-flex align-items-center mb-2 small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Asistencias y Actas Previas
+                                <i class="fas fa-check-circle text-success me-2"></i> Resumen de Asistencias
                             </div>
                             <div class="d-flex align-items-center small fw-medium text-navy">
-                                <i class="fas fa-check-circle text-success me-2"></i> Archivo Institucional Completo
+                                <i class="fas fa-check-circle text-success me-2"></i> Recomendaciones IA
                             </div>
                         </div>
-                        <a href="{{ url_for('reportes.historicos') }}" class="btn btn-outline-primary border-2 w-100 fw-bold py-2 shadow-sm mt-auto">
-                            Consultar Archivo <i class="fas fa-history ms-2 small"></i>
+                        <a href="{{ url_for('reportes.individual') }}" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mt-auto">
+                            Expediente Alumno <i class="fas fa-arrow-right ms-2 small"></i>
                         </a>
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
+
+        {% if current_user.rol == 'administrador' %}
+        <!-- Acceso Destacado al Archivo Histórico para Administradores -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-white overflow-hidden">
+                    <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                                <i class="fas fa-archive fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1 text-primary-color">Archivo y Reportes de Ciclos Históricos</h5>
+                                <p class="text-muted small mb-0">Audita notas, asistencias y expedientes cerrados de semestres anteriores sin alterar el ciclo activo actual.</p>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('reportes.historicos') }}" class="btn btn-outline-primary border-2 fw-bold px-4 py-2 shadow-sm">
+                            <i class="fas fa-history me-2"></i> Abrir Archivo Histórico
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Banner Informativo Inferior -->
         <div class="row mt-5">

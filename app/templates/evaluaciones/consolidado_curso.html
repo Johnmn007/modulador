@@ -25,8 +25,16 @@
                     {{ curso.nombre_curso }} ({{ curso.semestre }})
                 </p>
             </div>
-            <div>
-                <a href="{{ url_for('evaluaciones.index') }}" class="btn btn-white hover-lift shadow-sm">
+            <div class="d-flex gap-2 align-items-center">
+                <form method="POST" action="{{ url_for('reportes.generar_notas_curso') }}" target="_blank" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="curso_id" value="{{ curso.id }}">
+                    <input type="hidden" name="formato" value="pdf">
+                    <button type="submit" class="btn btn-danger hover-lift shadow-sm fw-bold">
+                        <i class="fas fa-file-pdf me-2"></i> Descargar Acta PDF Legal
+                    </button>
+                </form>
+                <a href="{{ url_for('evaluaciones.index') }}" class="btn btn-white hover-lift shadow-sm border">
                     <i class="fas fa-arrow-left me-2"></i> Volver a Evaluaciones
                 </a>
             </div>

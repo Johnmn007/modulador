@@ -334,6 +334,204 @@ def generar_asistencia_grupal():
         flash('Ocurrió un error al generar el reporte. Intente de nuevo.', 'danger')
         return redirect(url_for('reportes.asistencias_index'))
 
+# --- RUTAS DE REPORTES DE CALIFICACIONES Y NOTAS ---
+
+@reportes_bp.route('/notas')
+@login_required
+def notas_index():
+    """Pantalla inicial de reportes de calificaciones y actas consolidadas"""
+    from app.services.config_service import get_ciclo_activo
+    from app.models import Ciclo
+
+    ciclo_activo = get_ciclo_activo()
+    filtro_ciclo_id = request.args.get('filtro_ciclo_id', type=int)
+    ciclos = Ciclo.query.order_by(Ciclo.fecha_inicio.desc()).all() if current_user.rol == 'administrador' else []
+
+    if current_user.rol == 'administrador' and filtro_ciclo_id is not None:
+        if filtro_ciclo_id != -1:
+            target_ciclo_id = filtro_ciclo_id
+        else:
+            target_ciclo_id = None
+    else:
+        target_ciclo_id = ciclo_activo.id if ciclo_activo else None
+
+    # Docentes y coordinadores solo ven sus cursos
+    if current_user.rol in ('docente', 'coordinador'):
+        cursos_query = Curso.query.filter_by(activo=True, docente_id=current_user.id)
+        if target_ciclo_id:
+            cursos_query = cursos_query.filter_by(ciclo_id=target_ciclo_id)
+        cursos = cursos_query.order_by(Curso.semestre, Curso.nombre_curso).all()
+
+        estudiantes_ids_query = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+            Curso.docente_id == current_user.id
+        )
+        if target_ciclo_id:
+            estudiantes_ids_query = estudiantes_ids_query.filter(Curso.ciclo_id == target_ciclo_id)
+        estudiantes_ids = estudiantes_ids_query.distinct().subquery()
+
+        estudiantes = Estudiante.query.filter(
+            Estudiante.activo == True,
+            Estudiante.id.in_(estudiantes_ids)
+        ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    else:
+        cursos_query = Curso.query.filter_by(activo=True)
+        if target_ciclo_id:
+            cursos_query = cursos_query.filter_by(ciclo_id=target_ciclo_id)
+        cursos = cursos_query.order_by(Curso.semestre, Curso.nombre_curso).all()
+
+        if target_ciclo_id:
+            estudiantes_ids = db.session.query(Inscripcion.estudiante_id).join(Curso).filter(
+                Curso.ciclo_id == target_ciclo_id
+            ).distinct().subquery()
+            estudiantes = Estudiante.query.filter(
+                Estudiante.activo == True,
+                Estudiante.id.in_(estudiantes_ids)
+            ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        else:
+            estudiantes = Estudiante.query.filter_by(activo=True).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+    
+    config = cargar_configuracion()
+    return render_template(
+        'reportes/notas_filter.html',
+        cursos=cursos,
+        estudiantes=estudiantes,
+        config=config,
+        ciclos=ciclos,
+        ciclo_activo=ciclo_activo,
+        filtro_ciclo_id=filtro_ciclo_id,
+        target_ciclo_id=target_ciclo_id
+    )
+
+@reportes_bp.route('/notas/curso', methods=['POST'])
+@login_required
+def generar_notas_curso():
+    """Genera acta oficial consolidada de calificaciones de un curso"""
+    try:
+        curso_id = request.form.get('curso_id', type=int)
+        formato = request.form.get('formato', 'html')
+        
+        # Verificar pertenencia del curso para docentes y coordinadores
+        if current_user.rol in ('docente', 'coordinador'):
+            curso = Curso.query.get(curso_id)
+            if not curso or not curso_pertenece_al_usuario(curso):
+                flash('No tiene permisos para generar reportes de este curso', 'danger')
+                return redirect(url_for('reportes.notas_index'))
+        
+        generator = ReportGenerator()
+        resultado = generator.generar_reporte_notas_curso(curso_id)
+        
+        reporte = Reporte(
+            tipo_reporte='CURSO_NOTAS',
+            titulo=f'Acta Calificaciones - {resultado["curso"].nombre_curso}',
+            descripcion=f'Acta consolidada oficial de notas con ponderaciones y condición',
+            parametros={'curso_id': curso_id, 'formato': formato},
+            contenido=resultado['html'],
+            usuario_id=current_user.id
+        )
+        db.session.add(reporte)
+        db.session.commit()
+        
+        if formato == 'pdf':
+            try:
+                config = get_pdf_config()
+                options = {
+                    'page-size': 'A4',
+                    'orientation': 'Landscape',
+                    'margin-top': '.5in',
+                    'margin-right': '.5in',
+                    'margin-bottom': '.5in',
+                    'margin-left': '.5in',
+                    'encoding': "UTF-8"
+                }
+                pdf = pdfkit.from_string(resultado['html'], False, configuration=config, options=options)
+                filename = f"acta_notas_{resultado['curso'].codigo_curso}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+                temp.write(pdf)
+                temp.close()
+                return send_file(temp.name, as_attachment=True, download_name=filename)
+            except Exception as e:
+                app_logger.warning(f"Error generando PDF de notas de curso: {str(e)}")
+                flash('Ocurrió un error al generar el PDF. Mostrando vista interactiva.', 'warning')
+                return resultado['html']
+        
+        return render_template('reportes/vista_previa.html', 
+                             contenido=resultado['html'],
+                             titulo=reporte.titulo,
+                             reporte_id=reporte.id,
+                             datetime=datetime)
+    except Exception as e:
+        db.session.rollback()
+        app_logger.error(f"Error generando acta de curso: {str(e)}")
+        flash('Ocurrió un error al generar el reporte de calificaciones.', 'danger')
+        return redirect(url_for('reportes.notas_index'))
+
+@reportes_bp.route('/notas/boleta', methods=['POST'])
+@login_required
+def generar_boleta_estudiante():
+    """Genera boleta oficial de calificaciones de un estudiante"""
+    try:
+        estudiante_id = request.form.get('estudiante_id', type=int)
+        semestre = request.form.get('semestre')
+        formato = request.form.get('formato', 'html')
+        
+        # Validar permisos si es docente
+        if current_user.rol in ('docente', 'coordinador'):
+            inscrito_con_docente = db.session.query(Inscripcion).join(Curso).filter(
+                Inscripcion.estudiante_id == estudiante_id,
+                Curso.docente_id == current_user.id
+            ).first()
+            if not inscrito_con_docente and current_user.rol != 'administrador':
+                flash('No tiene permisos para ver las calificaciones de este estudiante', 'danger')
+                return redirect(url_for('reportes.notas_index'))
+        
+        generator = ReportGenerator()
+        resultado = generator.generar_reporte_boleta_estudiante(estudiante_id, semestre)
+        
+        reporte = Reporte(
+            tipo_reporte='BOLETA_NOTAS',
+            titulo=f'Boleta de Notas - {resultado["estudiante"].apellidos} {resultado["estudiante"].nombres}',
+            descripcion=f'Boleta oficial semestral de calificaciones para el periodo {semestre}',
+            parametros={'estudiante_id': estudiante_id, 'semestre': semestre, 'formato': formato},
+            contenido=resultado['html'],
+            usuario_id=current_user.id
+        )
+        db.session.add(reporte)
+        db.session.commit()
+        
+        if formato == 'pdf':
+            try:
+                config = get_pdf_config()
+                options = {
+                    'page-size': 'A4',
+                    'orientation': 'Portrait',
+                    'margin-top': '.5in',
+                    'margin-right': '.6in',
+                    'margin-bottom': '.5in',
+                    'margin-left': '.6in',
+                    'encoding': "UTF-8"
+                }
+                pdf = pdfkit.from_string(resultado['html'], False, configuration=config, options=options)
+                filename = f"boleta_notas_{resultado['estudiante'].codigo_estudiante}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+                temp.write(pdf)
+                temp.close()
+                return send_file(temp.name, as_attachment=True, download_name=filename)
+            except Exception as e:
+                app_logger.warning(f"Error generando PDF de boleta: {str(e)}")
+                flash('Ocurrió un error al generar el PDF. Mostrando vista interactiva.', 'warning')
+                return resultado['html']
+        
+        return render_template('reportes/vista_previa.html', 
+                             contenido=resultado['html'],
+                             titulo=reporte.titulo,
+                             reporte_id=reporte.id,
+                             datetime=datetime)
+    except Exception as e:
+        db.session.rollback()
+        app_logger.error(f"Error generando boleta de estudiante: {str(e)}")
+        flash('Ocurrió un error al generar la boleta de calificaciones.', 'danger')
+        return redirect(url_for('reportes.notas_index'))
+
 @reportes_bp.route('/historial')
 @login_required
 def historial():

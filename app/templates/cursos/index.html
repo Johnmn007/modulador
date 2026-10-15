@@ -101,6 +101,9 @@
                                         <a href="{{ url_for('cursos.detalle', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Detalle del Curso">
                                             <i class="fas fa-book-reader text-primary"></i>
                                         </a>
+                                        <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Consolidado de Calificaciones">
+                                            <i class="fas fa-chart-line text-info"></i>
+                                        </a>
                                         {% if current_user.rol in ['administrador', 'coordinador'] %}
                                         <a href="{{ url_for('cursos.editar', curso_id=curso.id) }}" class="btn btn-sm btn-white border-end" title="Editar">
                                             <i class="fas fa-edit text-warning"></i>

@@ -89,6 +89,11 @@
                             <i class="fas fa-calendar-check me-2"></i>Asistencia Grupal
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link pb-3" id="notas-tab" data-bs-toggle="tab" data-bs-target="#notas" type="button" role="tab" aria-controls="notas" aria-selected="false">
+                            <i class="fas fa-award me-2"></i>Acta de Calificaciones
+                        </button>
+                    </li>
                 </ul>
             </div>
 
@@ -196,6 +201,38 @@
                         </form>
                     </div>
 
+                    <!-- REPORTE CALIFICACIONES -->
+                    <div class="tab-pane fade" id="notas" role="tabpanel" aria-labelledby="notas-tab">
+                        <form id="formNotas" method="POST" action="{{ url_for('reportes.generar_notas_curso') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="formato" id="formatoNotas" value="html">
+                            
+                            <div class="row g-4">
+                                <div class="col-md-12">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Seleccionar Curso</label>
+                                        <select class="form-select form-select-lg bg-light border-0" name="curso_id" id="cursoNotasSelector" required>
+                                            <option value="">-- Selecciona primero el ciclo arriba --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-4 border-top pt-4">
+                                <div class="col-md-6">
+                                    <button type="button" onclick="submitHistorico('formNotas', 'html')" class="btn btn-outline-primary w-100 py-3 border-2 fw-bold shadow-sm">
+                                        <i class="fas fa-desktop mb-2 d-block fa-lg"></i> Vista Previa HTML
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" onclick="submitHistorico('formNotas', 'pdf')" class="btn btn-danger w-100 py-3 border-0 fw-bold shadow-sm">
+                                        <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> Generar Acta PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -207,7 +244,7 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
-    let selectCiclo, selectEstudiante, selectCurso, selectCategoria;
+    let selectCiclo, selectEstudiante, selectCurso, selectCursoNotas, selectCategoria;
 
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar TomSelects
@@ -231,6 +268,14 @@
             labelField: 'text',
             searchField: 'text',
             placeholder: '-- Selecciona un curso --' 
+        });
+
+        selectCursoNotas = new TomSelect('#cursoNotasSelector', { 
+            create: false, 
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            placeholder: '-- Selecciona un curso para su acta --' 
         });
 
         // Evento de cambio de ciclo
@@ -260,8 +305,10 @@
             // Deshabilitar selects mientras carga
             selectEstudiante.disable();
             selectCurso.disable();
+            selectCursoNotas.disable();
             selectEstudiante.clearOptions();
             selectCurso.clearOptions();
+            selectCursoNotas.clearOptions();
 
             // Fetch estudiantes
             const resEst = await fetch(`/reportes/api/ciclos/${ciclo_id}/estudiantes`);
@@ -284,12 +331,17 @@
                         id: c.id,
                         text: `${c.nombre} (${c.codigo})`
                     });
+                    selectCursoNotas.addOption({
+                        id: c.id,
+                        text: `${c.nombre} (${c.codigo})`
+                    });
                 });
             }
 
             // Habilitar selects
             selectEstudiante.enable();
             selectCurso.enable();
+            selectCursoNotas.enable();
 
         } catch (error) {
             console.error("Error al cargar datos del ciclo:", error);
@@ -307,6 +359,8 @@
             document.getElementById('formatoIndividual').value = formato;
         } else if (formId === 'formAsistencia') {
             document.getElementById('formatoAsistencia').value = formato;
+        } else if (formId === 'formNotas') {
+            document.getElementById('formatoNotas').value = formato;
         }
 
         if (form.checkValidity()) {

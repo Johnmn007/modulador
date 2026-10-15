@@ -101,6 +101,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('reportes.individual') }}"><i class="fas fa-user me-2"></i>Individual</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('reportes.general') }}"><i class="fas fa-users me-2"></i>General de Riesgo</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('reportes.asistencias_index') }}"><i class="fas fa-calendar-check me-2"></i>Asistencias</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reportes.notas_index') }}"><i class="fas fa-award me-2 text-info"></i>Calificaciones y Actas</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('reportes.historial') }}"><i class="fas fa-history me-2"></i>Historial</a></li>
                             {% if current_user.rol == 'administrador' %}

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acta Consolidada de Evaluación - {{ curso.nombre_curso }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --accent: #0284c7;
+            --success: #15803d;
+            --danger: #b91c1c;
+            --warning: #b45309;
+            --border: #cbd5e1;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1e293b;
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            line-height: 1.2;
+        }
+
+        .report-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            display: table;
+            width: 100%;
+        }
+
+        .header-cell {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 16pt;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            margin: 3px 0 0 0;
+            color: var(--accent);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10pt;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--bg-light);
+            font-size: 9pt;
+        }
+
+        .info-row {
+            display: table-row;
+        }
+
+        .info-col {
+            display: table-cell;
+            padding: 6px 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 8pt;
+            margin-right: 4px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 8.5pt;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 5px 6px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background-color: #0f172a;
+            color: white;
+            font-weight: bold;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+
+        .data-table th.eval-col {
+            background-color: #1e293b;
+            font-size: 7.5pt;
+        }
+
+        .data-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .data-table td.student-name {
+            text-align: left;
+            padding-left: 8px;
+            font-weight: 500;
+        }
+
+        .nota-aprobada {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .nota-desaprobada {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .badge-condicion {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 7.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-aprobado {
+            background-color: #dcfce7;
+            color: var(--success);
+        }
+
+        .badge-desaprobado {
+            background-color: #fee2e2;
+            color: var(--danger);
+        }
+
+        .badge-dpi {
+            background-color: #7f1d1d;
+            color: #ffffff;
+        }
+
+        .summary-container {
+            display: table;
+            width: 100%;
+            margin-top: 15px;
+            page-break-inside: avoid;
+        }
+
+        .stats-box {
+            display: table-cell;
+            width: 60%;
+            vertical-align: top;
+        }
+
+        .stats-table {
+            width: 95%;
+            border-collapse: collapse;
+            font-size: 8pt;
+        }
+
+        .stats-table td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 8px;
+        }
+
+        .stats-table tr:nth-child(even) {
+            background-color: #f1f5f9;
+        }
+
+        .signatures-box {
+            display: table-cell;
+            width: 40%;
+            vertical-align: bottom;
+            text-align: center;
+        }
+
+        .signature-line {
+            width: 80%;
+            margin: 40px auto 4px auto;
+            border-top: 1px solid #334155;
+            padding-top: 4px;
+            font-size: 8pt;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 7.5pt;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+            display: table;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabecera Oficial -->
+    <div class="report-header">
+        <div class="header-cell header-title">
+            <h1>Acta Consolidada de Evaluación Académica</h1>
+            <p>SADES — Sistema de Gestión y Seguimiento Estudiantil</p>
+        </div>
+        <div class="header-cell header-meta">
+            <strong>Generado:</strong> {{ fecha_generacion }}<br>
+            <strong>Periodo / Ciclo:</strong> {{ curso.ciclo.codigo_ciclo if curso.ciclo else 'N/A' }}<br>
+            <strong>Semestre Plan:</strong> {{ curso.semestre }}
+        </div>
+    </div>
+
+    <!-- Panel de Información del Curso -->
+    <div class="info-grid">
+        <div class="info-row">
+            <div class="info-col">
+                <span class="info-label">Asignatura:</span> {{ curso.nombre_curso }} ({{ curso.codigo_curso }})
+            </div>
+            <div class="info-col">
+                <span class="info-label">Docente:</span> {{ curso.docente.nombre_completo if curso.docente else 'No asignado' }}
+            </div>
+            <div class="info-col">
+                <span class="info-label">Créditos:</span> {{ curso.creditos }}
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-col">
+                <span class="info-label">Sesiones Programadas:</span> {{ curso.total_sesiones_programadas }} ({{ curso.sesiones_por_semana }} sem)
+            </div>
+            <div class="info-col">
+                <span class="info-label">Límite Faltas Permitidas:</span> {{ curso.max_faltas_permitidas }} (30% DPI)
+            </div>
+            <div class="info-col">
+                <span class="info-label">Nota Mínima Aprobatoria:</span> {{ "%.1f"|format(estadisticas.nota_minima_aprobatoria) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Principal de Calificaciones -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 25px;">N°</th>
+                <th style="width: 80px;">Código</th>
+                <th style="width: 230px;">Apellidos y Nombres</th>
+                {% for ev in evaluaciones %}
+                <th class="eval-col" style="min-width: 45px;">
+                    {{ ev.nombre_evaluacion[:14] }}<br>
+                    <span style="font-size: 6.5pt; opacity: 0.85;">({{ "%.0f"|format(ev.peso) }}%)</span>
+                </th>
+                {% endfor %}
+                <th style="width: 55px; background-color: #0284c7;">Prom.</th>
+                <th style="width: 40px; background-color: #475569;">Faltas</th>
+                <th style="width: 85px;">Condición</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in consolidado %}
+            <tr>
+                <td>{{ item.num }}</td>
+                <td style="font-family: monospace; font-weight: bold;">{{ item.codigo }}</td>
+                <td class="student-name">{{ item.nombre_completo }}</td>
+                {% for n in item.notas %}
+                <td>
+                    {% if n is not none %}
+                        <span class="{% if n >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                            {{ "%.1f"|format(n) }}
+                        </span>
+                    {% else %}
+                        <span style="color: #94a3b8;">-</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+                <td style="background-color: #f1f5f9; font-weight: bold; font-size: 9.5pt;">
+                    <span class="{% if item.promedio >= estadisticas.nota_minima_aprobatoria and item.condicion != 'DPI' %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                        {{ "%.1f"|format(item.promedio) }}
+                    </span>
+                </td>
+                <td style="font-size: 8pt; {% if item.faltas > item.max_faltas %}color: var(--danger); font-weight: bold;{% endif %}">
+                    {{ item.faltas }}
+                </td>
+                <td>
+                    {% if item.condicion == 'APROBADO' %}
+                        <span class="badge-condicion badge-aprobado">Aprobado</span>
+                    {% elif item.condicion == 'DPI' %}
+                        <span class="badge-condicion badge-dpi" title="Desaprobado por Inasistencia">DPI (>30%)</span>
+                    {% else %}
+                        <span class="badge-condicion badge-desaprobado">Desaprobado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{{ 6 + evaluaciones|length }}" style="padding: 20px; color: #64748b;">
+                    No existen estudiantes inscritos activos en este curso.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Bloque de Estadísticas y Firmas -->
+    <div class="summary-container">
+        <div class="stats-box">
+            <table class="stats-table">
+                <tr>
+                    <td colspan="4" style="background-color: #e2e8f0; font-weight: bold; text-transform: uppercase;">
+                        Resumen Estadístico del Rendimiento Académico
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Total Inscritos:</strong> {{ estadisticas.total_estudiantes }}</td>
+                    <td><strong>Promedio del Aula:</strong> {{ "%.2f"|format(estadisticas.promedio_aula) }}</td>
+                    <td><strong>Nota Máxima:</strong> {{ "%.1f"|format(estadisticas.nota_maxima) }}</td>
+                    <td><strong>Nota Mínima:</strong> {{ "%.1f"|format(estadisticas.nota_minima) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Aprobados:</strong> <span class="nota-aprobada">{{ estadisticas.aprobados }} ({{ estadisticas.porcentaje_aprobados }}%)</span></td>
+                    <td><strong>Desaprobados:</strong> <span class="nota-desaprobada">{{ estadisticas.desaprobados }} ({{ estadisticas.porcentaje_desaprobados }}%)</span></td>
+                    <td colspan="2"><strong>Retirados por DPI (>30% faltas):</strong> <span style="color: var(--danger); font-weight: bold;">{{ estadisticas.dpi }}</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="signatures-box">
+            <div class="signature-line">
+                {{ curso.docente.nombre_completo if curso.docente else 'Docente Responsable' }}<br>
+                Firma del Docente
+            </div>
+            <div class="signature-line" style="margin-top: 35px;">
+                Dirección Académica / Coordinación<br>
+                Sello y V°B° Institucional
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <div style="display: table-cell; text-align: left;">
+            Documento Oficial emitido por SADES. Escala Vigesimal 0-20. Condición DPI según reglamento de inasistencias (>30%).
+        </div>
+        <div style="display: table-cell; text-align: right;">
+            Página 1 de 1
+        </div>
+    </div>
+
+</body>
+</html>
