@@ -781,34 +781,55 @@ def procesar_masiva():
                 flash('No tiene permisos para registrar notas en este curso', 'danger')
                 return redirect(url_for('evaluaciones.registro_masivo'))
         
-        # Obtener todas las inscripciones del curso
+        # Obtener todas las inscripciones activas del curso
         inscripciones = Inscripcion.query.join(Estudiante).filter(
-            Inscripcion.curso_id == evaluacion.curso_id
+            Inscripcion.curso_id == evaluacion.curso_id,
+            Inscripcion.estado == 'ACTIVO'
         ).order_by(Estudiante.apellidos, Estudiante.nombres).all()
+        
+        # 1. Leer valores ingresados en el formulario
+        valores_form = {}
+        hay_notas_en_form = False
         
         for inscripcion in inscripciones:
             nota_valor = request.form.get(f'nota_{inscripcion.id}')
-            if nota_valor:
-                # Convertir a float, manejar vacío
+            if nota_valor is not None and str(nota_valor).strip() != '':
                 try:
-                    nota_float = float(nota_valor)
+                    nota_float = float(str(nota_valor).strip())
+                    nota_float = max(0.0, min(20.0, nota_float))
+                    valores_form[inscripcion.id] = nota_float
+                    hay_notas_en_form = True
                 except ValueError:
-                    continue
+                    valores_form[inscripcion.id] = None
+            else:
+                valores_form[inscripcion.id] = None
+
+        # 2. Verificar si la evaluación ya tiene notas previas en BD o si se ingresó al menos una nota ahora
+        notas_previas_count = Nota.query.filter_by(evaluacion_id=evaluacion_id).filter(Nota.nota.isnot(None)).count()
+        evaluacion_ya_tiene_notas = hay_notas_en_form or (notas_previas_count > 0)
+
+        # 3. Guardar las calificaciones (asignando 0.0 a los vacíos si la evaluación ya tiene notas)
+        for inscripcion in inscripciones:
+            nota_final = valores_form.get(inscripcion.id)
+            
+            # Si el campo vino vacío pero la evaluación ya tiene notas, asignar 0.0 para evitar falsos aprobados
+            if nota_final is None and evaluacion_ya_tiene_notas:
+                nota_final = 0.0
                 
-                # Buscar si ya existe
+            if nota_final is not None:
                 nota_obj = Nota.query.filter_by(
                     inscripcion_id=inscripcion.id,
                     evaluacion_id=evaluacion_id
                 ).first()
                 
                 if nota_obj:
-                    nota_obj.nota = nota_float
+                    nota_obj.nota = nota_final
                     nota_obj.fecha_registro = datetime.now(timezone.utc).date()
                 else:
                     nueva_nota = Nota(
                         inscripcion_id=inscripcion.id,
                         evaluacion_id=evaluacion_id,
-                        nota=nota_float,
+                        nota=nota_final,
                         fecha_registro=datetime.now(timezone.utc).date()
                     )
                     db.session.add(nueva_nota)
@@ -820,7 +841,7 @@ def procesar_masiva():
         for inscripcion in inscripciones:
             SeguimientoService.recalcular_estudiante(inscripcion.estudiante_id)
             
-        flash('Calificaciones registradas y riesgo actualizado exitosamente', 'success')
+        flash('Calificaciones registradas y riesgo actualizado exitosamente. Las casillas vacías de evaluaciones calificadas se guardaron con nota 0.', 'success')
         return redirect(url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion_id))
         
     except Exception as e:
@@ -865,7 +886,10 @@ def consolidado_curso(curso_id):
     
     # Mapeo: {inscripcion_id: {evaluacion_id: nota_float}}
     notas_dict = {}
+    evaluaciones_con_nota = set()
     for n in notas_raw:
+        if n.nota is not None:
+            evaluaciones_con_nota.add(n.evaluacion_id)
         if n.inscripcion_id not in notas_dict:
             notas_dict[n.inscripcion_id] = {}
         notas_dict[n.inscripcion_id][n.evaluacion_id] = float(n.nota) if n.nota is not None else None
@@ -884,6 +908,10 @@ def consolidado_curso(curso_id):
             
             for ev in il.evaluaciones:
                 nota_val = notas_alumno.get(ev.id)
+                # Si la evaluación ya tiene notas registradas en el curso y este alumno no tiene nota, asignar 0.0
+                if nota_val is None and ev.id in evaluaciones_con_nota:
+                    nota_val = 0.0
+                    
                 notas_il.append({'evaluacion': ev, 'nota': nota_val})
                 if nota_val is not None and ev.peso:
                     suma_pond_il += nota_val * float(ev.peso)

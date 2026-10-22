@@ -151,3 +151,116 @@ class TestIndicadoresLogroEvaluaciones(BaseTestCase):
         self.assertLessEqual(est_data['promedio'], 20.0)
         self.assertGreaterEqual(est_data['promedio'], 0.0)
         self.assertEqual(est_data['condicion'], 'APROBADO')
+
+    def test_procesar_masiva_asigna_cero_a_vacios(self):
+        """Verifica que procesar_masiva asigne 0.0 a las casillas vacías cuando al menos un alumno fue calificado"""
+        # Crear segundo estudiante en el curso
+        est2 = Estudiante(
+            codigo_estudiante="20260002",
+            nombres="Maria",
+            apellidos="Lopez",
+            email="maria.lopez@test.com",
+            activo=True
+        )
+        db.session.add(est2)
+        db.session.commit()
+
+        ins2 = Inscripcion(
+            estudiante_id=est2.id,
+            curso_id=self.curso.id,
+            estado="ACTIVO"
+        )
+        db.session.add(ins2)
+        db.session.commit()
+
+        ev = Evaluacion(
+            curso_id=self.curso.id,
+            indicador_id=self.il1.id,
+            nombre_evaluacion="Prueba Masiva",
+            tipo_evaluacion="PARCIAL",
+            peso=50.0
+        )
+        db.session.add(ev)
+        db.session.commit()
+
+        self.login('docente_test@test.com', 'password123')
+
+        # Se califica al estudiante 1 con 18.0 y se deja vacío al estudiante 2
+        response = self.client.post('/evaluaciones/notas/masiva/procesar', data={
+            'evaluacion_id': ev.id,
+            f'nota_{self.inscripcion.id}': '18.0',
+            f'nota_{ins2.id}': ''  # Vacio
+        }, follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verificar notas guardadas en BD
+        nota1 = Nota.query.filter_by(inscripcion_id=self.inscripcion.id, evaluacion_id=ev.id).first()
+        nota2 = Nota.query.filter_by(inscripcion_id=ins2.id, evaluacion_id=ev.id).first()
+
+        self.assertIsNotNone(nota1)
+        self.assertEqual(nota1.nota, 18.0)
+        self.assertIsNotNone(nota2)
+        self.assertEqual(nota2.nota, 0.0, "La nota vacia debe haberse guardado como 0.0")
+
+    def test_evitar_falso_aprobado_alumnos_con_notas_vacias_en_reporte(self):
+        """Verifica que un estudiante con notas vacias en evaluaciones ya evaluadas reciba 0 y no un falso aprobado"""
+        # Crear segundo estudiante
+        est2 = Estudiante(
+            codigo_estudiante="20260003",
+            nombres="Carlos",
+            apellidos="Garcia",
+            email="carlos.garcia@test.com",
+            activo=True
+        )
+        db.session.add(est2)
+        db.session.commit()
+
+        ins2 = Inscripcion(
+            estudiante_id=est2.id,
+            curso_id=self.curso.id,
+            estado="ACTIVO"
+        )
+        db.session.add(ins2)
+        db.session.commit()
+
+        # IL-01 tiene 2 evaluaciones de 50%
+        ev1 = Evaluacion(
+            curso_id=self.curso.id,
+            indicador_id=self.il1.id,
+            nombre_evaluacion="Eval 1",
+            tipo_evaluacion="PARCIAL",
+            peso=50.0
+        )
+        ev2 = Evaluacion(
+            curso_id=self.curso.id,
+            indicador_id=self.il1.id,
+            nombre_evaluacion="Eval 2",
+            tipo_evaluacion="PARCIAL",
+            peso=50.0
+        )
+        db.session.add_all([ev1, ev2])
+        db.session.commit()
+
+        # Estudiante 2 rinde ambas evaluaciones (15 y 16)
+        n_est2_ev1 = Nota(inscripcion_id=ins2.id, evaluacion_id=ev1.id, nota=15.0)
+        n_est2_ev2 = Nota(inscripcion_id=ins2.id, evaluacion_id=ev2.id, nota=16.0)
+        
+        # Estudiante 1 solo rindió Eval 1 (obtuvo 20), pero NUNCA rindió Eval 2 (está vacía/sin nota en BD)
+        n_est1_ev1 = Nota(inscripcion_id=self.inscripcion.id, evaluacion_id=ev1.id, nota=20.0)
+
+        db.session.add_all([n_est2_ev1, n_est2_ev2, n_est1_ev1])
+        db.session.commit()
+
+        rep = ReportGenerator()
+        resultado = rep.generar_reporte_notas_curso(self.curso.id)
+        consolidado = resultado['consolidado']
+
+        est1_rep = next(c for c in consolidado if c['codigo'] == self.estudiante.codigo_estudiante)
+        bloque_il1 = est1_rep['bloques_il'][0]
+
+        # Dado que Eval 2 ya fue evaluada en el curso, el Estudiante 1 debe tener 0.0 en Eval 2
+        # Promedio IL-01 = 20*0.5 + 0*0.5 = 10.0 (DESAPROBADO), NO 20.0 (falso aprobado)
+        self.assertEqual(bloque_il1['promedio_il'], 10.0)
+        self.assertEqual(bloque_il1['notas'][1], 0.0)
+

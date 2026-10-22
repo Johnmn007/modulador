@@ -20,6 +20,9 @@
                 <div class="stats-pill bg-light border px-3 py-1 rounded-pill small fw-bold d-none d-md-block">
                     <span class="text-muted">Aprobados:</span> <span id="aprobados_real" class="text-success">0</span>
                 </div>
+                <button type="button" class="btn btn-outline-warning btn-sm fw-bold shadow-sm" onclick="rellenarVaciosConCero()" title="Asigna 0 a todos los alumnos que no tengan nota">
+                    <i class="fas fa-magic me-1"></i> Asignar 0 a vacíos
+                </button>
                 <a href="{{ url_for('evaluaciones.registro_masivo', curso_id=evaluacion.curso_id) }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-times me-1"></i> Salir
                 </a>
@@ -92,7 +95,8 @@
             <div class="sticky-bottom-panel py-4 mt-4 bg-white border-top shadow-lg">
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="text-muted small">
-                        <i class="fas fa-info-circle me-1"></i> Se guardarán solo los campos completados. Las notas existentes serán actualizadas.
+                        <i class="fas fa-info-circle me-1 text-primary"></i> 
+                        <strong>Atención:</strong> Si la evaluación ya tiene notas o califica a estudiantes, las casillas que queden vacías se guardarán automáticamente con <strong>nota 0</strong> para evitar inconsistencias y falsos aprobados.
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm hover-lift">
                         <i class="fas fa-save me-2"></i> Guardar Calificaciones
@@ -185,6 +189,29 @@ function calculateGlobalStats() {
     const avg = count > 0 ? (total / count).toFixed(1) : "0.0";
     document.getElementById('promedio_real').innerText = avg;
     document.getElementById('aprobados_real').innerText = approved + "/" + count;
+}
+
+function rellenarVaciosConCero() {
+    const inputs = document.querySelectorAll('.grade-input');
+    let mod = 0;
+    inputs.forEach(input => {
+        if (!input.value || input.value.trim() === '') {
+            input.value = '0';
+            const id = input.name.split('_')[1];
+            updateGradeStatus(input, id);
+            mod++;
+        }
+    });
+    calculateGlobalStats();
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Casillas actualizadas',
+            text: `Se asignó calificación 0 a ${mod} estudiante(s) que estaban sin calificar. Recuerda pulsar "Guardar Calificaciones" para confirmar.`,
+            timer: 3000,
+            showConfirmButton: false
+        });
+    }
 }
 
 // Inicializar al cargar

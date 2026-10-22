@@ -314,7 +314,10 @@ class ReportGenerator:
         ).all()
         
         notas_dict = {}
+        evaluaciones_con_nota = set()
         for n in notas_raw:
+            if n.nota is not None:
+                evaluaciones_con_nota.add(n.evaluacion_id)
             if n.inscripcion_id not in notas_dict:
                 notas_dict[n.inscripcion_id] = {}
             notas_dict[n.inscripcion_id][n.evaluacion_id] = float(n.nota) if n.nota is not None else None
@@ -349,6 +352,10 @@ class ReportGenerator:
                 
                 for ev in il.evaluaciones:
                     val = notas_alumno.get(ev.id)
+                    # Si la evaluación ya tiene notas registradas en el curso y este alumno no tiene nota, asignar 0.0
+                    if val is None and ev.id in evaluaciones_con_nota:
+                        val = 0.0
+                        
                     notas_list.append(val)
                     notas_il.append(val)
                     if val is not None and ev.peso:
@@ -496,6 +503,12 @@ class ReportGenerator:
                 indicadores = [il1]
                 
             notas_alumno = {n.evaluacion_id: float(n.nota) for n in ins.notas if n.nota is not None}
+            evaluaciones_con_nota_curso = set(
+                n[0] for n in db.session.query(Nota.evaluacion_id).join(Inscripcion).filter(
+                    Inscripcion.curso_id == curso.id,
+                    Nota.nota.isnot(None)
+                ).distinct().all()
+            )
             
             desglose_indicadores = []
             desglose_notas_plano = []
@@ -508,6 +521,9 @@ class ReportGenerator:
                 
                 for ev in il.evaluaciones:
                     nota_val = notas_alumno.get(ev.id)
+                    if nota_val is None and ev.id in evaluaciones_con_nota_curso:
+                        nota_val = 0.0
+                        
                     ev_dict = {
                         'evaluacion': ev.nombre_evaluacion,
                         'peso': ev.peso,
