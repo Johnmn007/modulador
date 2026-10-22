@@ -264,3 +264,80 @@ class TestIndicadoresLogroEvaluaciones(BaseTestCase):
         self.assertEqual(bloque_il1['promedio_il'], 10.0)
         self.assertEqual(bloque_il1['notas'][1], 0.0)
 
+    def test_editar_peso_indicador_logro(self):
+        """Verifica que un docente pueda editar el peso y datos de un indicador de logro"""
+        self.login('docente_test@test.com', 'password123')
+        
+        response = self.client.post(f'/evaluaciones/indicador/{self.il1.id}/editar', data={
+            'codigo': 'IL-01-MOD',
+            'nombre': 'Indicador Modificado',
+            'peso': '40.0',
+            'orden': '1'
+        }, follow_redirects=True)
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # Verificar en base de datos
+        db.session.refresh(self.il1)
+        self.assertEqual(self.il1.codigo, 'IL-01-MOD')
+        self.assertEqual(self.il1.nombre, 'Indicador Modificado')
+        self.assertAlmostEqual(float(self.il1.peso), 40.0)
+
+    def test_actualizar_pesos_masivo_y_recalculo_consolidado(self):
+        """Verifica que la actualización en bloque de pesos de indicadores afecte el promedio final"""
+        self.login('docente_test@test.com', 'password123')
+        
+        # Crear evaluaciones con notas en IL1 e IL2
+        ev1 = Evaluacion(curso_id=self.curso.id, indicador_id=self.il1.id, nombre_evaluacion='Ev 1', peso=100.0)
+        ev2 = Evaluacion(curso_id=self.curso.id, indicador_id=self.il2.id, nombre_evaluacion='Ev 2', peso=100.0)
+        db.session.add_all([ev1, ev2])
+        db.session.commit()
+
+        # Alumno saca 10 en IL1 y 20 en IL2
+        n1 = Nota(inscripcion_id=self.inscripcion.id, evaluacion_id=ev1.id, nota=10.0)
+        n2 = Nota(inscripcion_id=self.inscripcion.id, evaluacion_id=ev2.id, nota=20.0)
+        db.session.add_all([n1, n2])
+        db.session.commit()
+
+        # Con pesos iniciales (50% y 50%): promedio final = 10*0.5 + 20*0.5 = 15.0
+        rep = ReportGenerator()
+        res_ini = rep.generar_reporte_notas_curso(self.curso.id)
+        self.assertEqual(res_ini['consolidado'][0]['promedio'], 15.0)
+
+        # Ahora actualizamos los pesos: IL1 = 20% y IL2 = 80%
+        response = self.client.post(f'/evaluaciones/curso/{self.curso.id}/indicadores/actualizar-pesos', data={
+            f'peso_{self.il1.id}': '20.0',
+            f'peso_{self.il2.id}': '80.0'
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verificar nuevos pesos en BD
+        db.session.refresh(self.il1)
+        db.session.refresh(self.il2)
+        self.assertAlmostEqual(float(self.il1.peso), 20.0)
+        self.assertAlmostEqual(float(self.il2.peso), 80.0)
+
+        # Con nuevos pesos: promedio final = 10*(0.2) + 20*(0.8) = 2.0 + 16.0 = 18.0
+        res_nuevo = rep.generar_reporte_notas_curso(self.curso.id)
+        self.assertEqual(res_nuevo['consolidado'][0]['promedio'], 18.0)
+
+    def test_eliminar_indicador_con_y_sin_evaluaciones(self):
+        """Verifica que solo se puedan eliminar indicadores que no tengan evaluaciones asociadas"""
+        self.login('docente_test@test.com', 'password123')
+
+        # il1 tiene una evaluación asignada
+        ev = Evaluacion(curso_id=self.curso.id, indicador_id=self.il1.id, nombre_evaluacion='Ev IL1', peso=100.0)
+        db.session.add(ev)
+        db.session.commit()
+
+        # Intentar eliminar il1 -> Debe fallar / rechazar la eliminación
+        resp_bloqueado = self.client.post(f'/evaluaciones/indicador/{self.il1.id}/eliminar', follow_redirects=True)
+        self.assertEqual(resp_bloqueado.status_code, 200)
+        self.assertIsNotNone(IndicadorLogro.query.get(self.il1.id))
+
+        # il2 no tiene evaluaciones -> Debe eliminarse exitosamente
+        resp_exito = self.client.post(f'/evaluaciones/indicador/{self.il2.id}/eliminar', follow_redirects=True)
+        self.assertEqual(resp_exito.status_code, 200)
+        self.assertIsNone(IndicadorLogro.query.get(self.il2.id))
+
+

@@ -153,6 +153,9 @@
                                         <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=evaluacion.curso_id) }}" class="btn btn-sm btn-white border-end" title="Consolidado de Notas del Curso">
                                             <i class="fas fa-chart-line text-info"></i>
                                         </a>
+                                        <a href="{{ url_for('evaluaciones.gestionar_indicadores', curso_id=evaluacion.curso_id) }}" class="btn btn-sm btn-white border-end" title="Indicadores y Pesos del Curso">
+                                            <i class="fas fa-layer-group text-primary"></i>
+                                        </a>
                                         <a href="{{ url_for('evaluaciones.editar_evaluacion', evaluacion_id=evaluacion.id) }}" class="btn btn-sm btn-white border-end" title="Editar">
                                             <i class="fas fa-edit text-warning"></i>
                                         </a>

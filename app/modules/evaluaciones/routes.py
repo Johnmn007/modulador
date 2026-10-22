@@ -1017,4 +1017,131 @@ def gestionar_indicadores(curso_id):
                          curso=curso,
                          indicadores=indicadores,
                          suma_pesos_il=suma_pesos_il,
-                         form=form)
+                         form=form)
+
+@evaluaciones_bp.route('/indicador/<int:indicador_id>/editar', methods=['POST'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def editar_indicador(indicador_id):
+    """Editar código, nombre, peso y orden de un Indicador de Logro"""
+    indicador = IndicadorLogro.query.get_or_404(indicador_id)
+    curso = indicador.curso
+    
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para modificar este indicador', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+            
+    codigo = request.form.get('codigo', '').strip().upper()
+    nombre = request.form.get('nombre', '').strip()
+    peso_str = request.form.get('peso', '').strip()
+    orden_str = request.form.get('orden', '').strip()
+    
+    if not codigo or not nombre or not peso_str:
+        flash('Código, nombre y peso son campos obligatorios', 'danger')
+        return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id))
+        
+    try:
+        peso_val = float(peso_str)
+        if peso_val <= 0 or peso_val > 100:
+            flash('El peso debe estar entre 0.1% y 100%', 'danger')
+            return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id))
+    except ValueError:
+        flash('El peso ingresado no es válido', 'danger')
+        return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id))
+        
+    # Verificar que el código no colisione con otro indicador del mismo curso
+    conflicto = IndicadorLogro.query.filter(
+        IndicadorLogro.curso_id == curso.id,
+        IndicadorLogro.codigo == codigo,
+        IndicadorLogro.id != indicador.id
+    ).first()
+    if conflicto:
+        flash(f'Ya existe otro indicador con el código {codigo} en este curso', 'danger')
+        return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id))
+        
+    try:
+        orden_val = int(orden_str) if orden_str else indicador.orden
+    except ValueError:
+        orden_val = indicador.orden
+
+    indicador.codigo = codigo
+    indicador.nombre = nombre
+    indicador.peso = round(peso_val, 2)
+    indicador.orden = orden_val
+    
+    db.session.commit()
+    flash(f'Indicador {indicador.codigo} actualizado correctamente. Peso asignado: {indicador.peso}%.', 'success')
+    return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id))
+
+@evaluaciones_bp.route('/curso/<int:curso_id>/indicadores/actualizar-pesos', methods=['POST'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def actualizar_pesos_indicadores(curso_id):
+    """Actualización masiva de pesos para todos los Indicadores de Logro de un curso"""
+    curso = Curso.query.get_or_404(curso_id)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para modificar este curso', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+            
+    indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id).all()
+    if not indicadores:
+        flash('El curso no tiene indicadores para actualizar', 'warning')
+        return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+        
+    suma_pesos = 0.0
+    actualizaciones = []
+    
+    for il in indicadores:
+        campo = f"peso_{il.id}"
+        peso_str = request.form.get(campo, '').strip()
+        if not peso_str:
+            flash(f'Debe ingresar un peso válido para el indicador {il.codigo}', 'danger')
+            return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+        try:
+            peso_val = float(peso_str)
+            if peso_val < 0 or peso_val > 100:
+                flash(f'El peso del indicador {il.codigo} debe estar entre 0% y 100%', 'danger')
+                return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+            suma_pesos += peso_val
+            actualizaciones.append((il, round(peso_val, 2)))
+        except ValueError:
+            flash(f'Valor de peso no válido para {il.codigo}', 'danger')
+            return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+            
+    for il, nuevo_peso in actualizaciones:
+        il.peso = nuevo_peso
+        
+    db.session.commit()
+    
+    if abs(suma_pesos - 100.0) < 0.05:
+        flash('¡Pesos actualizados exitosamente! La suma total es 100%.', 'success')
+    else:
+        flash(f'Pesos actualizados. La suma actual es {suma_pesos:.1f}%. Se recomienda que la suma sea 100%.', 'warning')
+        
+    return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+
+@evaluaciones_bp.route('/indicador/<int:indicador_id>/eliminar', methods=['POST'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def eliminar_indicador(indicador_id):
+    """Eliminar un Indicador de Logro si no tiene evaluaciones asociadas"""
+    indicador = IndicadorLogro.query.get_or_404(indicador_id)
+    curso_id = indicador.curso_id
+    curso = indicador.curso
+    
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para modificar este curso', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+            
+    if indicador.evaluaciones:
+        flash(f'No se puede eliminar el indicador {indicador.codigo} porque tiene {len(indicador.evaluaciones)} evaluación(es) asociada(s). Primero elimine o reasigne sus evaluaciones.', 'danger')
+        return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+        
+    codigo = indicador.codigo
+    db.session.delete(indicador)
+    db.session.commit()
+    flash(f'Indicador {codigo} eliminado correctamente.', 'success')
+    return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
