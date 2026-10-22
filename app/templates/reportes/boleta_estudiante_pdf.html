@@ -271,15 +271,32 @@
                     <span style="font-size: 8pt; color: #64748b; font-weight: normal;">Código: {{ item.curso.codigo_curso }} | Nivel {{ item.curso.semestre }}</span>
                 </td>
                 <td style="text-align: center; font-weight: bold;">{{ item.creditos }}</td>
-                <td style="font-size: 8pt;">
-                    {% for ev in item.evaluaciones %}
-                        <span style="color: #475569;">{{ ev.evaluacion[:8] }}:</span> 
-                        <strong class="{% if ev.nota is not none and ev.nota >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% elif ev.nota is not none %}nota-desaprobada{% else %}{% endif %}">
-                            {{ "%.1f"|format(ev.nota) if ev.nota is not none else '-' }}
-                        </strong>{% if not loop.last %} &bull; {% endif %}
+                <td style="font-size: 8pt; vertical-align: middle;">
+                    {% if item.indicadores %}
+                        {% for blk in item.indicadores %}
+                            <div style="margin-bottom: 3px;">
+                                <strong style="color: #0369a1;">{{ blk.indicador.codigo }}:</strong>
+                                {% for ev in blk.evaluaciones %}
+                                    <span style="color: #475569;">{{ ev.evaluacion[:7] }}:</span> 
+                                    <strong class="{% if ev.nota is not none and ev.nota >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% elif ev.nota is not none %}nota-desaprobada{% else %}{% endif %}">
+                                        {{ "%.1f"|format(ev.nota) if ev.nota is not none else '-' }}
+                                    </strong>{% if not loop.last %} &bull; {% endif %}
+                                {% endfor %}
+                                <span style="background-color: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 7.5pt;">
+                                    [P: {{ "%.1f"|format(blk.promedio_il) if blk.promedio_il is not none else '-' }}]
+                                </span>
+                            </div>
+                        {% endfor %}
                     {% else %}
-                        <span style="color: #94a3b8;">Sin notas parciales registradas</span>
-                    {% endfor %}
+                        {% for ev in item.evaluaciones %}
+                            <span style="color: #475569;">{{ ev.evaluacion[:8] }}:</span> 
+                            <strong class="{% if ev.nota is not none and ev.nota >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% elif ev.nota is not none %}nota-desaprobada{% else %}{% endif %}">
+                                {{ "%.1f"|format(ev.nota) if ev.nota is not none else '-' }}
+                            </strong>{% if not loop.last %} &bull; {% endif %}
+                        {% else %}
+                            <span style="color: #94a3b8;">Sin notas parciales registradas</span>
+                        {% endfor %}
+                    {% endif %}
                 </td>
                 <td style="text-align: center; background-color: #f8fafc; font-size: 11pt; font-weight: bold;">
                     <span class="{% if item.promedio >= estadisticas.nota_minima_aprobatoria and item.condicion != 'DPI' %}nota-aprobada{% else %}nota-desaprobada{% endif %}">

@@ -2,10 +2,10 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from . import evaluaciones_bp
-from app.models import Evaluacion, Curso, Nota, Inscripcion, Estudiante
+from app.models import Evaluacion, Curso, Nota, Inscripcion, Estudiante, IndicadorLogro
 from app.extensions import db
 from app.decorators import roles_required, curso_pertenece_al_usuario
-from .forms import EvaluacionForm, NotaForm
+from .forms import EvaluacionForm, NotaForm, IndicadorForm
 from datetime import datetime, timezone
 
 # ===== RUTAS PARA EVALUACIONES =====
@@ -98,17 +98,38 @@ def index():
 @login_required
 @roles_required('administrador', 'coordinador', 'docente')
 def crear_evaluacion():
-    """Crear nueva evaluación"""
-    form = EvaluacionForm()
+    """Crear nueva evaluación con validación estricta de 100% por Indicador de Logro"""
+    curso_id_param = request.form.get('curso_id', type=int) or request.args.get('curso_id', type=int)
+    form = EvaluacionForm(curso_id=curso_id_param)
     
-    # Para GET request, establecer fecha actual como default
+    # Si viene curso_id, asegurar indicadores y actualizar choices
+    if curso_id_param:
+        form.curso_id.data = curso_id_param
+        indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id_param).order_by(IndicadorLogro.orden).all()
+        if not indicadores:
+            il1 = IndicadorLogro(curso_id=curso_id_param, codigo='IL-01', nombre='Indicador de Logro 01', peso=33.33, orden=1)
+            il2 = IndicadorLogro(curso_id=curso_id_param, codigo='IL-02', nombre='Indicador de Logro 02', peso=33.33, orden=2)
+            il3 = IndicadorLogro(curso_id=curso_id_param, codigo='IL-03', nombre='Indicador de Logro 03', peso=33.34, orden=3)
+            db.session.add_all([il1, il2, il3])
+            db.session.commit()
+            indicadores = [il1, il2, il3]
+            
+        form.indicador_id.choices = [
+            (il.id, f"{il.codigo}: {il.nombre} ({il.peso_disponible:.1f}% disponible)")
+            for il in indicadores
+        ]
+    
+    # Para GET request, establecer fecha actual y sugerir peso disponible
     if request.method == 'GET':
         form.fecha_creacion.data = datetime.now(timezone.utc).date()
-        form.peso.data = 100.0  # Valor por defecto
-        # Preseleccionar el curso si viene como parámetro (desde detalle del curso)
-        curso_id = request.args.get('curso_id', type=int)
-        if curso_id:
-            form.curso_id.data = curso_id
+        if form.indicador_id.choices:
+            primer_il = IndicadorLogro.query.get(form.indicador_id.choices[0][0])
+            if primer_il and primer_il.peso_disponible > 0:
+                form.peso.data = min(primer_il.peso_disponible, 20.0)
+            else:
+                form.peso.data = 20.0
+        else:
+            form.peso.data = 20.0
     
     if form.validate_on_submit():
         try:
@@ -119,6 +140,20 @@ def crear_evaluacion():
                     flash('No tiene permisos para crear evaluaciones en este curso', 'danger')
                     return redirect(url_for('evaluaciones.index'))
             
+            # Validar que el indicador pertenece al curso
+            indicador = IndicadorLogro.query.get(form.indicador_id.data)
+            if not indicador or indicador.curso_id != form.curso_id.data:
+                flash('El Indicador de Logro no es válido para este curso', 'danger')
+                return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id_param, curso_preselected=bool(curso_id_param))
+
+            # REGLA FUNDAMENTAL: Las evaluaciones de un indicador no deben sobrepasar el 100%
+            peso_nuevo = float(form.peso.data)
+            peso_actual = indicador.suma_pesos_evaluaciones
+            if (peso_actual + peso_nuevo) > 100.001:
+                disp = max(100.0 - peso_actual, 0.0)
+                flash(f'¡No permitido! La suma de evaluaciones en el indicador {indicador.codigo} no puede sobrepasar el 100%. Actualmente tiene acumulado {peso_actual:.1f}%, por lo que el peso máximo disponible es {disp:.1f}%.', 'danger')
+                return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id_param, curso_preselected=bool(curso_id_param))
+            
             # Verificar si ya existe la evaluación en el mismo curso
             evaluacion_existente = Evaluacion.query.filter_by(
                 nombre_evaluacion=form.nombre_evaluacion.data,
@@ -127,11 +162,12 @@ def crear_evaluacion():
             
             if evaluacion_existente:
                 flash('Ya existe una evaluación con este nombre en el mismo curso', 'danger')
-                return render_template('evaluaciones/crear_evaluacion.html', form=form)
+                return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id_param, curso_preselected=bool(curso_id_param))
             
-            # Crear nueva evaluación
+            # Crear nueva evaluación vinculada a su Indicador de Logro
             nueva_evaluacion = Evaluacion(
                 curso_id=form.curso_id.data,
+                indicador_id=form.indicador_id.data,
                 nombre_evaluacion=form.nombre_evaluacion.data,
                 tipo_evaluacion=form.tipo_evaluacion.data,
                 peso=form.peso.data,
@@ -141,16 +177,15 @@ def crear_evaluacion():
             db.session.add(nueva_evaluacion)
             db.session.commit()
             
-            flash('Evaluación creada exitosamente', 'success')
+            flash(f'Evaluación asignada exitosamente al {indicador.codigo} con peso de {form.peso.data}%. (Total acumulado en indicador: {indicador.suma_pesos_evaluaciones:.1f}%)', 'success')
             return redirect(url_for('evaluaciones.index'))
             
         except Exception as e:
             db.session.rollback()
-            flash('Ocurrió un error al crear la evaluación. Intente de nuevo.', 'danger')
+            flash(f'Ocurrió un error al crear la evaluación: {str(e)}', 'danger')
     
     # Mantener curso_id disponible para el template (para el botón "Volver al curso")
-    curso_id = request.args.get('curso_id', type=int)
-    return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id, curso_preselected=bool(curso_id))
+    return render_template('evaluaciones/crear_evaluacion.html', form=form, curso_id=curso_id_param, curso_preselected=bool(curso_id_param))
 
 @evaluaciones_bp.route('/<int:evaluacion_id>')
 @login_required
@@ -194,7 +229,7 @@ def detalle_evaluacion(evaluacion_id):
 @login_required
 @roles_required('administrador', 'coordinador', 'docente')
 def editar_evaluacion(evaluacion_id):
-    """Editar evaluación existente"""
+    """Editar evaluación existente con validación estricta de 100% por Indicador de Logro"""
     evaluacion = Evaluacion.query.get_or_404(evaluacion_id)
     
     # Verificar pertenencia del curso (docentes y coordinadores)
@@ -205,8 +240,31 @@ def editar_evaluacion(evaluacion_id):
     
     form = EvaluacionForm(obj=evaluacion)
     
+    # Cargar indicadores del curso
+    indicadores = IndicadorLogro.query.filter_by(curso_id=evaluacion.curso_id).order_by(IndicadorLogro.orden).all()
+    form.indicador_id.choices = [
+        (il.id, f"{il.codigo}: {il.nombre} ({il.peso_disponible + (float(evaluacion.peso) if evaluacion.indicador_id == il.id else 0.0):.1f}% disponible)")
+        for il in indicadores
+    ]
+    if request.method == 'GET' and evaluacion.indicador_id:
+        form.indicador_id.data = evaluacion.indicador_id
+    
     if form.validate_on_submit():
         try:
+            # Validar indicador
+            indicador = IndicadorLogro.query.get(form.indicador_id.data)
+            if not indicador or indicador.curso_id != form.curso_id.data:
+                flash('El Indicador de Logro seleccionado no pertenece al curso seleccionado', 'danger')
+                return render_template('evaluaciones/editar_evaluacion.html', form=form, evaluacion=evaluacion)
+                
+            # REGLA: Suma de pesos en el indicador no puede sobrepasar el 100% (excluyendo la evaluación actual)
+            peso_nuevo = float(form.peso.data)
+            peso_actual_otros = sum(float(e.peso or 0) for e in indicador.evaluaciones if e.id != evaluacion.id)
+            if (peso_actual_otros + peso_nuevo) > 100.001:
+                disp = max(100.0 - peso_actual_otros, 0.0)
+                flash(f'¡No permitido! La suma de evaluaciones en el indicador {indicador.codigo} no debe sobrepasar el 100%. Actualmente tiene acumulado {peso_actual_otros:.1f}%, por lo que el peso máximo disponible es {disp:.1f}%.', 'danger')
+                return render_template('evaluaciones/editar_evaluacion.html', form=form, evaluacion=evaluacion)
+
             # Verificar si ya existe la evaluación (excluyendo la actual)
             evaluacion_existente = Evaluacion.query.filter(
                 Evaluacion.nombre_evaluacion == form.nombre_evaluacion.data,
@@ -220,6 +278,7 @@ def editar_evaluacion(evaluacion_id):
             
             # Actualizar evaluación
             evaluacion.curso_id = form.curso_id.data
+            evaluacion.indicador_id = form.indicador_id.data
             evaluacion.nombre_evaluacion = form.nombre_evaluacion.data
             evaluacion.tipo_evaluacion = form.tipo_evaluacion.data
             evaluacion.peso = form.peso.data
@@ -773,8 +832,8 @@ def procesar_masiva():
 @login_required
 @roles_required('administrador', 'coordinador', 'docente')
 def consolidado_curso(curso_id):
-    """Consolidado de notas cruzadas para un curso"""
-    from app.models import Curso, Evaluacion, Inscripcion, Nota, Estudiante
+    """Consolidado de notas organizado por Indicadores de Logro con promedios parciales y final"""
+    from app.models import Curso, Evaluacion, Inscripcion, Nota, Estudiante, IndicadorLogro
     
     curso = Curso.query.get_or_404(curso_id)
     
@@ -785,7 +844,15 @@ def consolidado_curso(curso_id):
             flash('No tiene permisos para ver el consolidado de este curso', 'danger')
             return redirect(url_for('evaluaciones.index'))
             
-    evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(Evaluacion.fecha_creacion).all()
+    # Obtener Indicadores de Logro del curso
+    indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id).order_by(IndicadorLogro.orden, IndicadorLogro.id).all()
+    
+    # Si el curso no tiene indicadores, auto-crear IL-01
+    if not indicadores:
+        il1 = IndicadorLogro(curso_id=curso_id, codigo='IL-01', nombre='Indicador de Logro 01', peso=100.0, orden=1)
+        db.session.add(il1)
+        db.session.commit()
+        indicadores = [il1]
     
     inscripciones = Inscripcion.query.join(Estudiante).filter(
         Inscripcion.curso_id == curso_id,
@@ -796,42 +863,130 @@ def consolidado_curso(curso_id):
         Inscripcion.curso_id == curso_id
     ).all()
     
-    # Mapeo: {inscripcion_id: {evaluacion_id: nota_obj}}
+    # Mapeo: {inscripcion_id: {evaluacion_id: nota_float}}
     notas_dict = {}
     for n in notas_raw:
         if n.inscripcion_id not in notas_dict:
             notas_dict[n.inscripcion_id] = {}
-        notas_dict[n.inscripcion_id][n.evaluacion_id] = n
+        notas_dict[n.inscripcion_id][n.evaluacion_id] = float(n.nota) if n.nota is not None else None
         
     consolidado = []
     
     for ins in inscripciones:
         notas_alumno = notas_dict.get(ins.id, {})
-        suma_ponderada = 0
-        suma_pesos_evaluados = 0
-        notas_list = []
+        bloques_il = []
+        promedios_para_final = []
         
-        for eval_obj in evaluaciones:
-            nota_obj = notas_alumno.get(eval_obj.id)
-            if nota_obj is not None:
-                valor = nota_obj.nota
-                # Calcular promedio ponderado sobre el total de pesos o asumiendo suma=100
-                suma_ponderada += valor * (eval_obj.peso / 100)
-                notas_list.append(valor)
+        for il in indicadores:
+            notas_il = []
+            suma_pond_il = 0.0
+            suma_pesos_il = 0.0
+            
+            for ev in il.evaluaciones:
+                nota_val = notas_alumno.get(ev.id)
+                notas_il.append({'evaluacion': ev, 'nota': nota_val})
+                if nota_val is not None and ev.peso:
+                    suma_pond_il += nota_val * float(ev.peso)
+                    suma_pesos_il += float(ev.peso)
+                    
+            if suma_pesos_il > 0:
+                promedio_il = round(suma_pond_il / suma_pesos_il, 1)
             else:
-                notas_list.append(None)
+                notas_validas = [n['nota'] for n in notas_il if n['nota'] is not None]
+                promedio_il = round(sum(notas_validas) / len(notas_validas), 1) if notas_validas else None
                 
-        # Dependiendo si la suma de pesos es 100, la suma ponderada ya es el promedio
-        promedio = suma_ponderada
-        
+            bloques_il.append({
+                'indicador': il,
+                'notas': notas_il,
+                'promedio_il': promedio_il
+            })
+            
+            if promedio_il is not None:
+                peso_il = float(il.peso or 0)
+                promedios_para_final.append((promedio_il, peso_il))
+                
+        # Promedio final ponderado de los indicadores de logro
+        if promedios_para_final:
+            suma_pesos_final = sum(peso for _, peso in promedios_para_final)
+            if suma_pesos_final > 0:
+                promedio_final = round(sum(p * w for p, w in promedios_para_final) / suma_pesos_final, 1)
+            else:
+                promedio_final = round(sum(p for p, _ in promedios_para_final) / len(promedios_para_final), 1)
+        else:
+            promedio_final = 0.0
+            
         consolidado.append({
             'estudiante': f"{ins.estudiante.apellidos} {ins.estudiante.nombres}",
             'codigo': ins.estudiante.codigo_estudiante,
-            'notas': notas_list,
-            'promedio': promedio
+            'bloques_il': bloques_il,
+            'promedio': promedio_final
         })
         
     return render_template('evaluaciones/consolidado_curso.html',
                          curso=curso,
-                         evaluaciones=evaluaciones,
-                         consolidado=consolidado)
+                         indicadores=indicadores,
+                         consolidado=consolidado)
+
+@evaluaciones_bp.route('/api/cursos/<int:curso_id>/indicadores')
+@login_required
+def api_curso_indicadores(curso_id):
+    """API para obtener los indicadores de un curso con sus pesos y disponibilidad"""
+    indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id).order_by(IndicadorLogro.orden).all()
+    if not indicadores:
+        il1 = IndicadorLogro(curso_id=curso_id, codigo='IL-01', nombre='Indicador de Logro 01', peso=33.33, orden=1)
+        il2 = IndicadorLogro(curso_id=curso_id, codigo='IL-02', nombre='Indicador de Logro 02', peso=33.33, orden=2)
+        il3 = IndicadorLogro(curso_id=curso_id, codigo='IL-03', nombre='Indicador de Logro 03', peso=33.34, orden=3)
+        db.session.add_all([il1, il2, il3])
+        db.session.commit()
+        indicadores = [il1, il2, il3]
+        
+    return jsonify([{
+        'id': il.id,
+        'codigo': il.codigo,
+        'nombre': il.nombre,
+        'peso_il': float(il.peso),
+        'peso_acumulado': il.suma_pesos_evaluaciones,
+        'peso_disponible': il.peso_disponible,
+        'evaluaciones_count': len(il.evaluaciones)
+    } for il in indicadores])
+
+@evaluaciones_bp.route('/curso/<int:curso_id>/indicadores', methods=['GET', 'POST'])
+@login_required
+@roles_required('administrador', 'coordinador', 'docente')
+def gestionar_indicadores(curso_id):
+    """Panel de gestión de Indicadores de Logro de una Unidad Didáctica"""
+    curso = Curso.query.get_or_404(curso_id)
+    if current_user.rol in ('docente', 'coordinador'):
+        if not curso_pertenece_al_usuario(curso):
+            flash('No tiene permisos para modificar este curso', 'danger')
+            return redirect(url_for('evaluaciones.index'))
+            
+    form = IndicadorForm()
+    
+    if request.method == 'POST' and form.validate_on_submit():
+        codigo_clean = form.codigo.data.strip().upper()
+        existente = IndicadorLogro.query.filter_by(curso_id=curso_id, codigo=codigo_clean).first()
+        if existente:
+            flash(f'Ya existe un indicador con el código {codigo_clean} en este curso', 'danger')
+        else:
+            indicadores_act = IndicadorLogro.query.filter_by(curso_id=curso_id).all()
+            nuevo = IndicadorLogro(
+                curso_id=curso_id,
+                codigo=codigo_clean,
+                nombre=form.nombre.data.strip(),
+                peso=form.peso.data,
+                orden=int(form.orden.data or len(indicadores_act) + 1)
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            flash(f'Indicador {nuevo.codigo} agregado correctamente.', 'success')
+            return redirect(url_for('evaluaciones.gestionar_indicadores', curso_id=curso_id))
+            
+    indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id).order_by(IndicadorLogro.orden).all()
+    suma_pesos_il = sum(float(il.peso) for il in indicadores)
+    
+    return render_template('evaluaciones/gestionar_indicadores.html',
+                         curso=curso,
+                         indicadores=indicadores,
+                         suma_pesos_il=suma_pesos_il,
+                         form=form)

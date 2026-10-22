@@ -61,6 +61,7 @@ class Curso(db.Model):
     # Relaciones
     inscripciones = db.relationship('Inscripcion', backref='curso', lazy=True)
     evaluaciones = db.relationship('Evaluacion', backref='curso', lazy=True)
+    indicadores = db.relationship('IndicadorLogro', backref='curso', lazy=True, order_by='IndicadorLogro.orden', cascade='all, delete-orphan')
     docente = db.relationship('Usuario', backref='cursos_asignados', lazy=True)
     
     __table_args__ = (
@@ -232,11 +233,43 @@ class DiaNoLectivo(db.Model):
     def __repr__(self):
         return f'<DiaNoLectivo {self.fecha} - {self.tipo}: {self.motivo}>'
 
+class IndicadorLogro(db.Model):
+    __tablename__ = 'indicadores_logro'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    curso_id = db.Column(db.Integer, db.ForeignKey('cursos.id'), nullable=False)
+    codigo = db.Column(db.String(20), nullable=False)  # e.g., 'IL-01', 'IL-02'
+    nombre = db.Column(db.String(200), nullable=False)
+    peso = db.Column(db.Numeric(5, 2), default=0.0, nullable=False)  # Peso dentro del curso (suma 100%)
+    orden = db.Column(db.Integer, default=1, nullable=False)
+    fecha_creacion = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
+    
+    # Relaciones
+    evaluaciones = db.relationship('Evaluacion', backref='indicador', lazy=True, order_by='Evaluacion.id')
+    
+    __table_args__ = (
+        db.UniqueConstraint('curso_id', 'codigo', name='uq_curso_indicador'),
+    )
+    
+    @property
+    def suma_pesos_evaluaciones(self):
+        """Suma actual de los pesos de las evaluaciones pertenecientes a este indicador"""
+        return sum(float(e.peso or 0) for e in self.evaluaciones)
+        
+    @property
+    def peso_disponible(self):
+        """Peso restante disponible para nuevas evaluaciones (hasta 100%)"""
+        return max(100.0 - self.suma_pesos_evaluaciones, 0.0)
+    
+    def __repr__(self):
+        return f'<IndicadorLogro {self.codigo}: {self.nombre} (Curso {self.curso_id})>'
+
 class Evaluacion(db.Model):
     __tablename__ = 'evaluaciones'
     
     id = db.Column(db.Integer, primary_key=True)
     curso_id = db.Column(db.Integer, db.ForeignKey('cursos.id'), nullable=False)
+    indicador_id = db.Column(db.Integer, db.ForeignKey('indicadores_logro.id'), nullable=True)
     nombre_evaluacion = db.Column(db.String(100), nullable=False)
     tipo_evaluacion = db.Column(db.String(50))
     peso = db.Column(db.Numeric(5, 2), default=100.0)

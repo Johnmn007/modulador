@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 from flask import render_template
-from app.models import Estudiante, SeguimientoRiesgo, Curso, Inscripcion, Nota, Asistencia, Evaluacion
+from app.models import Estudiante, SeguimientoRiesgo, Curso, Inscripcion, Nota, Asistencia, Evaluacion, IndicadorLogro
 from app.extensions import db
 from app.services.config_service import cargar_configuracion
 
@@ -273,17 +273,36 @@ class ReportGenerator:
         }
 
     def generar_reporte_notas_curso(self, curso_id):
-        """Genera acta oficial consolidada de calificaciones para un curso"""
+        """Genera acta oficial consolidada de calificaciones para un curso organizada por Indicadores de Logro"""
         curso = Curso.query.get_or_404(curso_id)
         config = cargar_configuracion()
         nota_minima = float(config.get('nota_minima_aprobatoria', 12.5))
         
-        # Evaluaciones del curso ordenadas por fecha/creación
-        evaluaciones = Evaluacion.query.filter_by(curso_id=curso_id).order_by(
-            Evaluacion.fecha_creacion.asc(),
-            Evaluacion.id.asc()
+        # Obtener Indicadores de Logro del curso ordenados
+        indicadores = IndicadorLogro.query.filter_by(curso_id=curso_id).order_by(
+            IndicadorLogro.orden.asc(),
+            IndicadorLogro.id.asc()
         ).all()
         
+        if not indicadores:
+            il1 = IndicadorLogro(curso_id=curso_id, codigo='IL-01', nombre='Indicador de Logro 01', peso=100.0, orden=1)
+            db.session.add(il1)
+            db.session.commit()
+            indicadores = [il1]
+            
+        # Lista plana de todas las evaluaciones agrupadas por indicador
+        evaluaciones = []
+        for il in indicadores:
+            evaluaciones.extend(il.evaluaciones)
+            
+        # Si hubiera evaluaciones huérfanas sin indicador, asignarlas al primer indicador
+        evals_huerfanas = Evaluacion.query.filter_by(curso_id=curso_id, indicador_id=None).all()
+        for ev in evals_huerfanas:
+            ev.indicador_id = indicadores[0].id
+            evaluaciones.append(ev)
+        if evals_huerfanas:
+            db.session.commit()
+            
         # Estudiantes inscritos activos
         inscripciones = Inscripcion.query.filter_by(curso_id=curso_id, estado='ACTIVO').join(
             Estudiante
@@ -320,17 +339,46 @@ class ReportGenerator:
         for idx, ins in enumerate(inscripciones, 1):
             notas_alumno = notas_dict.get(ins.id, {})
             notas_list = []
-            suma_ponderada = 0.0
+            bloques_il = []
+            promedios_para_final = []
             
-            for ev in evaluaciones:
-                val = notas_alumno.get(ev.id)
-                notas_list.append(val)
-                if val is not None:
-                    peso_frac = float(ev.peso) / 100.0 if ev.peso else 0.0
-                    suma_ponderada += val * peso_frac
-            
-            # Promedio ponderado final
-            promedio_final = round(suma_ponderada, 1) if evaluaciones else 0.0
+            for il in indicadores:
+                notas_il = []
+                suma_pond_il = 0.0
+                suma_pesos_il = 0.0
+                
+                for ev in il.evaluaciones:
+                    val = notas_alumno.get(ev.id)
+                    notas_list.append(val)
+                    notas_il.append(val)
+                    if val is not None and ev.peso:
+                        suma_pond_il += val * float(ev.peso)
+                        suma_pesos_il += float(ev.peso)
+                        
+                if suma_pesos_il > 0:
+                    promedio_il = round(suma_pond_il / suma_pesos_il, 1)
+                else:
+                    notas_validas = [n for n in notas_il if n is not None]
+                    promedio_il = round(sum(notas_validas) / len(notas_validas), 1) if notas_validas else None
+                    
+                bloques_il.append({
+                    'indicador': il,
+                    'notas': notas_il,
+                    'promedio_il': promedio_il
+                })
+                
+                if promedio_il is not None:
+                    promedios_para_final.append((promedio_il, float(il.peso or 0)))
+                    
+            # Promedio ponderado final de los Indicadores de Logro
+            if promedios_para_final:
+                suma_pesos_final = sum(peso for _, peso in promedios_para_final)
+                if suma_pesos_final > 0:
+                    promedio_final = round(sum(p * w for p, w in promedios_para_final) / suma_pesos_final, 1)
+                else:
+                    promedio_final = round(sum(p for p, _ in promedios_para_final) / len(promedios_para_final), 1)
+            else:
+                promedio_final = 0.0
             
             faltas = inasistencias_dict.get(ins.id, 0)
             es_dpi = (faltas > max_faltas) if (max_faltas is not None and curso.total_sesiones_programadas > 0) else False
@@ -354,6 +402,7 @@ class ReportGenerator:
                 'codigo': ins.estudiante.codigo_estudiante,
                 'nombre_completo': f"{ins.estudiante.apellidos}, {ins.estudiante.nombres}",
                 'notas': notas_list,
+                'bloques_il': bloques_il,
                 'promedio': promedio_final,
                 'faltas': faltas,
                 'max_faltas': max_faltas,
@@ -383,6 +432,7 @@ class ReportGenerator:
         html_content = render_template(
             'reportes/notas_curso_pdf.html',
             curso=curso,
+            indicadores=indicadores,
             evaluaciones=evaluaciones,
             consolidado=consolidado,
             estadisticas=estadisticas,
@@ -393,6 +443,7 @@ class ReportGenerator:
         return {
             'html': html_content,
             'curso': curso,
+            'indicadores': indicadores,
             'evaluaciones': evaluaciones,
             'consolidado': consolidado,
             'estadisticas': estadisticas
@@ -437,27 +488,60 @@ class ReportGenerator:
             curso = ins.curso
             creditos = curso.creditos or 3
             
-            evaluaciones = Evaluacion.query.filter_by(curso_id=curso.id).order_by(
-                Evaluacion.fecha_creacion.asc(),
-                Evaluacion.id.asc()
-            ).all()
-            
+            indicadores = IndicadorLogro.query.filter_by(curso_id=curso.id).order_by(IndicadorLogro.orden, IndicadorLogro.id).all()
+            if not indicadores:
+                il1 = IndicadorLogro(curso_id=curso.id, codigo='IL-01', nombre='Indicador de Logro 01', peso=100.0, orden=1)
+                db.session.add(il1)
+                db.session.commit()
+                indicadores = [il1]
+                
             notas_alumno = {n.evaluacion_id: float(n.nota) for n in ins.notas if n.nota is not None}
             
-            desglose_notas = []
-            suma_ponderada = 0.0
+            desglose_indicadores = []
+            desglose_notas_plano = []
+            promedios_para_final = []
             
-            for ev in evaluaciones:
-                nota_val = notas_alumno.get(ev.id)
-                desglose_notas.append({
-                    'evaluacion': ev.nombre_evaluacion,
-                    'peso': ev.peso,
-                    'nota': nota_val
-                })
-                if nota_val is not None:
-                    suma_ponderada += nota_val * (float(ev.peso) / 100.0 if ev.peso else 0.0)
+            for il in indicadores:
+                desglose_evs = []
+                suma_pond_il = 0.0
+                suma_pesos_il = 0.0
+                
+                for ev in il.evaluaciones:
+                    nota_val = notas_alumno.get(ev.id)
+                    ev_dict = {
+                        'evaluacion': ev.nombre_evaluacion,
+                        'peso': ev.peso,
+                        'nota': nota_val
+                    }
+                    desglose_evs.append(ev_dict)
+                    desglose_notas_plano.append(ev_dict)
+                    if nota_val is not None and ev.peso:
+                        suma_pond_il += nota_val * float(ev.peso)
+                        suma_pesos_il += float(ev.peso)
+                        
+                if suma_pesos_il > 0:
+                    promedio_il = round(suma_pond_il / suma_pesos_il, 1)
+                else:
+                    valid_notes = [e['nota'] for e in desglose_evs if e['nota'] is not None]
+                    promedio_il = round(sum(valid_notes) / len(valid_notes), 1) if valid_notes else None
                     
-            promedio_curso = round(suma_ponderada, 1) if evaluaciones else 0.0
+                desglose_indicadores.append({
+                    'indicador': il,
+                    'evaluaciones': desglose_evs,
+                    'promedio_il': promedio_il
+                })
+                
+                if promedio_il is not None:
+                    promedios_para_final.append((promedio_il, float(il.peso or 0)))
+                    
+            if promedios_para_final:
+                s_pesos_f = sum(w for _, w in promedios_para_final)
+                if s_pesos_f > 0:
+                    promedio_curso = round(sum(p * w for p, w in promedios_para_final) / s_pesos_f, 1)
+                else:
+                    promedio_curso = round(sum(p for p, _ in promedios_para_final) / len(promedios_para_final), 1)
+            else:
+                promedio_curso = 0.0
             
             inasistencias = sum(1 for a in ins.asistencias if not a.presente and not a.justificado)
             max_faltas = curso.max_faltas_permitidas
@@ -479,7 +563,8 @@ class ReportGenerator:
             boleta_cursos.append({
                 'curso': curso,
                 'creditos': creditos,
-                'evaluaciones': desglose_notas,
+                'indicadores': desglose_indicadores,
+                'evaluaciones': desglose_notas_plano,
                 'promedio': promedio_curso,
                 'inasistencias': inasistencias,
                 'condicion': condicion

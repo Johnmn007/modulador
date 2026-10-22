@@ -119,6 +119,26 @@
             font-size: 7.5pt;
         }
 
+        .data-table th.il-header {
+            background-color: #0369a1;
+            color: white;
+            font-size: 7.5pt;
+            letter-spacing: 0.3px;
+        }
+
+        .data-table th.subtotal-col {
+            background-color: #0284c7;
+            color: white;
+            font-size: 7.5pt;
+        }
+
+        .data-table td.col-subtotal {
+            background-color: #f0f9ff;
+            font-weight: bold;
+            border-left: 1px solid #cbd5e1;
+            border-right: 1px solid #cbd5e1;
+        }
+
         .data-table tr:nth-child(even) {
             background-color: #f8fafc;
         }
@@ -264,18 +284,30 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 25px;">N°</th>
-                <th style="width: 80px;">Código</th>
-                <th style="width: 230px;">Apellidos y Nombres</th>
-                {% for ev in evaluaciones %}
-                <th class="eval-col" style="min-width: 45px;">
-                    {{ ev.nombre_evaluacion[:14] }}<br>
-                    <span style="font-size: 6.5pt; opacity: 0.85;">({{ "%.0f"|format(ev.peso) }}%)</span>
+                <th rowspan="2" style="width: 25px;">N°</th>
+                <th rowspan="2" style="width: 75px;">Código</th>
+                <th rowspan="2" style="width: 190px;">Apellidos y Nombres</th>
+                {% for il in indicadores %}
+                <th colspan="{{ il.evaluaciones|length + 1 }}" class="il-header">
+                    {{ il.codigo }}{% if il.nombre %} - {{ il.nombre[:18] }}{% endif %} ({{ "%.0f"|format(il.peso) }}%)
                 </th>
                 {% endfor %}
-                <th style="width: 55px; background-color: #0284c7;">Prom.</th>
-                <th style="width: 40px; background-color: #475569;">Faltas</th>
-                <th style="width: 85px;">Condición</th>
+                <th rowspan="2" style="width: 50px; background-color: #0f172a;">Prom. Final</th>
+                <th rowspan="2" style="width: 35px; background-color: #475569;">Faltas</th>
+                <th rowspan="2" style="width: 80px;">Condición</th>
+            </tr>
+            <tr>
+                {% for il in indicadores %}
+                    {% for ev in il.evaluaciones %}
+                    <th class="eval-col" style="min-width: 40px;">
+                        {{ ev.nombre_evaluacion[:10] }}<br>
+                        <span style="font-size: 6.5pt; opacity: 0.85;">({{ "%.0f"|format(ev.peso) }}%)</span>
+                    </th>
+                    {% endfor %}
+                    <th class="subtotal-col" style="min-width: 42px;">
+                        Prom.<br>{{ il.codigo }}
+                    </th>
+                {% endfor %}
             </tr>
         </thead>
         <tbody>
@@ -284,16 +316,27 @@
                 <td>{{ item.num }}</td>
                 <td style="font-family: monospace; font-weight: bold;">{{ item.codigo }}</td>
                 <td class="student-name">{{ item.nombre_completo }}</td>
-                {% for n in item.notas %}
-                <td>
-                    {% if n is not none %}
-                        <span class="{% if n >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
-                            {{ "%.1f"|format(n) }}
-                        </span>
-                    {% else %}
-                        <span style="color: #94a3b8;">-</span>
-                    {% endif %}
-                </td>
+                {% for bloque in item.bloques_il %}
+                    {% for n in bloque.notas %}
+                    <td>
+                        {% if n is not none %}
+                            <span class="{% if n >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                                {{ "%.1f"|format(n) }}
+                            </span>
+                        {% else %}
+                            <span style="color: #94a3b8;">-</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="col-subtotal">
+                        {% if bloque.promedio_il is not none %}
+                            <span class="{% if bloque.promedio_il >= estadisticas.nota_minima_aprobatoria %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
+                                {{ "%.1f"|format(bloque.promedio_il) }}
+                            </span>
+                        {% else %}
+                            <span style="color: #94a3b8;">-</span>
+                        {% endif %}
+                    </td>
                 {% endfor %}
                 <td style="background-color: #f1f5f9; font-weight: bold; font-size: 9.5pt;">
                     <span class="{% if item.promedio >= estadisticas.nota_minima_aprobatoria and item.condicion != 'DPI' %}nota-aprobada{% else %}nota-desaprobada{% endif %}">
@@ -315,7 +358,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="{{ 6 + evaluaciones|length }}" style="padding: 20px; color: #64748b;">
+                <td colspan="40" style="padding: 20px; color: #64748b;">
                     No existen estudiantes inscritos activos en este curso.
                 </td>
             </tr>

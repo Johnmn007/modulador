@@ -52,22 +52,38 @@
                 <div class="table-responsive border-top-0 border-start-0 border-end-0 border-radius-0" style="border-radius: 0;">
                     <table class="table align-middle mb-0">
                         <thead>
-                            <tr>
-                                <th class="text-start ps-4" style="min-width: 250px;">Estudiante</th>
-                                <th class="text-center" style="min-width: 120px;">Código</th>
-                                {% for evaluacion in evaluaciones %}
-                                <th class="text-center" style="min-width: 150px;">
-                                    <div class="text-truncate fw-bold text-dark" title="{{ evaluacion.nombre_evaluacion }}">
-                                        <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="text-decoration-none text-dark hover-lift d-inline-block">
-                                            {{ evaluacion.nombre_evaluacion }}
-                                        </a>
+                            <tr class="bg-light">
+                                <th rowspan="2" class="text-start ps-4 align-middle" style="min-width: 250px;">Estudiante</th>
+                                <th rowspan="2" class="text-center align-middle" style="min-width: 110px;">Código</th>
+                                {% for il in indicadores %}
+                                <th colspan="{{ il.evaluaciones|length + 1 }}" class="text-center py-2 border-start border-end" style="background-color: #f8fafc;">
+                                    <div class="d-flex justify-content-center align-items-center gap-2">
+                                        <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-bold">{{ il.codigo }}</span>
+                                        <span class="fw-bold text-dark">{{ il.nombre }}</span>
+                                        <span class="badge bg-light text-muted border small">{{ "%.1f"|format(il.peso) }}%</span>
                                     </div>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary mt-2 rounded-pill px-3 py-1">{{ "%.1f"|format(evaluacion.peso) }}%</span>
                                 </th>
                                 {% endfor %}
-                                <th class="text-center bg-light" style="min-width: 120px; border-left: 1px solid #E2E8F0;">
-                                    <span class="text-primary fw-bold">Promedio Final</span>
+                                <th rowspan="2" class="text-center bg-light align-middle text-primary fw-bold" style="min-width: 130px; border-left: 2px solid #0284c7;">
+                                    <span class="fs-6">Promedio Final</span>
                                 </th>
+                            </tr>
+                            <tr class="text-muted small text-uppercase">
+                                {% for il in indicadores %}
+                                    {% for evaluacion in il.evaluaciones %}
+                                    <th class="text-center border-start" style="min-width: 120px; font-size: 7.5pt;">
+                                        <div class="text-truncate fw-bold text-dark" title="{{ evaluacion.nombre_evaluacion }}">
+                                            <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=evaluacion.id) }}" class="text-decoration-none text-dark hover-lift d-inline-block">
+                                                {{ evaluacion.nombre_evaluacion }}
+                                            </a>
+                                        </div>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary mt-1 rounded-pill px-2 py-0">{{ "%.0f"|format(evaluacion.peso) }}%</span>
+                                    </th>
+                                    {% endfor %}
+                                    <th class="text-center text-primary fw-bold" style="min-width: 90px; background-color: #e0f2fe; border-left: 1px solid #bae6fd; border-end: 2px solid #cbd5e1;">
+                                        Prom. {{ il.codigo }}
+                                    </th>
+                                {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
@@ -75,27 +91,38 @@
                             <tr>
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-secondary fw-bold" style="width: 40px; height: 40px; font-size: 0.8rem;">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-secondary fw-bold" style="width: 36px; height: 36px; font-size: 0.8rem;">
                                             {{ fila.estudiante[:2]|upper }}
                                         </div>
                                         <div class="fw-bold text-dark">{{ fila.estudiante }}</div>
                                     </div>
                                 </td>
-                                <td class="text-center text-muted small fw-medium">
+                                <td class="text-center text-muted small fw-medium" style="font-family: monospace;">
                                     {{ fila.codigo }}
                                 </td>
-                                {% for nota in fila.notas %}
-                                <td class="text-center">
-                                    {% if nota is not none %}
-                                        <span class="fw-bold {% if nota >= 12.5 %}text-success{% else %}text-danger{% endif %} px-2 py-1 rounded-3 {% if nota >= 12.5 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
-                                            {{ "%.1f"|format(nota) }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted opacity-50"><i class="fas fa-minus"></i></span>
-                                    {% endif %}
-                                </td>
+                                {% for b in fila.bloques_il %}
+                                    {% for item_n in b.notas %}
+                                    <td class="text-center border-start">
+                                        {% if item_n.nota is not none %}
+                                            <span class="fw-bold {% if item_n.nota >= 12.5 %}text-success bg-success{% else %}text-danger bg-danger{% endif %} bg-opacity-10 px-2 py-1 rounded-3">
+                                                {{ "%.1f"|format(item_n.nota) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted opacity-50"><i class="fas fa-minus"></i></span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                    <td class="text-center fw-bold border-start border-end" style="background-color: #f0f9ff;">
+                                        {% if b.promedio_il is not none %}
+                                            <span class="{% if b.promedio_il >= 12.5 %}text-primary{% else %}text-danger{% endif %}">
+                                                {{ "%.1f"|format(b.promedio_il) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted opacity-50">-</span>
+                                        {% endif %}
+                                    </td>
                                 {% endfor %}
-                                <td class="text-center bg-light" style="border-left: 1px solid #F1F5F9;">
+                                <td class="text-center bg-light" style="border-left: 2px solid #0284c7;">
                                     <div class="h5 fw-bold mb-0 {% if fila.promedio >= 12.5 %}text-success{% else %}text-danger{% endif %}">
                                         {{ "%.1f"|format(fila.promedio) }}
                                     </div>

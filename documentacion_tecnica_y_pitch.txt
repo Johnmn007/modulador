@@ -1,0 +1,84 @@
+================================================================================
+              DOCUMENTACIÓN TÉCNICA Y GUION DE PRESENTACIÓN
+                 SISTEMA DE SEGUIMIENTO ESTUDIANTIL
+================================================================================
+
+1. ASPECTOS TÉCNICOS Y ARQUITECTURA
+--------------------------------------------------------------------------------
+El Sistema de Seguimiento Estudiantil es una aplicación web transaccional y analítica diseñada bajo la arquitectura Modelo-Vista-Controlador (MVC). Su objetivo principal es monitorear el desempeño académico y la asistencia de los estudiantes para detectar de manera temprana aquellos que se encuentran en riesgo de deserción o reprobación.
+
+Tecnologías utilizadas y su idoneidad:
+- Backend (Python + Flask): Se eligió Flask por ser un micro-framework ligero y altamente escalable en Python. Permite la rápida creación de rutas y el manejo de servicios complejos (como el motor de cálculo de riesgos) de forma modular. Python es ideal gracias a sus capacidades nativas para cálculos numéricos y procesamiento de datos.
+- Base de Datos (PostgreSQL): Es un motor relacional robusto y seguro. Se optó por PostgreSQL porque maneja de forma eficiente relaciones complejas (Estudiantes -> Inscripciones -> Cursos -> Evaluaciones/Asistencias) y permite guardar tipos de datos avanzados como JSON para los factores de riesgo calculados.
+- ORM (SQLAlchemy): Abstrae las consultas SQL complejas a código Python seguro, evitando inyecciones SQL y permitiendo migraciones de esquema fluidas.
+- Frontend (HTML5, Bootstrap 5, JavaScript puro): Para una UI responsive y amigable. El uso de DataTables.js permite manejar cientos de registros en memoria con búsquedas, filtrados y paginación en tiempo real.
+- Infraestructura (Railway): Plataforma PaaS moderna elegida por su capacidad de CI/CD (integración y despliegue continuo) vinculada directamente al repositorio Git.
+
+2. CÓMO FUNCIONA EL MOTOR DE CÁLCULO DE RIESGO
+--------------------------------------------------------------------------------
+El motor (RiesgoCalculatorV2) evalúa multidimensionalmente al estudiante combinando su pasado y su presente. Genera un "Puntaje de Riesgo" global de 0 a 1, donde valores más cercanos a 1 indican mayor peligro. 
+
+Las variables configurables (ponderaciones) del algoritmo son 4:
+
+A) Rendimiento Académico (Peso por defecto: 35%):
+   Es el factor más crítico. Calcula el promedio general ponderado de las evaluaciones que el estudiante ha rendido en el semestre actual. Escala su nivel de alarma si los promedios parciales bajan del umbral aprobatorio estricto (12.5).
+
+B) Asistencia Actual (Peso por defecto: 25%):
+   Identifica si el estudiante ha dejado de asistir y cómo eso afecta cursos clave. Se calcula contando la inasistencia. Si la inasistencia se cruza con un promedio de curso menor a 12.5, se penaliza aún más fuerte (riesgo incrementado en 0.2 adicionales).
+
+C) Distribución de Riesgo (Peso por defecto: 20%):
+   A diferencia del promedio general (Rendimiento Académico), esta métrica escanea "curso por curso" y cuenta de manera absoluta cuántos cursos están desaprobados (< 12.5). Evita que un 20 en un curso fácil esconda 3 cursos reprobados. Es vital para detectar alumnos que están fracasando de manera "distribuida" y múltiple.
+
+D) Antecedentes Académicos (Rendimiento Histórico) (Peso por defecto: 20%):
+   Evalúa el promedio acumulado del estudiante en ciclos anteriores, aportando contexto sobre el perfil general del estudiante.
+   - Excelente (Promedio >= 14.5): Aporta 0.0 al riesgo.
+   - Aceptable (Promedio >= 12.5): Aporta 0.3 al riesgo.
+   - Moderado (Promedio >= 10.5): Aporta 0.7 al riesgo.
+   - Alto (Promedio < 10.5): Aporta 1.0 al riesgo.
+
+El cálculo también incluye un "Factor de Completitud" matemático para evitar falsos positivos si el ciclo recién empieza y hay muy pocas evaluaciones tomadas.
+Umbrales de Alarma Finales:
+- SIN RIESGO (Color Verde): Puntaje < 0.40
+- ALERTA AMARILLA (Color Ámbar): Puntaje entre 0.40 y 0.70
+- ALERTA ROJA (Color Rojo): Puntaje > 0.70
+
+3. TIPOS DE REPORTES Y SU UTILIDAD
+--------------------------------------------------------------------------------
+- Panel de Control (Dashboard) y Tabla Principal: Permite a coordinadores filtrar estudiantes según ciclo, o nivel de riesgo en vivo. Útil para ubicar rápidamente la población vulnerable de toda la institución.
+- Reporte Histórico: Compara semestres cerrados (ej. 2026-1) con el ciclo actual. Sirve para evaluar si las intervenciones tutoriales pasadas tuvieron éxito y medir la "Tendencia" (Sube, Baja o Estable) del estudiante.
+- Consolidado por Curso ("Sábana de Notas"): Un reporte cruzado tabular útil para los docentes, donde ven de un solo vistazo el desempeño de toda su clase en todas las evaluaciones, facilitando la identificación de exámenes o temas donde todo el aula falló.
+- Ficha Individual de Riesgo (Expediente): Detalla exactamente por qué un alumno específico está en riesgo mostrando barras de progreso y un desglose de los 3 factores matemáticos. Es la herramienta principal del psicólogo o tutor durante las reuniones con el estudiante.
+
+================================================================================
+               GUION PARA CONCURSO DE INNOVACIÓN TECNOLÓGICA
+================================================================================
+
+[Diapositiva 1: El Problema - Título en pantalla: "La Deserción Invisible"]
+
+(Presentador mirando al jurado con tono serio pero empático)
+"Buenos días miembros del jurado. En las instituciones educativas, existe un problema silencioso: el estudiante que se apaga poco a poco. Empieza con una inasistencia, sigue con una nota de 12.4, y termina en la deserción escolar. Lamentablemente, nuestros docentes y psicólogos se dan cuenta de esto cuando ya es demasiado tarde, cuando el semestre termina. Hoy les vengo a presentar la solución a este problema."
+
+[Diapositiva 2: La Solución - Mostrar el Dashboard con Alertas Rojas y Verdes]
+
+"Les presento nuestro Sistema de Seguimiento Estudiantil Inteligente. No es solo un simple registro de notas; es un motor analítico predictivo. 
+A través de un algoritmo multidimensional, nuestra plataforma procesa en tiempo real la asistencia, el historial académico previo y el rendimiento del ciclo actual. Convierte todos estos fríos datos en un semáforo de riesgo accionable."
+
+[Diapositiva 3: La Tecnología y el Valor Agregado]
+
+"¿Cómo lo hacemos? Hemos construido una arquitectura robusta y escalable (Python, Flask, PostgreSQL) alojada en la nube.
+Pero el verdadero valor agregado es nuestro motor predictivo, el 'Calculador de Riesgo v2', un algoritmo configurable y altamente sofisticado que no solo saca un promedio, sino que cruza 4 variables en simultáneo: 
+1. El Historial Académico.
+2. La Asistencia en tiempo real.
+3. El Rendimiento Académico del ciclo actual.
+4. Y nuestra métrica estrella: La 'Distribución de Riesgo', que evita que un curso fácil disfrace el fracaso en cursos críticos, analizando de forma granular cuántas materias exactas están en peligro.
+Con este cruce cuádruple, el sistema detecta de inmediato al estudiante vulnerable y lo alerta antes de que sea tarde."
+
+[Diapositiva 4: Impacto]
+
+"El impacto es directo: transformamos una institución reactiva en una institución proactiva. 
+- Los docentes obtienen 'sábanas' consolidadas para identificar temas donde todo el aula falla.
+- Los tutores tienen una ficha clínica por estudiante para sustentar intervenciones tempranas.
+- La institución salva talentos y reduce los costos operativos de la deserción.
+
+(Cierre, con tono inspirador)
+"La innovación no siempre se trata de crear la tecnología más compleja, sino de usar la tecnología correcta para cuidar el recurso más importante que tenemos: nuestros estudiantes. Con nuestro sistema, garantizamos que ningún estudiante vuelva a quedarse atrás en el anonimato. Muchas gracias."

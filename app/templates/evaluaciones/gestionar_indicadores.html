@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Indicadores de Logro - {{ curso.nombre_curso }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home me-1"></i> Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('cursos.index') }}">Cursos</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('cursos.detalle', curso_id=curso.id) }}">{{ curso.codigo_curso }}</a></li>
+        <li class="breadcrumb-item active">Indicadores de Logro</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="fw-bold m-0" style="font-family: 'Outfit', sans-serif;">
+                    <i class="fas fa-layer-group text-primary me-2"></i>Indicadores de Logro
+                </h2>
+                <p class="text-muted mb-0 fs-5 mt-1">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill me-2">{{ curso.codigo_curso }}</span>
+                    {{ curso.nombre_curso }} ({{ curso.semestre }})
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('evaluaciones.crear_evaluacion', curso_id=curso.id) }}" class="btn btn-primary hover-lift shadow-sm fw-bold">
+                    <i class="fas fa-plus me-2"></i> Nueva Evaluación
+                </a>
+                <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=curso.id) }}" class="btn btn-outline-primary hover-lift shadow-sm fw-bold">
+                    <i class="fas fa-chart-line me-2"></i> Ver Consolidado
+                </a>
+                <a href="{{ url_for('cursos.detalle', curso_id=curso.id) }}" class="btn btn-white hover-lift shadow-sm border">
+                    <i class="fas fa-arrow-left me-2"></i> Volver al Curso
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Ponderaciones del Curso -->
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">Estructura Modular de la Unidad Didáctica</h5>
+                    <p class="text-muted small mb-0">Cada indicador agrupa sus propias evaluaciones (máx. 100% por indicador) y tiene un peso en el promedio final del curso.</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <div class="small text-muted fw-bold">Suma de Pesos de Indicadores:</div>
+                        <div class="h4 fw-bold mb-0 {% if suma_pesos_il == 100 %}text-success{% else %}text-warning{% endif %}">
+                            {{ "%.1f"|format(suma_pesos_il) }}% / 100%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress mt-3" style="height: 10px; border-radius: 10px;">
+                <div class="progress-bar {% if suma_pesos_il == 100 %}bg-success{% else %}bg-warning{% endif %}" 
+                     role="progressbar" 
+                     style="width: {{ suma_pesos_il }}%;" 
+                     aria-valuenow="{{ suma_pesos_il }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Indicadores y sus Evaluaciones -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="card-header bg-white py-3 px-4 border-bottom">
+                <h6 class="fw-bold m-0 text-dark">
+                    <i class="fas fa-list-check text-primary me-2"></i>Indicadores Programados ({{ indicadores|length }})
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if indicadores %}
+                    <div class="list-group list-group-flush">
+                        {% for il in indicadores %}
+                        <div class="list-group-item p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                                <div>
+                                    <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold fs-6 me-2">{{ il.codigo }}</span>
+                                    <strong class="fs-5 text-dark">{{ il.nombre }}</strong>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-dark border px-3 py-2 fw-bold">
+                                        Peso en Curso: {{ "%.1f"|format(il.peso) }}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Estado de carga de evaluaciones del indicador -->
+                            <div class="bg-light p-3 rounded-3 mb-3 border">
+                                <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                    <span class="fw-bold text-muted">Carga de Evaluaciones en este Indicador:</span>
+                                    <span class="fw-bold {% if il.suma_pesos_evaluaciones == 100 %}text-success{% elif il.suma_pesos_evaluaciones > 100 %}text-danger{% else %}text-primary{% endif %}">
+                                        {{ "%.1f"|format(il.suma_pesos_evaluaciones) }}% de 100%
+                                        {% if il.peso_disponible > 0 %}
+                                            <span class="text-muted fw-normal">({{ "%.1f"|format(il.peso_disponible) }}% disponible)</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {% if il.suma_pesos_evaluaciones == 100 %}bg-success{% elif il.suma_pesos_evaluaciones > 100 %}bg-danger{% else %}bg-primary{% endif %}" 
+                                         style="width: {{ il.suma_pesos_evaluaciones }}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Evaluaciones dentro de este Indicador -->
+                            {% if il.evaluaciones %}
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="text-muted small text-uppercase">
+                                        <tr>
+                                            <th>Evaluación</th>
+                                            <th>Tipo</th>
+                                            <th class="text-center">Peso</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ev in il.evaluaciones %}
+                                        <tr>
+                                            <td class="fw-bold text-dark">{{ ev.nombre_evaluacion }}</td>
+                                            <td><span class="badge bg-light text-muted border">{{ ev.tipo_evaluacion.replace('_', ' ').title() }}</span></td>
+                                            <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary fw-bold">{{ "%.1f"|format(ev.peso) }}%</span></td>
+                                            <td class="text-end">
+                                                <a href="{{ url_for('evaluaciones.editar_evaluacion', evaluacion_id=ev.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{{ url_for('evaluaciones.detalle_evaluacion', evaluacion_id=ev.id) }}" class="btn btn-sm btn-outline-primary" title="Ver Notas">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted small mb-0 fst-italic">No hay evaluaciones asignadas a este indicador todavía. 
+                                <a href="{{ url_for('evaluaciones.crear_evaluacion', curso_id=curso.id) }}" class="text-primary fw-bold">Agregar la primera evaluación</a>
+                            </p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-5 text-center text-muted">
+                        <i class="fas fa-layer-group fa-3x mb-3 text-secondary opacity-50"></i>
+                        <h5>Sin Indicadores Configurados</h5>
+                        <p class="small">Utilice el formulario de la derecha para agregar el primer Indicador de Logro a este curso.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario para Agregar Nuevo Indicador -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="fas fa-plus-circle text-primary me-2"></i>Agregar Indicador
+            </h5>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.codigo.label(class="form-label fw-bold small text-muted text-uppercase") }}
+                    {{ form.codigo(class="form-control", placeholder="Ej: IL-01, IL-02, IL-03") }}
+                    {% if form.codigo.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.codigo.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.nombre.label(class="form-label fw-bold small text-muted text-uppercase") }}
+                    {{ form.nombre(class="form-control", placeholder="Ej: Indicador de Logro 01...") }}
+                    {% if form.nombre.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.nombre.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.peso.label(class="form-label fw-bold small text-muted text-uppercase") }}
+                    {{ form.peso(class="form-control", type="number", step="0.01", min="0.1", max="100", placeholder="Ej: 33.33") }}
+                    {% if form.peso.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.peso.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">Porcentaje que aporta este indicador a la nota final del curso.</div>
+                </div>
+                <div class="mb-4">
+                    {{ form.orden.label(class="form-label fw-bold small text-muted text-uppercase") }}
+                    {{ form.orden(class="form-control", type="number", min="1") }}
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm py-2">
+                    <i class="fas fa-save me-2"></i> Guardar Indicador
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

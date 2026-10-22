@@ -26,6 +26,9 @@
                 <a href="{{ url_for('cursos.index') }}" class="btn btn-outline-secondary border-2 fw-bold">
                     <i class="fas fa-arrow-left me-1"></i> Catálogo
                 </a>
+                <a href="{{ url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id) }}" class="btn btn-outline-primary border-2 fw-bold">
+                    <i class="fas fa-layer-group me-1"></i> Indicadores
+                </a>
                 <a href="{{ url_for('evaluaciones.consolidado_curso', curso_id=curso.id) }}" class="btn btn-outline-info border-2 fw-bold">
                     <i class="fas fa-table me-1"></i> Ver Consolidado
                 </a>
@@ -123,7 +126,14 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold m-0 text-primary-color text-uppercase small">Esquema de Evaluación</h6>
-                <a href="{{ url_for('evaluaciones.crear_evaluacion', curso_id=curso.id) }}" class="btn btn-sm btn-light fw-bold text-primary">+ Nueva</a>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('evaluaciones.gestionar_indicadores', curso_id=curso.id) }}" class="btn btn-sm btn-outline-primary fw-bold">
+                        <i class="fas fa-layer-group me-1"></i> Indicadores
+                    </a>
+                    <a href="{{ url_for('evaluaciones.crear_evaluacion', curso_id=curso.id) }}" class="btn btn-sm btn-primary fw-bold text-white">
+                        <i class="fas fa-plus me-1"></i> Nueva Evaluación
+                    </a>
+                </div>
             </div>
             <div class="card-body p-0">
                 {% if evaluaciones %}
@@ -132,6 +142,7 @@
                         <thead class="bg-light text-muted small text-uppercase fw-bold">
                             <tr>
                                 <th class="ps-4">Actividad</th>
+                                <th>Indicador</th>
                                 <th>Tipo</th>
                                 <th class="text-end pe-4">Peso</th>
                             </tr>
@@ -140,9 +151,18 @@
                             {% for evaluacion in evaluaciones %}
                             <tr>
                                 <td class="ps-4 fw-bold text-primary-color">{{ evaluacion.nombre_evaluacion }}</td>
+                                <td>
+                                    {% if evaluacion.indicador %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold">
+                                        {{ evaluacion.indicador.codigo }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary">General</span>
+                                    {% endif %}
+                                </td>
                                 <td><span class="small text-muted">{{ evaluacion.tipo_evaluacion.replace('_', ' ').title() }}</span></td>
                                 <td class="text-end pe-4">
-                                    <div class="fw-bold text-cyan">{{ evaluacion.peso }}%</div>
+                                    <div class="fw-bold text-cyan">{{ "%.0f"|format(evaluacion.peso) }}%</div>
                                 </td>
                             </tr>
                             {% endfor %}
