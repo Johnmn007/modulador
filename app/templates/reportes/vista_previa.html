@@ -20,6 +20,11 @@
                 <a href="{{ url_for('reportes.descargar', reporte_id=reporte_id) }}" class="btn btn-danger fw-bold shadow-sm">
                     <i class="fas fa-file-pdf me-2"></i> Descargar Documento PDF
                 </a>
+                {% if (reporte and reporte.tipo_reporte == 'CURSO_NOTAS') or curso_id %}
+                <a href="{{ url_for('reportes.descargar', reporte_id=reporte_id, formato='excel') }}" class="btn btn-success fw-bold shadow-sm">
+                    <i class="fas fa-file-excel me-2"></i> Descargar Excel (.xlsx)
+                </a>
+                {% endif %}
                 {% endif %}
             </div>
         </div>

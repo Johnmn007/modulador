@@ -13,6 +13,8 @@
     .btn-outline-primary:hover { background-color: rgba(6, 182, 212, 0.1); color: #0891b2; border-color: #06b6d4; transform: translateY(-2px); }
     .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; }
     .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
+    .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #ffffff; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important; color: #ffffff; }
 
     /* Custom styling to match theme with Tom Select */
     .ts-wrapper.form-select-lg .ts-control {
@@ -151,14 +153,19 @@
                             </div>
 
                             <div class="row g-2">
-                                <div class="col-6">
-                                    <button type="button" onclick="submitNotas('formCursoNotas', 'formatoCursoNotas', 'html')" class="btn btn-outline-primary w-100 py-3 fw-bold border-2 shadow-sm">
+                                <div class="col-4">
+                                    <button type="button" onclick="submitNotas('formCursoNotas', 'formatoCursoNotas', 'html')" class="btn btn-outline-primary w-100 py-3 fw-bold border-2 shadow-sm text-center">
                                         <i class="fas fa-desktop mb-2 d-block fa-lg"></i> Vista Web
                                     </button>
                                 </div>
-                                <div class="col-6">
-                                    <button type="button" onclick="submitNotas('formCursoNotas', 'formatoCursoNotas', 'pdf')" class="btn btn-danger w-100 py-3 fw-bold border-0 shadow-sm">
-                                        <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> Acta PDF Legal
+                                <div class="col-4">
+                                    <button type="button" onclick="submitNotas('formCursoNotas', 'formatoCursoNotas', 'pdf')" class="btn btn-danger w-100 py-3 fw-bold border-0 shadow-sm text-center">
+                                        <i class="fas fa-file-pdf mb-2 d-block fa-lg"></i> Acta PDF
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" onclick="submitNotas('formCursoNotas', 'formatoCursoNotas', 'excel')" class="btn btn-success w-100 py-3 fw-bold border-0 shadow-sm text-center">
+                                        <i class="fas fa-file-excel mb-2 d-block fa-lg"></i> Excel (.xlsx)
                                     </button>
                                 </div>
                             </div>

@@ -456,6 +456,486 @@ class ReportGenerator:
             'estadisticas': estadisticas
         }
 
+    def generar_excel_notas_curso(self, resultado_o_curso_id):
+        """
+        Genera el libro Excel (.xlsx) con el acta consolidada oficial de calificaciones.
+        Estructurada con encabezados institucionales, desglose por Indicador de Logro,
+        evaluaciones ponderadas, promedios parciales y finales, faltas, condición y
+        resumen estadístico institucional.
+        """
+        import io
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        if isinstance(resultado_o_curso_id, (int, str)):
+            resultado = self.generar_reporte_notas_curso(int(resultado_o_curso_id))
+        else:
+            resultado = resultado_o_curso_id
+
+        curso = resultado['curso']
+        indicadores = resultado['indicadores']
+        evaluaciones = resultado['evaluaciones']
+        consolidado = resultado['consolidado']
+        estadisticas = resultado['estadisticas']
+        nota_minima = float(estadisticas.get('nota_minima_aprobatoria', 12.5))
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        codigo_limpio = (curso.codigo_curso or 'CURSO')[:20]
+        ws.title = f"Acta {codigo_limpio}"
+        ws.views.sheetView[0].showGridLines = True
+
+        # Paleta de Colores Institucional
+        c_navy = "0F172A"       # Encabezado principal
+        c_slate = "1E293B"      # Subencabezado / evaluacion
+        c_ocean = "0369A1"      # Indicador de logro
+        c_sky = "0284C7"        # Subtotal promedio IL
+        c_subtotal_bg = "F0F9FF"# Fondo celda promedio IL
+        c_final_bg = "F1F5F9"   # Fondo celda promedio final
+        c_border = "CBD5E1"     # Bordes suaves
+        c_zebra = "F8FAFC"      # Fondo fila par
+
+        # Fuentes
+        f_title1 = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        f_title2 = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+        f_th = Font(name="Calibri", size=8.5, bold=True, color="FFFFFF")
+        f_th_small = Font(name="Calibri", size=7.5, bold=True, color="FFFFFF")
+        f_cell_normal = Font(name="Calibri", size=9.5, color="1E293B")
+        f_cell_bold = Font(name="Calibri", size=9.5, bold=True, color="1E293B")
+        f_aprobado = Font(name="Calibri", size=9.5, bold=True, color="15803D")
+        f_desaprobado = Font(name="Calibri", size=9.5, bold=True, color="B91C1C")
+        f_final_aprobado = Font(name="Calibri", size=10.5, bold=True, color="15803D")
+        f_final_desaprobado = Font(name="Calibri", size=10.5, bold=True, color="B91C1C")
+        f_null = Font(name="Calibri", size=9.5, color="94A3B8")
+
+        # Rellenos
+        fill_navy = PatternFill(start_color=c_navy, end_color=c_navy, fill_type="solid")
+        fill_slate = PatternFill(start_color=c_slate, end_color=c_slate, fill_type="solid")
+        fill_ocean = PatternFill(start_color=c_ocean, end_color=c_ocean, fill_type="solid")
+        fill_sky = PatternFill(start_color=c_sky, end_color=c_sky, fill_type="solid")
+        fill_subtotal = PatternFill(start_color=c_subtotal_bg, end_color=c_subtotal_bg, fill_type="solid")
+        fill_final = PatternFill(start_color=c_final_bg, end_color=c_final_bg, fill_type="solid")
+        fill_info = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+        fill_even = PatternFill(start_color=c_zebra, end_color=c_zebra, fill_type="solid")
+        fill_odd = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+
+        # Badges condición
+        fill_badge_aprobado = PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid")
+        font_badge_aprobado = Font(name="Calibri", size=9, bold=True, color="15803D")
+
+        fill_badge_desaprobado = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")
+        font_badge_desaprobado = Font(name="Calibri", size=9, bold=True, color="B91C1C")
+
+        fill_badge_dpi = PatternFill(start_color="7F1D1D", end_color="7F1D1D", fill_type="solid")
+        font_badge_dpi = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
+
+        # Bordes
+        border_thin = Border(
+            left=Side(style='thin', color=c_border),
+            right=Side(style='thin', color=c_border),
+            top=Side(style='thin', color=c_border),
+            bottom=Side(style='thin', color=c_border)
+        )
+        border_info = Border(
+            left=Side(style='thin', color="E2E8F0"),
+            right=Side(style='thin', color="E2E8F0"),
+            top=Side(style='thin', color="E2E8F0"),
+            bottom=Side(style='thin', color="E2E8F0")
+        )
+
+        align_center = Alignment(horizontal="center", vertical="center")
+        align_left = Alignment(horizontal="left", vertical="center")
+        align_th = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        def style_cells(min_col, min_row, max_col, max_row, font=None, fill=None, border=None, alignment=None, number_format=None):
+            for r in range(min_row, max_row + 1):
+                for c in range(min_col, max_col + 1):
+                    cell = ws.cell(row=r, column=c)
+                    if font: cell.font = font
+                    if fill: cell.fill = fill
+                    if border: cell.border = border
+                    if alignment: cell.alignment = alignment
+                    if number_format: cell.number_format = number_format
+
+        # Calcular número total de columnas
+        total_eval_cols = sum(len(il.evaluaciones) + 1 for il in indicadores)
+        total_cols = 3 + total_eval_cols + 3  # N°, Código, Nombre, [ILs...], Prom. Final, Faltas, Condición
+        total_cols = max(total_cols, 8)       # Al menos 8 columnas para la cabecera
+
+        # Fila 1: Banner institucional
+        ws.row_dimensions[1].height = 20
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
+        ws.cell(1, 1, "SADES — SISTEMA DE GESTIÓN Y SEGUIMIENTO ESTUDIANTIL")
+        style_cells(1, 1, total_cols, 1, font=f_title1, fill=fill_navy, alignment=align_center)
+
+        # Fila 2: Título del documento
+        ws.row_dimensions[2].height = 26
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=total_cols)
+        ws.cell(2, 1, "ACTA CONSOLIDADA DE EVALUACIÓN ACADÉMICA")
+        style_cells(1, 2, total_cols, 2, font=f_title2, fill=fill_slate, alignment=align_center)
+
+        # Fila 3: Separador
+        ws.row_dimensions[3].height = 8
+
+        # Fila 4 a 6: Ficha informativa del curso
+        ws.row_dimensions[4].height = 20
+        ws.row_dimensions[5].height = 20
+        ws.row_dimensions[6].height = 20
+
+        # Rellenar cuadro de información
+        style_cells(1, 4, total_cols, 6, fill=fill_info, border=border_info)
+
+        col_mid = max(3, total_cols // 2)
+
+        # Fila 4:
+        ws.cell(4, 1, "ASIGNATURA:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(4, 1).alignment = align_left
+        ws.merge_cells(start_row=4, start_column=2, end_row=4, end_column=col_mid)
+        ws.cell(4, 2, f"{curso.nombre_curso} ({curso.codigo_curso})").font = Font(name="Calibri", size=9.5, bold=True, color=c_navy)
+        ws.cell(4, 2).alignment = align_left
+
+        col_doc_lbl = col_mid + 1
+        ws.cell(4, col_doc_lbl, "DOCENTE:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(4, col_doc_lbl).alignment = align_left
+        col_doc_val = col_doc_lbl + 1
+        ws.merge_cells(start_row=4, start_column=col_doc_val, end_row=4, end_column=total_cols - 2)
+        if curso.docente:
+            docente_nombre = getattr(curso.docente, 'nombre_completo', None) or getattr(curso.docente, 'username', 'Docente')
+        else:
+            docente_nombre = "No asignado"
+        ws.cell(4, col_doc_val, docente_nombre).font = Font(name="Calibri", size=9.5, bold=True, color=c_navy)
+        ws.cell(4, col_doc_val).alignment = align_left
+
+        ws.cell(4, total_cols - 1, "CRÉDITOS:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(4, total_cols, str(curso.creditos or 0)).font = Font(name="Calibri", size=9.5, bold=True, color=c_navy)
+        ws.cell(4, total_cols).alignment = align_center
+
+        # Fila 5:
+        ws.cell(5, 1, "PERIODO / CICLO:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(5, 1).alignment = align_left
+        ws.merge_cells(start_row=5, start_column=2, end_row=5, end_column=col_mid)
+        ciclo_codigo = curso.ciclo.codigo_ciclo if curso.ciclo else "N/A"
+        ws.cell(5, 2, ciclo_codigo).font = Font(name="Calibri", size=9.5, color=c_navy)
+        ws.cell(5, 2).alignment = align_left
+
+        ws.cell(5, col_doc_lbl, "SEMESTRE:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(5, col_doc_lbl).alignment = align_left
+        ws.merge_cells(start_row=5, start_column=col_doc_val, end_row=5, end_column=total_cols - 2)
+        ws.cell(5, col_doc_val, f"Semestre {curso.semestre}").font = Font(name="Calibri", size=9.5, color=c_navy)
+        ws.cell(5, col_doc_val).alignment = align_left
+
+        ws.cell(5, total_cols - 1, "SESIONES:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(5, total_cols, f"{curso.total_sesiones_programadas}").font = Font(name="Calibri", size=9.5, color=c_navy)
+        ws.cell(5, total_cols).alignment = align_center
+
+        # Fila 6:
+        ws.cell(6, 1, "LÍMITE FALTAS:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(6, 1).alignment = align_left
+        ws.merge_cells(start_row=6, start_column=2, end_row=6, end_column=col_mid)
+        ws.cell(6, 2, f"{curso.max_faltas_permitidas} (30% DPI)").font = Font(name="Calibri", size=9.5, color=c_navy)
+        ws.cell(6, 2).alignment = align_left
+
+        ws.cell(6, col_doc_lbl, "NOTA MÍNIMA:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(6, col_doc_lbl).alignment = align_left
+        ws.merge_cells(start_row=6, start_column=col_doc_val, end_row=6, end_column=total_cols - 2)
+        ws.cell(6, col_doc_val, f"{nota_minima:.1f}").font = Font(name="Calibri", size=9.5, bold=True, color=c_navy)
+        ws.cell(6, col_doc_val).alignment = align_left
+
+        ws.cell(6, total_cols - 1, "EMISIÓN:").font = Font(name="Calibri", size=9, bold=True, color="475569")
+        ws.cell(6, total_cols, datetime.now().strftime('%d/%m/%Y')).font = Font(name="Calibri", size=8.5, color="64748B")
+        ws.cell(6, total_cols).alignment = align_center
+
+        # Fila 7: Separador
+        ws.row_dimensions[7].height = 10
+
+        # Filas 8 y 9: Encabezados de la Tabla Principal
+        ws.row_dimensions[8].height = 24
+        ws.row_dimensions[9].height = 28
+
+        # N° (Col 1)
+        ws.merge_cells(start_row=8, start_column=1, end_row=9, end_column=1)
+        ws.cell(8, 1, "N°")
+        style_cells(1, 8, 1, 9, font=f_th, fill=fill_navy, border=border_thin, alignment=align_center)
+
+        # Código (Col 2)
+        ws.merge_cells(start_row=8, start_column=2, end_row=9, end_column=2)
+        ws.cell(8, 2, "CÓDIGO")
+        style_cells(2, 8, 2, 9, font=f_th, fill=fill_navy, border=border_thin, alignment=align_center)
+
+        # Apellidos y Nombres (Col 3)
+        ws.merge_cells(start_row=8, start_column=3, end_row=9, end_column=3)
+        ws.cell(8, 3, "APELLIDOS Y NOMBRES")
+        style_cells(3, 8, 3, 9, font=f_th, fill=fill_navy, border=border_thin, alignment=align_center)
+
+        current_col = 4
+        subtotal_cols = []
+
+        for il in indicadores:
+            il_evals_count = len(il.evaluaciones)
+            il_total_cols = il_evals_count + 1  # Evaluaciones + Subtotal
+            start_col = current_col
+            end_col = current_col + il_total_cols - 1
+
+            # Nivel 1: Indicador de Logro
+            ws.merge_cells(start_row=8, start_column=start_col, end_row=8, end_column=end_col)
+            il_title = f"{il.codigo}{' - ' + il.nombre[:20] if il.nombre else ''} ({il.peso:.0f}%)"
+            ws.cell(8, start_col, il_title)
+            style_cells(start_col, 8, end_col, 8, font=f_th, fill=fill_ocean, border=border_thin, alignment=align_center)
+
+            # Nivel 2: Evaluaciones
+            for ev in il.evaluaciones:
+                ws.cell(9, current_col, f"{ev.nombre_evaluacion[:14]}\n({ev.peso:.0f}%)")
+                style_cells(current_col, 9, current_col, 9, font=f_th_small, fill=fill_slate, border=border_thin, alignment=align_th)
+                current_col += 1
+
+            # Nivel 2: Subtotal Promedio del Indicador
+            ws.cell(9, current_col, f"Prom.\n{il.codigo}")
+            style_cells(current_col, 9, current_col, 9, font=f_th_small, fill=fill_sky, border=border_thin, alignment=align_th)
+            subtotal_cols.append(current_col)
+            current_col += 1
+
+        # Promedio Final
+        col_prom_final = current_col
+        ws.merge_cells(start_row=8, start_column=col_prom_final, end_row=9, end_column=col_prom_final)
+        ws.cell(8, col_prom_final, "PROM.\nFINAL")
+        style_cells(col_prom_final, 8, col_prom_final, 9, font=f_th, fill=fill_navy, border=border_thin, alignment=align_th)
+        current_col += 1
+
+        # Faltas
+        col_faltas = current_col
+        ws.merge_cells(start_row=8, start_column=col_faltas, end_row=9, end_column=col_faltas)
+        ws.cell(8, col_faltas, "FALTAS")
+        style_cells(col_faltas, 8, col_faltas, 9, font=f_th, fill=fill_slate, border=border_thin, alignment=align_th)
+        current_col += 1
+
+        # Condición
+        col_condicion = current_col
+        ws.merge_cells(start_row=8, start_column=col_condicion, end_row=9, end_column=col_condicion)
+        ws.cell(8, col_condicion, "CONDICIÓN")
+        style_cells(col_condicion, 8, col_condicion, 9, font=f_th, fill=fill_navy, border=border_thin, alignment=align_center)
+
+        # Filas de Datos (Estudiantes)
+        start_data_row = 10
+        current_row = start_data_row
+
+        if not consolidado:
+            ws.row_dimensions[current_row].height = 24
+            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=total_cols)
+            ws.cell(current_row, 1, "No existen estudiantes inscritos activos en este curso.")
+            style_cells(1, current_row, total_cols, current_row, font=f_null, border=border_thin, alignment=align_center)
+            current_row += 1
+        else:
+            for item in consolidado:
+                ws.row_dimensions[current_row].height = 20
+                row_fill = fill_even if (item['num'] % 2 == 0) else fill_odd
+
+                # N°
+                ws.cell(current_row, 1, item['num'])
+                style_cells(1, current_row, 1, current_row, font=f_cell_normal, fill=row_fill, border=border_thin, alignment=align_center)
+
+                # Código
+                ws.cell(current_row, 2, item['codigo'])
+                style_cells(2, current_row, 2, current_row, font=f_cell_bold, fill=row_fill, border=border_thin, alignment=align_center)
+
+                # Nombre
+                ws.cell(current_row, 3, item['nombre_completo'])
+                style_cells(3, current_row, 3, current_row, font=f_cell_normal, fill=row_fill, border=border_thin, alignment=align_left)
+
+                # Notas por Indicador
+                c_idx = 4
+                for bloque in item['bloques_il']:
+                    for nota in bloque['notas']:
+                        cell = ws.cell(current_row, c_idx)
+                        if nota is not None:
+                            cell.value = float(nota)
+                            cell.number_format = '0.0'
+                            cell.font = f_aprobado if float(nota) >= nota_minima else f_desaprobado
+                        else:
+                            cell.value = "-"
+                            cell.font = f_null
+                        cell.fill = row_fill
+                        cell.border = border_thin
+                        cell.alignment = align_center
+                        c_idx += 1
+
+                    # Promedio IL
+                    cell_il = ws.cell(current_row, c_idx)
+                    prom_il = bloque['promedio_il']
+                    if prom_il is not None:
+                        cell_il.value = float(prom_il)
+                        cell_il.number_format = '0.0'
+                        cell_il.font = f_aprobado if float(prom_il) >= nota_minima else f_desaprobado
+                    else:
+                        cell_il.value = "-"
+                        cell_il.font = f_null
+                    cell_il.fill = fill_subtotal
+                    cell_il.border = border_thin
+                    cell_il.alignment = align_center
+                    c_idx += 1
+
+                # Promedio Final
+                cell_pf = ws.cell(current_row, col_prom_final)
+                pf_val = item['promedio']
+                cell_pf.value = float(pf_val)
+                cell_pf.number_format = '0.0'
+                if float(pf_val) >= nota_minima and item['condicion'] != 'DPI':
+                    cell_pf.font = f_final_aprobado
+                else:
+                    cell_pf.font = f_final_desaprobado
+                cell_pf.fill = fill_final
+                cell_pf.border = border_thin
+                cell_pf.alignment = align_center
+
+                # Faltas
+                cell_f = ws.cell(current_row, col_faltas)
+                cell_f.value = int(item['faltas'])
+                cell_f.fill = row_fill
+                cell_f.border = border_thin
+                cell_f.alignment = align_center
+                if item.get('max_faltas') is not None and item['faltas'] > item['max_faltas']:
+                    cell_f.font = f_desaprobado
+                else:
+                    cell_f.font = f_cell_normal
+
+                # Condición con Badge
+                cell_cond = ws.cell(current_row, col_condicion)
+                cond_text = item['condicion']
+                if cond_text == 'APROBADO':
+                    cell_cond.value = "Aprobado"
+                    cell_cond.fill = fill_badge_aprobado
+                    cell_cond.font = font_badge_aprobado
+                elif cond_text == 'DPI':
+                    cell_cond.value = "DPI (>30%)"
+                    cell_cond.fill = fill_badge_dpi
+                    cell_cond.font = font_badge_dpi
+                else:
+                    cell_cond.value = "Desaprobado"
+                    cell_cond.fill = fill_badge_desaprobado
+                    cell_cond.font = font_badge_desaprobado
+                cell_cond.border = border_thin
+                cell_cond.alignment = align_center
+
+                current_row += 1
+
+        # Bloque de Resumen Estadístico
+        current_row += 1
+        ws.row_dimensions[current_row].height = 8  # Espacio
+
+        current_row += 1
+        ws.row_dimensions[current_row].height = 22
+        stats_header_end = min(total_cols, 7)
+        ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=stats_header_end)
+        ws.cell(current_row, 2, "RESUMEN ESTADÍSTICO DEL RENDIMIENTO ACADÉMICO")
+        style_cells(2, current_row, stats_header_end, current_row, font=Font(name="Calibri", size=9.5, bold=True, color=c_navy),
+                    fill=PatternFill(start_color="E2E8F0", end_color="E2E8F0", fill_type="solid"),
+                    border=border_thin, alignment=align_center)
+
+        # Fila 1 de Estadísticas
+        current_row += 1
+        ws.row_dimensions[current_row].height = 20
+        # Total Inscritos
+        ws.cell(current_row, 2, "Total Inscritos:").font = f_cell_bold
+        ws.cell(current_row, 2).alignment = align_left
+        ws.cell(current_row, 2).fill = fill_odd
+        ws.cell(current_row, 2).border = border_thin
+
+        ws.cell(current_row, 3, estadisticas.get('total_estudiantes', 0)).font = f_cell_bold
+        ws.cell(current_row, 3).alignment = align_center
+        ws.cell(current_row, 3).fill = fill_odd
+        ws.cell(current_row, 3).border = border_thin
+
+        # Promedio del Aula
+        ws.cell(current_row, 4, "Promedio Aula:").font = f_cell_bold
+        ws.cell(current_row, 4).alignment = align_left
+        ws.cell(current_row, 4).fill = fill_odd
+        ws.cell(current_row, 4).border = border_thin
+
+        cell_pa = ws.cell(current_row, 5, float(estadisticas.get('promedio_aula', 0.0)))
+        cell_pa.font = f_cell_bold
+        cell_pa.number_format = '0.00'
+        cell_pa.alignment = align_center
+        cell_pa.fill = fill_odd
+        cell_pa.border = border_thin
+
+        # Nota Máx / Mín
+        ws.cell(current_row, 6, "Nota Máx / Mín:").font = f_cell_bold
+        ws.cell(current_row, 6).alignment = align_left
+        ws.cell(current_row, 6).fill = fill_odd
+        ws.cell(current_row, 6).border = border_thin
+
+        ws.cell(current_row, 7, f"{estadisticas.get('nota_maxima', 0):.1f} / {estadisticas.get('nota_minima', 0):.1f}").font = f_cell_bold
+        ws.cell(current_row, 7).alignment = align_center
+        ws.cell(current_row, 7).fill = fill_odd
+        ws.cell(current_row, 7).border = border_thin
+
+        # Fila 2 de Estadísticas
+        current_row += 1
+        ws.row_dimensions[current_row].height = 20
+        # Aprobados
+        ws.cell(current_row, 2, "Aprobados:").font = f_cell_bold
+        ws.cell(current_row, 2).alignment = align_left
+        ws.cell(current_row, 2).fill = fill_even
+        ws.cell(current_row, 2).border = border_thin
+
+        ws.cell(current_row, 3, f"{estadisticas.get('aprobados', 0)} ({estadisticas.get('porcentaje_aprobados', 0):.1f}%)").font = f_aprobado
+        ws.cell(current_row, 3).alignment = align_center
+        ws.cell(current_row, 3).fill = fill_even
+        ws.cell(current_row, 3).border = border_thin
+
+        # Desaprobados
+        ws.cell(current_row, 4, "Desaprobados:").font = f_cell_bold
+        ws.cell(current_row, 4).alignment = align_left
+        ws.cell(current_row, 4).fill = fill_even
+        ws.cell(current_row, 4).border = border_thin
+
+        ws.cell(current_row, 5, f"{estadisticas.get('desaprobados', 0)} ({estadisticas.get('porcentaje_desaprobados', 0):.1f}%)").font = f_desaprobado
+        ws.cell(current_row, 5).alignment = align_center
+        ws.cell(current_row, 5).fill = fill_even
+        ws.cell(current_row, 5).border = border_thin
+
+        # Retirados por DPI
+        ws.cell(current_row, 6, "Retirados DPI:").font = f_cell_bold
+        ws.cell(current_row, 6).alignment = align_left
+        ws.cell(current_row, 6).fill = fill_even
+        ws.cell(current_row, 6).border = border_thin
+
+        ws.cell(current_row, 7, str(estadisticas.get('dpi', 0))).font = f_desaprobado
+        ws.cell(current_row, 7).alignment = align_center
+        ws.cell(current_row, 7).fill = fill_even
+        ws.cell(current_row, 7).border = border_thin
+
+        # Ajuste de Ancho de Columnas
+        col_widths = {
+            1: 6,   # N°
+            2: 14,  # Código
+            3: 32,  # Apellidos y Nombres
+        }
+        for c in range(4, current_col):
+            if c in subtotal_cols:
+                col_widths[c] = 12
+            elif c == col_prom_final:
+                col_widths[c] = 12
+            elif c == col_faltas:
+                col_widths[c] = 9
+            elif c == col_condicion:
+                col_widths[c] = 15
+            else:
+                col_widths[c] = 11
+
+        for c, w in col_widths.items():
+            col_letter = get_column_letter(c)
+            ws.column_dimensions[col_letter].width = w
+
+        # Congelar Paneles en Celda D10 (Fija filas 1-9 y columnas A-C)
+        ws.freeze_panes = "D10"
+
+        # Exportar a BytesIO
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output
+
     def generar_reporte_boleta_estudiante(self, estudiante_id, semestre=None):
         """Genera boleta oficial de calificaciones de un estudiante para un semestre"""
         estudiante = Estudiante.query.get_or_404(estudiante_id)

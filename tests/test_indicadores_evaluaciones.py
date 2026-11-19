@@ -340,4 +340,50 @@ class TestIndicadoresLogroEvaluaciones(BaseTestCase):
         self.assertEqual(resp_exito.status_code, 200)
         self.assertIsNone(IndicadorLogro.query.get(self.il2.id))
 
+    def test_generar_excel_notas_curso_service(self):
+        """Verifica que ReportGenerator genera un buffer Excel (.xlsx) estructurado correctamente"""
+        import openpyxl
+
+        ev1 = Evaluacion(curso_id=self.curso.id, indicador_id=self.il1.id, nombre_evaluacion='Ev 1', peso=100.0)
+        ev2 = Evaluacion(curso_id=self.curso.id, indicador_id=self.il2.id, nombre_evaluacion='Ev 2', peso=100.0)
+        db.session.add_all([ev1, ev2])
+        db.session.commit()
+
+        # Registrar nota
+        nota = Nota(inscripcion_id=self.inscripcion.id, evaluacion_id=ev1.id, nota=16.0)
+        db.session.add(nota)
+        db.session.commit()
+
+        rep = ReportGenerator()
+        excel_buffer = rep.generar_excel_notas_curso(self.curso.id)
+        self.assertIsNotNone(excel_buffer)
+
+        # Leer con openpyxl para verificar integridad
+        wb = openpyxl.load_workbook(excel_buffer)
+        self.assertTrue(len(wb.sheetnames) > 0)
+        ws = wb.active
+        # Celda A1 contiene el encabezado institucional
+        self.assertIn("SADES", ws['A1'].value)
+        self.assertIn("ACTA CONSOLIDADA", ws['A2'].value)
+
+    def test_descargar_excel_notas_curso_routes(self):
+        """Verifica que las rutas de descarga en Excel responden con código 200 y el mimetype correcto"""
+        self.login('docente_test@test.com', 'password123')
+
+        # 1. Petición POST a /reportes/notas/curso con formato=excel
+        resp_post = self.client.post('/reportes/notas/curso', data={
+            'curso_id': self.curso.id,
+            'formato': 'excel'
+        })
+        self.assertEqual(resp_post.status_code, 200)
+        self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', resp_post.content_type)
+        self.assertIn('.xlsx', resp_post.headers.get('Content-Disposition', ''))
+
+        # 2. Petición GET a la ruta directa /reportes/notas/curso/<id>/excel
+        resp_get = self.client.get(f'/reportes/notas/curso/{self.curso.id}/excel')
+        self.assertEqual(resp_get.status_code, 200)
+        self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', resp_get.content_type)
+        self.assertIn('.xlsx', resp_get.headers.get('Content-Disposition', ''))
+
+
 

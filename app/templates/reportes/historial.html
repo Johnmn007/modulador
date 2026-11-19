@@ -58,8 +58,14 @@
                                         </a>
                                         {% if reporte.archivo_path %}
                                         <a href="{{ url_for('reportes.descargar', reporte_id=reporte.id) }}" 
-                                           class="btn btn-sm btn-danger border-0 fw-bold px-3 shadow-sm">
+                                           class="btn btn-sm btn-danger border-0 fw-bold px-3 shadow-sm" title="Descargar PDF">
                                             <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if reporte.tipo_reporte == 'CURSO_NOTAS' %}
+                                        <a href="{{ url_for('reportes.descargar', reporte_id=reporte.id, formato='excel') }}" 
+                                           class="btn btn-sm btn-success border-0 fw-bold px-3 shadow-sm" title="Descargar Excel (.xlsx)">
+                                            <i class="fas fa-file-excel"></i>
                                         </a>
                                         {% endif %}
                                     </div>

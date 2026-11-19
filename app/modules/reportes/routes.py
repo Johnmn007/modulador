@@ -431,6 +431,21 @@ def generar_notas_curso():
         db.session.add(reporte)
         db.session.commit()
         
+        if formato == 'excel':
+            try:
+                excel_buffer = generator.generar_excel_notas_curso(resultado)
+                filename = f"consolidado_notas_{resultado['curso'].codigo_curso}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+                return send_file(
+                    excel_buffer,
+                    as_attachment=True,
+                    download_name=filename,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+            except Exception as e:
+                app_logger.error(f"Error generando Excel de notas de curso: {str(e)}")
+                flash('Ocurrió un error al generar el archivo Excel. Mostrando vista previa web.', 'warning')
+                return resultado['html']
+
         if formato == 'pdf':
             try:
                 config = get_pdf_config()
@@ -458,11 +473,40 @@ def generar_notas_curso():
                              contenido=resultado['html'],
                              titulo=reporte.titulo,
                              reporte_id=reporte.id,
+                             reporte=reporte,
+                             curso_id=curso_id,
                              datetime=datetime)
     except Exception as e:
         db.session.rollback()
         app_logger.error(f"Error generando acta de curso: {str(e)}")
         flash('Ocurrió un error al generar el reporte de calificaciones.', 'danger')
+        return redirect(url_for('reportes.notas_index'))
+
+@reportes_bp.route('/notas/curso/<int:curso_id>/excel')
+@login_required
+def descargar_excel_curso(curso_id):
+    """Descarga directa del consolidado de notas de un curso en formato Excel (.xlsx)"""
+    try:
+        # Verificar pertenencia del curso para docentes y coordinadores
+        if current_user.rol in ('docente', 'coordinador'):
+            curso = Curso.query.get(curso_id)
+            if not curso or not curso_pertenece_al_usuario(curso):
+                flash('No tiene permisos para descargar el reporte de este curso', 'danger')
+                return redirect(url_for('reportes.notas_index'))
+        
+        generator = ReportGenerator()
+        resultado = generator.generar_reporte_notas_curso(curso_id)
+        excel_buffer = generator.generar_excel_notas_curso(resultado)
+        filename = f"consolidado_notas_{resultado['curso'].codigo_curso}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        return send_file(
+            excel_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        app_logger.error(f"Error descargando Excel de notas de curso {curso_id}: {str(e)}")
+        flash('Ocurrió un error al generar el consolidado en Excel.', 'danger')
         return redirect(url_for('reportes.notas_index'))
 
 @reportes_bp.route('/notas/boleta', methods=['POST'])
@@ -553,6 +597,26 @@ def descargar(reporte_id):
         flash('No tiene permisos para acceder a este reporte', 'danger')
         return redirect(url_for('reportes.historial'))
     
+    formato = request.args.get('formato')
+    if (formato == 'excel' or request.args.get('excel')) and reporte.tipo_reporte == 'CURSO_NOTAS':
+        curso_id = reporte.parametros.get('curso_id') if reporte.parametros else None
+        if curso_id:
+            try:
+                generator = ReportGenerator()
+                resultado = generator.generar_reporte_notas_curso(curso_id)
+                excel_buffer = generator.generar_excel_notas_curso(resultado)
+                filename = f"consolidado_notas_{resultado['curso'].codigo_curso}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+                return send_file(
+                    excel_buffer,
+                    as_attachment=True,
+                    download_name=filename,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+            except Exception as e:
+                app_logger.error(f"Error generando Excel para reporte {reporte_id}: {str(e)}")
+                flash('Ocurrió un error al generar el archivo Excel.', 'danger')
+                return redirect(url_for('reportes.historial'))
+
     # Si el reporte es HTML guardado en DB, podemos intentar reconvertirlo a PDF si se pide
     # Por ahora solo manejamos archivos físicos si existen
     if reporte.archivo_path and os.path.exists(reporte.archivo_path):
@@ -564,6 +628,7 @@ def descargar(reporte_id):
                              contenido=reporte.contenido,
                              titulo=reporte.titulo,
                              reporte_id=reporte.id,
+                             reporte=reporte,
                              datetime=datetime)
 
 # --- RUTAS PARA REPORTES HISTÓRICOS ---
